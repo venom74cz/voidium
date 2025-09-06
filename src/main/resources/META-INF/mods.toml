@@ -1,0 +1,35 @@
+# Mod properties
+modLoader="neoforge"
+loaderVersion="${loader_version_range}"
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/yourusername/voidium/issues"
+
+[[mods]]
+modId="voidium"
+version="1.0.1"
+displayName="Voidium Server Tools"
+# updateJSONURL="https://change.me.example.invalid/updates.json"
+displayURL="https://github.com/yourusername/voidium"
+# logoFile="voidium.png"
+credits="Created by You"
+authors="Your Name"
+description='''
+Server-side mod pro správu serveru s následujícími funkcemi:
+- Automatický restart serveru
+- Systém oznámení
+- Konfigurovatelné zprávy
+'''
+
+[[dependencies.voidium]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.205,)"
+ordering="NONE"
+side="SERVER"
+
+[[dependencies.voidium]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="SERVER"
