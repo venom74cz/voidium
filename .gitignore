@@ -1,26 +1,23 @@
-# eclipse
-bin
-*.launch
-.settings
-.metadata
-.classpath
-.project
+# Gradle
+.gradle/
+build/
+out/
+classes/
 
-# idea
-out
+# IDE
+.idea/
+.vscode/
+*.iml
 *.ipr
 *.iws
-*.iml
-.idea
 
-# gradle
-build
-.gradle
+# OS
+.DS_Store
+Thumbs.db
 
-# other
-eclipse
-run
-runs
-run-data
+# Minecraft Development Kit
+run/
+logs/
 
-repo
+# Config cache
+.gradle/configuration-cache/
