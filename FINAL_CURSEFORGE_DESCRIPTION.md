@@ -8,9 +8,10 @@ Transform your Minecraft server administration with this powerful, all-in-one ma
 
 ## 🌟 Core Features
 
-### 🔄 **Smart Restart System**
+### 🔄 **Advanced Restart System**
 - **Fixed Time Restarts** - Schedule daily restarts at specific times (6 AM, 6 PM, etc.)
 - **Interval Restarts** - Automatic restarts every X hours for consistent uptime
+- **Delay Restarts** - Restart X minutes after server startup (NEW!)
 - **Manual Control** - Force restarts with `/voidium restart <minutes>` command
 - **Visual Countdown** - Boss bar displays restart timer for 10+ minute restarts
 - **Smart Warnings** - Automatic notifications at 60, 30, 15, 10, 5, 3, 2, 1 minutes before restart
@@ -66,7 +67,8 @@ The mod creates three organized configuration files with detailed comments:
 {
   "restartType": "FIXED_TIME",
   "fixedRestartTimes": ["06:00", "18:00"],
-  "intervalHours": 6
+  "intervalHours": 6,
+  "delayMinutes": 60
 }
 ```
 

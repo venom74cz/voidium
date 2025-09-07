@@ -40,16 +40,25 @@ public class Voidium {
     }
 
     private void onServerStarted(ServerStartedEvent event) {
-        restartManager = new RestartManager(event.getServer());
-        announcementManager = new AnnouncementManager(event.getServer());
-        
-        // Nastavení managerů pro příkazy
-        VoidiumCommand.setManagers(restartManager, announcementManager);
-        
-        // Oznámení pro OPs
-        announcementManager.broadcastToOps("&aVoidium mod je načten a běží!");
-        announcementManager.broadcastToOps("&eVerze: 1.0.0");
-        announcementManager.broadcastToOps("&bKonfigurace načtena úspěšně!");
+        try {
+            System.out.println("Starting Voidium managers...");
+            
+            restartManager = new RestartManager(event.getServer());
+            announcementManager = new AnnouncementManager(event.getServer());
+            
+            // Nastavení managerů pro příkazy
+            VoidiumCommand.setManagers(restartManager, announcementManager);
+            
+            System.out.println("Voidium managers started successfully!");
+            
+            // Oznámení pro OPs
+            announcementManager.broadcastToOps("&aVoidium mod loaded and running!");
+            announcementManager.broadcastToOps("&eVersion: 1.2.5");
+            announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
+        } catch (Exception e) {
+            System.err.println("Failed to start Voidium managers: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {

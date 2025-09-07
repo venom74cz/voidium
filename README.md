@@ -4,9 +4,10 @@ A comprehensive server-side mod for Minecraft 1.21.1 with NeoForge that provides
 
 ## 🚀 Features
 
-### 🔄 Automatic Restart System
+### 🔄 Advanced Restart System
 - **Fixed Time Restarts**: Schedule restarts at specific times (e.g., 6:00 AM, 6:00 PM)
 - **Interval Restarts**: Restart every X hours automatically
+- **Delay Restarts**: Restart X minutes after server startup
 - **Manual Restarts**: Force restart with `/voidium restart <minutes>` command
 - **Boss Bar Countdown**: Visual countdown for restarts 10+ minutes (red progress bar)
 - **Warning System**: Automatic warnings at 60, 30, 15, 10, 5, 3, 2, 1 minutes before restart
@@ -64,11 +65,12 @@ A comprehensive server-side mod for Minecraft 1.21.1 with NeoForge that provides
 ### restart.json
 ```json
 // === RESTART CONFIGURATION ===
-// Choose restart type: FIXED_TIME (specific times) or INTERVAL (every X hours)
+// Choose restart type: FIXED_TIME (specific times), INTERVAL (every X hours), or DELAY (restart in X minutes)
 {
   "restartType": "FIXED_TIME",
   "fixedRestartTimes": ["06:00", "18:00"],
-  "intervalHours": 6
+  "intervalHours": 6,
+  "delayMinutes": 60
 }
 ```
 

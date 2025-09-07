@@ -1,0 +1,16 @@
+Hotfix v1.2.5: Fix DELAY restart timing calculation
+
+- Fixed DELAY restart to calculate from server startup time instead of last restart time
+- Added serverStartTime tracking for accurate DELAY restart countdown
+- Status command now shows correct time remaining for DELAY restarts
+- Improved time calculation accuracy for all restart types
+
+Bug fix:
+- DELAY restart was incorrectly using lastRestartTime (time of previous restart)
+- Now correctly uses serverStartTime (when server actually started)
+- Status display now shows accurate countdown: "in 0h 1m (delay restart)"
+
+Technical changes:
+- Added serverStartTime field to RestartManager
+- Updated getNextRestartInfo() to use correct time base for DELAY type
+- Improved restart time calculation logic

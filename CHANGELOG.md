@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.2.5] - 2024-12-19
+### Fixed
+- **DELAY restart timing** - now correctly calculates from server startup time instead of last restart
+- Status command now shows accurate countdown for DELAY restart type
+- Improved DELAY restart info display with proper time calculation
+
+## [1.2.4] - 2024-12-19
+### Added
+- **DELAY restart type** - restart server X minutes after startup
+- Enhanced restart scheduling with three flexible options
+- Improved debug logging for troubleshooting restart issues
+
+### Fixed
+- Restart functionality completely overhauled and working properly
+- Boss bar timing calculations corrected
+- Config loading with proper error handling
+- Scheduler management improved
+
+### Changed
+- Restart configuration now supports three types: FIXED_TIME, INTERVAL, and DELAY
+
+## [1.2.3] - 2024-12-19
+### Fixed
+- Major restart system overhaul with debug logging
+- Improved error handling and validation
+- Fixed scheduler task management
+- Corrected boss bar countdown timing
+
 ## [1.2.2] - 2024-12-19
 ### Added
 - Detailed comments in all configuration files explaining each setting

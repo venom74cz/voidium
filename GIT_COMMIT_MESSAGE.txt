@@ -1,0 +1,21 @@
+Update to v1.2.4: Major restart system overhaul with DELAY restart type
+
+- Added DELAY restart type for flexible server scheduling
+- Completely overhauled restart functionality with proper error handling
+- Fixed boss bar timing calculations and scheduler management
+- Enhanced debug logging for troubleshooting restart issues
+- Improved config loading with comprehensive validation
+- Updated all documentation and examples
+- Restart system now fully functional and reliable
+
+New features:
+- Three restart types: FIXED_TIME, INTERVAL, and DELAY
+- Delay restart: restart X minutes after server startup
+- Enhanced debug output for restart scheduling
+- Improved task cancellation and rescheduling
+
+Bug fixes:
+- Fixed restart scheduling logic
+- Corrected boss bar countdown timing
+- Improved scheduler task management
+- Better error handling throughout restart system
