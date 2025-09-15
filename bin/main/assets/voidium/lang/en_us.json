@@ -1,0 +1,13 @@
+{
+  "itemGroup.voidium": "Example Mod Tab",
+  "block.voidium.example_block": "Example Block",
+  "item.voidium.example_item": "Example Item",
+
+  "voidium.configuration.title": "VOIDIUM Configs",
+  "voidium.configuration.section.voidium.common.toml": "VOIDIUM Configs",
+  "voidium.configuration.section.voidium.common.toml.title": "VOIDIUM Configs",
+  "voidium.configuration.items": "Item List",
+  "voidium.configuration.logDirtBlock": "Log Dirt Block",
+  "voidium.configuration.magicNumberIntroduction": "Magic Number Text",
+  "voidium.configuration.magicNumber": "Magic Number"
+}

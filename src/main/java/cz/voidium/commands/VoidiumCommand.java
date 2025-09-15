@@ -10,6 +10,7 @@ import cz.voidium.config.AnnouncementConfig;
 import cz.voidium.config.GeneralConfig;
 import cz.voidium.server.RestartManager;
 import cz.voidium.server.AnnouncementManager;
+import cz.voidium.server.SkinRestorer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -21,11 +22,13 @@ import java.util.concurrent.ScheduledFuture;
 public class VoidiumCommand {
     private static RestartManager restartManager;
     private static AnnouncementManager announcementManager;
+    private static SkinRestorer skinRestorer;
     
     public static void setManagers(RestartManager restart, AnnouncementManager announcement) {
         restartManager = restart;
         announcementManager = announcement;
     }
+    public static void setSkinRestorer(SkinRestorer restorer) { skinRestorer = restorer; }
     
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("voidium")
@@ -55,6 +58,9 @@ public class VoidiumCommand {
                     .executes(VoidiumCommand::guiAnnounce))
                 .then(Commands.literal("general")
                     .executes(VoidiumCommand::guiGeneral)))
+            .then(Commands.literal("skin")
+                .then(Commands.argument("player", StringArgumentType.word())
+                    .executes(VoidiumCommand::skinRefresh)))
         );
         
         // Status příkaz pro všechny
@@ -74,7 +80,29 @@ public class VoidiumCommand {
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium cancel §7- Cancel scheduled restart"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium config §7- Configuration settings"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium gui §7- Interactive settings"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium skin <player> §7- Try refresh player skin (offline mode)"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium status §7- Show mod status (everyone)"), false);
+        return 1;
+    }
+
+    private static int skinRefresh(CommandContext<CommandSourceStack> context) {
+        String targetName = StringArgumentType.getString(context, "player");
+        if (skinRestorer == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cSkinRestorer disabled"));
+            return 0;
+        }
+        net.minecraft.server.MinecraftServer server = context.getSource().getServer();
+        var player = server.getPlayerList().getPlayerByName(targetName);
+        if (player == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cPlayer not online"));
+            return 0;
+        }
+        boolean scheduled = skinRestorer.manualRefresh(player);
+        if (scheduled) {
+            context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aSkin refresh scheduled for §e" + targetName), false);
+        } else {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cRefresh failed to schedule"));
+        }
         return 1;
     }
     
@@ -111,10 +139,9 @@ public class VoidiumCommand {
     }
     
     private static int status(CommandContext<CommandSourceStack> context) {
-        VoidiumConfig config = VoidiumConfig.getInstance();
         context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fServer status:"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Server name: §e" + context.getSource().getServer().getMotd()), false);
-        context.getSource().sendSuccess(() -> Component.literal("§7Version: §e1.2.5"), false);
+    context.getSource().sendSuccess(() -> Component.literal("§7Version: §e1.2.6"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Mod count: §e" + net.neoforged.fml.ModList.get().size()), false);
         
         // TPS informace

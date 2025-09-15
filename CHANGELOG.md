@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.2.8] - 2025-09-15
+### Added
+- Konfigurovatelný TTL pro persistentní Skin Cache (`skinCacheHours` v `general.json`, výchozí 24h)
+
+### Changed
+- Unifikované logování pro Skin subsystem (SkinCache, EarlySkinInjector, SkinRestorer) přes SLF4J
+- Broadcast verze aktualizován na 1.2.8
+
+### Notes
+- Minimální hodnota `skinCacheHours` je 1 (nižší hodnoty jsou automaticky zvýšeny)
+- Při expiraci je záznam odstraněn a skin se znovu stáhne při dalším přihlášení
+
+## [1.2.7] - 2025-09-15
+### Added
+- **Persistent Skin Cache** – ukládá Mojang skin data do `config/voidium/skin-cache.json` (24h TTL)
+
+### Changed
+- Skin Restorer nyní aplikuje skiny okamžitě při připojování (mixin do `PlayerList.placeNewPlayer`)
+- Fallback SkinRestorer po přihlášení je zjednodušen (pouze pokud early injection nezískal skin)
+- Odstraněny hacky (opakované ADD/REMOVE, přepínání gamemode) – klient dostane správný skin hned při první tab list synchronizaci
+
+### Notes
+- `/voidium skin <player>` stále funguje pro manuální obnovu (cache-respektující)
+- Staré záznamy v cache se automaticky obnoví po expiraci (24h)
+
+## [1.2.6] - 2025-09-15
+### Added
+- **Skin Restorer (offline mode)** – načítá Mojang skiny i když je server v `online-mode=false`
+- `/voidium skin <player>` příkaz pro ruční obnovení skinu
+
+### Changed
+- Vylepšené logování (diagnostika restartů a skin fetchování)
+- README + dokumentace rozšířena o Skin Restorer sekci
+
+### Notes
+- Okamžitá aplikace skinu může na některých klientech vyžadovat relog (známé omezení klienta)
+- Bezpečně deaktivováno automaticky pokud je server v online módu
+
 ## [1.2.5] - 2024-12-19
 ### Fixed
 - **DELAY restart timing** - now correctly calculates from server startup time instead of last restart

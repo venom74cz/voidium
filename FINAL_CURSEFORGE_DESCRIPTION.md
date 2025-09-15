@@ -29,6 +29,11 @@ Transform your Minecraft server administration with this powerful, all-in-one ma
 - **Server Statistics** - Comprehensive status available to all players
 
 ### 🎮 **Interactive Management**
+### 🧍 **Offline Mode Skin Restorer**
+- Immediate Mojang skin fetch during join (no relog needed)
+- Persistent cache stored in `config/voidium/skin-cache.json` (TTL konfigurovatelný přes `skinCacheHours`, výchozí 24h)
+- Safe: auto-disabled if server runs in online mode
+- Manual refresh: `/voidium skin <player>`
 - **In-Game GUI** - View all settings with `/voidium gui` without file editing
 - **Hot Reload** - Apply configuration changes with `/voidium reload`
 - **Organized Config** - Separate files for restarts, announcements, and general settings
@@ -84,13 +89,15 @@ The mod creates three organized configuration files with detailed comments:
 }
 ```
 
-### **general.json** - Master Controls
+### **general.json** - Master Controls (1.2.8 adds `skinCacheHours`)
 ```json
 {
   "enableMod": true,
   "enableRestarts": true,
   "enableAnnouncements": true,
-  "enableBossBar": true
+  "enableBossBar": true,
+  "enableSkinRestorer": true,
+  "skinCacheHours": 24
 }
 ```
 

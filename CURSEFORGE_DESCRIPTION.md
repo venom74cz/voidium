@@ -1,6 +1,8 @@
-# Voidium Server Management Mod
+# VOIDIUM - SERVER MANAGER
 
-**A powerful server-side mod for Minecraft 1.21.1 that provides comprehensive server management tools including automatic restarts, player announcements, and real-time monitoring.**
+**A powerful NeoForge server management suite for Minecraft 1.21.1: automated restarts, announcements, status & performance tooling, GUI control, and instant offline‑mode skin restoration (persistent configurable cache).**
+
+Immediate offline-mode Mojang skin application with persistent caching (TTL konfigurovatelný pomocí `skinCacheHours`).
 
 ---
 
@@ -66,7 +68,7 @@ The mod creates three organized configuration files with detailed comments:
 - **`announcements.json`** - Player messages and broadcasting
 - **`general.json`** - Master switches and mod behavior
 
-Each file includes comprehensive documentation and examples!
+Each file includes comprehensive documentation and examples! New in 1.2.8: `skinCacheHours` in `general.json` for skin cache TTL (hours, default 24).
 
 ---
 

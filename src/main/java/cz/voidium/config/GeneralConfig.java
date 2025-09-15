@@ -26,6 +26,14 @@ public class GeneralConfig {
     // Shows a red progress bar at the top of players' screens
     private boolean enableBossBar = true;
     
+    // Enable/disable Skin Restorer (fetch real skins in offline mode)
+    private boolean enableSkinRestorer = true;
+
+    // Number of hours to keep a cached skin entry (value+signature) before refetch.
+    // Minimum enforced internally is 1. Set higher (e.g. 48) to reduce Mojang API calls,
+    // or lower (e.g. 6) if players frequently change skins. Default 24.
+    private int skinCacheHours = 24;
+    
     // Default prefix for mod messages (used in commands and notifications)
     // Use & for color codes
     private String modPrefix = "&8[&bVoidium&8]&r ";
@@ -74,6 +82,8 @@ public class GeneralConfig {
                 writer.write("// If false, only manual announcements via commands will work\n");
                 writer.write("// Enable/disable boss bar countdown during restarts (10+ minutes)\n");
                 writer.write("// Shows a red progress bar at the top of players' screens\n");
+                writer.write("// Enable/disable Skin Restorer (real skins in offline mode)\n");
+                writer.write("// skinCacheHours - retention time for cached skins (hours) – min 1\n");
                 writer.write("// Default prefix for mod messages (used in commands and notifications)\n");
                 writer.write("// Use & for color codes\n\n");
                 GSON.toJson(this, writer);
@@ -89,4 +99,6 @@ public class GeneralConfig {
     public boolean isEnableAnnouncements() { return enableAnnouncements; }
     public boolean isEnableBossBar() { return enableBossBar; }
     public String getModPrefix() { return modPrefix; }
+    public boolean isEnableSkinRestorer() { return enableSkinRestorer; }
+    public int getSkinCacheHours() { return skinCacheHours; }
 }

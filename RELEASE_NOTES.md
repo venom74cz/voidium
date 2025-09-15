@@ -1,3 +1,10 @@
+# Voidium v1.2.7 - Release Notes
+
+## New in 1.2.7
+Immediate offline-mode skin application (pre-join mixin) and persistent disk cache (`skin-cache.json`, 24h TTL). See `CHANGELOG.md` and `RELEASE_NOTES_v1.2.7.md` for details.
+
+# Older Versions
+
 # Voidium v1.2.2 - Release Notes
 
 ## 🎉 What's New in v1.2.2

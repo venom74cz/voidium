@@ -1,6 +1,6 @@
-# Voidium Server Management Mod
+# VOIDIUM - SERVER MANAGER
 
-A comprehensive server-side mod for Minecraft 1.21.1 with NeoForge that provides automatic restart management, player announcements, and server monitoring tools.
+A comprehensive server-side management suite for Minecraft 1.21.1 (NeoForge) providing automated restarts, announcements, status tooling, GUI control, and offline-mode skin restoration.
 
 ## 🚀 Features
 
@@ -34,6 +34,15 @@ A comprehensive server-side mod for Minecraft 1.21.1 with NeoForge that provides
 - **Detailed Comments**: Each config file includes comprehensive documentation
 - **Hot Reload**: Reload configuration without server restart using `/voidium reload`
 - **Master Switches**: Enable/disable individual features independently
+ 
+### 🧍 Skin Restorer (Offline Mode)
+- **Immediate Skin Application**: Mixin injektuje skin před prvním broadcastem hráče (žádný relog potřeba)
+- **Persistent Cache**: `config/voidium/skin-cache.json` ukládá value+signature (TTL konfigurovatelný)
+- **Konfigurovatelný TTL**: `skinCacheHours` (výchozí 24) v `general.json` – minimálně 1 hodina
+- **Config Toggle**: `enableSkinRestorer` v `general.json`
+- **Fallback Logic**: Post-login fallback běží jen pokud early krok nezískal skin
+- **Manual Command**: `/voidium skin <player>` pro manuální obnovu / refresh cache
+- **Online Mode Safe**: Automaticky vypnuto pokud je server v online módu
 
 ## 📋 Commands
 
@@ -47,6 +56,7 @@ A comprehensive server-side mod for Minecraft 1.21.1 with NeoForge that provides
 - `/voidium cancel` - Cancel scheduled manual restart
 - `/voidium config` - Show configuration file locations
 - `/voidium gui` - Open interactive configuration GUI
+- `/voidium skin <player>` - Force skin refresh (offline mode)
 
 ### For All Players
 - `/voidium status` - View server status, TPS, next restart, and general information
@@ -97,6 +107,9 @@ A comprehensive server-side mod for Minecraft 1.21.1 with NeoForge that provides
   "enableRestarts": true,
   "enableAnnouncements": true,
   "enableBossBar": true,
+  "enableSkinRestorer": true,
+  // Kolik hodin mají být skiny drženy v persistentní cache (min 1)
+  "skinCacheHours": 24,
   "modPrefix": "&8[&bVoidium&8]&r "
 }
 ```

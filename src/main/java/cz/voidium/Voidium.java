@@ -3,9 +3,10 @@ package cz.voidium;
 import cz.voidium.config.VoidiumConfig;
 import cz.voidium.server.RestartManager;
 import cz.voidium.server.AnnouncementManager;
+import cz.voidium.server.SkinRestorer;
+import cz.voidium.skin.SkinCache;
 import cz.voidium.commands.VoidiumCommand;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
@@ -22,10 +23,11 @@ public class Voidium {
     
     private RestartManager restartManager;
     private AnnouncementManager announcementManager;
+    private SkinRestorer skinRestorer;
 
     public Voidium() {
         if (FMLEnvironment.dist.isDedicatedServer()) {
-            LOGGER.info("Voidium Server-Side Mod is loading...");
+            LOGGER.info("VOIDIUM - SERVER MANAGER is loading...");
             
             // Inicializace konfigurace
             VoidiumConfig.init(FMLPaths.CONFIGDIR.get());
@@ -36,28 +38,55 @@ public class Voidium {
             NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
             
             LOGGER.info("Voidium configuration loaded successfully!");
+            // Init persistent skin cache directory + apply TTL from general config once it exists
+            try {
+                SkinCache.init(FMLPaths.CONFIGDIR.get());
+                var gc = cz.voidium.config.GeneralConfig.getInstance();
+                if (gc != null) {
+                    int hours = Math.max(1, gc.getSkinCacheHours());
+                    SkinCache.setMaxAgeSeconds(hours * 3600L);
+                    LOGGER.info("SkinCache TTL set to {} hours", hours);
+                }
+            } catch (Exception e) {
+                LOGGER.warn("Failed to init SkinCache", e);
+            }
         }
     }
 
     private void onServerStarted(ServerStartedEvent event) {
         try {
-            System.out.println("Starting Voidium managers...");
+            LOGGER.info("Starting Voidium managers...");
             
             restartManager = new RestartManager(event.getServer());
             announcementManager = new AnnouncementManager(event.getServer());
+            // Start SkinRestorer only if server offline mode and enabled in config
+            try {
+                LOGGER.info("Offline mode? {}", !event.getServer().usesAuthentication());
+                LOGGER.info("SkinRestorer enabled in config? {}", cz.voidium.config.GeneralConfig.getInstance().isEnableSkinRestorer());
+                if (!event.getServer().usesAuthentication()) {
+                    if (cz.voidium.config.GeneralConfig.getInstance().isEnableSkinRestorer()) {
+                        skinRestorer = new SkinRestorer(event.getServer());
+                        cz.voidium.commands.VoidiumCommand.setSkinRestorer(skinRestorer);
+                        LOGGER.info("SkinRestorer instance created.");
+                    } else {
+                        LOGGER.info("SkinRestorer disabled by config.");
+                    }
+                } else {
+                    LOGGER.info("Server in online mode -> SkinRestorer skipped.");
+                }
+            } catch (Exception ignored) {}
             
             // Nastavení managerů pro příkazy
             VoidiumCommand.setManagers(restartManager, announcementManager);
             
-            System.out.println("Voidium managers started successfully!");
+            LOGGER.info("Voidium managers started successfully!");
             
             // Oznámení pro OPs
-            announcementManager.broadcastToOps("&aVoidium mod loaded and running!");
-            announcementManager.broadcastToOps("&eVersion: 1.2.5");
+            announcementManager.broadcastToOps("&aVOIDIUM - SERVER MANAGER loaded and running!");
+            announcementManager.broadcastToOps("&eVersion: 1.2.8");
             announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
         } catch (Exception e) {
-            System.err.println("Failed to start Voidium managers: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.error("Failed to start Voidium managers: {}", e.getMessage(), e);
         }
     }
 
@@ -71,6 +100,9 @@ public class Voidium {
         }
         if (announcementManager != null) {
             announcementManager.shutdown();
+        }
+        if (skinRestorer != null) {
+            skinRestorer.shutdown();
         }
     }
 }
