@@ -1,5 +1,5 @@
 # VOIDIUM - SERVER MANAGER
-# made with AI
+# Made with AI
 
 **Comprehensive NeoForge server management: automated restarts (fixed / interval / delay / manual), announcements, live performance metrics (TPS/MSPT/memory), in‑game GUI configuration, and instant offline‑mode Mojang skin restoration with a configurable persistent cache.**
 
