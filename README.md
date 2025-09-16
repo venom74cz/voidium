@@ -1,139 +1,48 @@
-# VOIDIUM - SERVER MANAGER
+# VOIDIUM – SERVER MANAGER
 
-A comprehensive server-side management suite for Minecraft 1.21.1 (NeoForge) providing automated restarts, announcements, status tooling, GUI control, and offline-mode skin restoration.
+Simple and powerful NeoForge server management: automated restarts, announcements, live performance metrics, and offline-mode skin restoration.
 
-## 🚀 Features
+_Mod made with AI_
 
-### 🔄 Advanced Restart System
-- **Fixed Time Restarts**: Schedule restarts at specific times (e.g., 6:00 AM, 6:00 PM)
-- **Interval Restarts**: Restart every X hours automatically
-- **Delay Restarts**: Restart X minutes after server startup
-- **Manual Restarts**: Force restart with `/voidium restart <minutes>` command
-- **Boss Bar Countdown**: Visual countdown for restarts 10+ minutes (red progress bar)
-- **Warning System**: Automatic warnings at 60, 30, 15, 10, 5, 3, 2, 1 minutes before restart
+## 🔄 Restart System
 
-### 📢 Announcement System
-- **Automatic Announcements**: Broadcast messages at configurable intervals
-- **Color Code Support**: Full Minecraft color code support (&a, &b, &c, etc.)
-- **Custom Prefix**: Configurable message prefix
-- **Manual Announcements**: Send instant announcements with `/voidium announce <message>`
+*   Fixed-time, interval, delayed, and manual restarts
+*   Boss bar countdown and structured warnings
 
-### 📊 Server Monitoring
-- **Server Status**: Real-time TPS, MSPT, memory usage, and player count
-- **Player List**: View online players with ping information
-- **Memory Monitor**: Track server memory usage and allocation
-- **Mod Information**: Display loaded mod count and server details
+## 📢 Announcements
 
-### 🎮 Interactive GUI
-- **In-Game Configuration**: View all settings via `/voidium gui` command
-- **Clickable Interface**: Navigate through different configuration sections
-- **Real-Time Display**: See current configuration values without editing files
+*   Scheduled and manual broadcasts
+*   Color codes, formatting, custom prefix, hot reload
 
-### ⚙️ Advanced Configuration
-- **Separated Config Files**: Organized into restart.json, announcements.json, and general.json
-- **Detailed Comments**: Each config file includes comprehensive documentation
-- **Hot Reload**: Reload configuration without server restart using `/voidium reload`
-- **Master Switches**: Enable/disable individual features independently
- 
-### 🧍 Skin Restorer (Offline Mode)
-- **Immediate Skin Application**: Mixin injektuje skin před prvním broadcastem hráče (žádný relog potřeba)
-- **Persistent Cache**: `config/voidium/skin-cache.json` ukládá value+signature (TTL konfigurovatelný)
-- **Konfigurovatelný TTL**: `skinCacheHours` (výchozí 24) v `general.json` – minimálně 1 hodina
-- **Config Toggle**: `enableSkinRestorer` v `general.json`
-- **Fallback Logic**: Post-login fallback běží jen pokud early krok nezískal skin
-- **Manual Command**: `/voidium skin <player>` pro manuální obnovu / refresh cache
-- **Online Mode Safe**: Automaticky vypnuto pokud je server v online módu
+## 📊 Monitoring & Utilities
 
-## 📋 Commands
+*   TPS, MSPT, memory usage
+*   Player list with ping
+*   Server and mod info, public status
 
-### For Server Operators (OP Level 2+)
-- `/voidium` - Show help and available commands
-- `/voidium reload` - Reload configuration files
-- `/voidium restart <minutes>` - Schedule manual restart (1-60 minutes)
-- `/voidium announce <message>` - Send announcement to all players
-- `/voidium players` - List online players with ping
-- `/voidium memory` - Display server memory usage
-- `/voidium cancel` - Cancel scheduled manual restart
-- `/voidium config` - Show configuration file locations
-- `/voidium gui` - Open interactive configuration GUI
-- `/voidium skin <player>` - Force skin refresh (offline mode)
+## 🧍 Offline-Mode Skin Restorer
 
-### For All Players
-- `/voidium status` - View server status, TPS, next restart, and general information
+*   Early join injection (no relog required)
+*   Persistent JSON cache, configurable TTL
+*   Manual refresh, auto-disabled in online mode
 
-## 🛠️ Installation
+## ✅ Commands (Operators)
 
-1. Download the latest version from CurseForge
-2. Place the `.jar` file in your server's `mods` folder
-3. Start your server
-4. Configuration files will be automatically created in `config/voidium/`
-5. Edit the configuration files as needed
-6. Use `/voidium reload` to apply changes without restarting
+`/voidium restart <minutes>` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium cancel` · `/voidium config` · `/voidium reload` · `/voidium skin <player>`  
+Players: `/voidium status`
 
-## ⚙️ Configuration
+## 🔧 Technical
 
-### restart.json
-```json
-// === RESTART CONFIGURATION ===
-// Choose restart type: FIXED_TIME (specific times), INTERVAL (every X hours), or DELAY (restart in X minutes)
-{
-  "restartType": "FIXED_TIME",
-  "fixedRestartTimes": ["06:00", "18:00"],
-  "intervalHours": 6,
-  "delayMinutes": 60
-}
-```
+*   Minecraft: 1.21.1
+*   Loader: NeoForge
+*   Server-only (clients not required)
+*   License: MIT
+*   Lightweight & modular
 
-### announcements.json
-```json
-// === ANNOUNCEMENT CONFIGURATION ===
-// Use & for color codes (e.g., &b = aqua, &e = yellow, &c = red)
-{
-  "announcements": [
-    "&bWelcome to the server!",
-    "&eDon't forget to visit our website!"
-  ],
-  "announcementIntervalMinutes": 30,
-  "prefix": "&8[&bVoidium&8]&r "
-}
-```
+## 📌 Notes
 
-### general.json
-```json
-// === GENERAL CONFIGURATION ===
-// Master switches for mod features
-{
-  "enableMod": true,
-  "enableRestarts": true,
-  "enableAnnouncements": true,
-  "enableBossBar": true,
-  "enableSkinRestorer": true,
-  // Kolik hodin mají být skiny drženy v persistentní cache (min 1)
-  "skinCacheHours": 24,
-  "modPrefix": "&8[&bVoidium&8]&r "
-}
-```
+*   `skinCacheHours` below 1 is forced to 1
+*   Expired cache entries refresh at next login
+*   Safe in online mode (skin feature auto-skips)
 
-## 🎨 Color Codes
-
-Use `&` followed by a character for colors:
-- **Colors**: &0-&9, &a-&f
-- **Formatting**: &l (bold), &o (italic), &n (underline), &r (reset)
-
-## 🔧 Requirements
-
-- **Minecraft**: 1.21.1
-- **Mod Loader**: NeoForge
-- **Side**: Server-side only (not required on client)
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🐛 Bug Reports & Feature Requests
-
-Please report issues and suggest features on the CurseForge project page.
-
-## 📊 Version History
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history and changes.
+**Professional server control, zero hassle.**
