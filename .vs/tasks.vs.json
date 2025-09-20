@@ -1,0 +1,10 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "úloha – GPT 5 LIKE SONNET 4.instructions",
+      "appliesTo": ".github/instructions/GPT 5 LIKE SONNET 4.instructions.md",
+      "type": "launch"
+    }
+  ]
+}
