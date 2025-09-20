@@ -1,4 +1,17 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "C:\\Program Files\\Microsoft\\jdk-21.0.8.9-hotspot",
+            "default": true
+        }
+    ],
+    "java.import.gradle.java.home": "C:\\Program Files\\Microsoft\\jdk-21.0.8.9-hotspot",
+    "java.import.gradle.wrapper.enabled": true,
+    "java.import.gradle.enabled": true,
+    "java.maven.downloadSources": true,
+    "java.sources.organizeImports.starThreshold": 999,
+    "java.sources.organizeImports.staticStarThreshold": 999
 }

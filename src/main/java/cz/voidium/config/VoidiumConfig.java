@@ -3,7 +3,6 @@ package cz.voidium.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.ChatFormatting;
 import java.io.*;
 import java.nio.file.*;
 import java.time.LocalTime;
