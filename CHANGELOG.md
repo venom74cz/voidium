@@ -1,4 +1,19 @@
 # Changelog
+# Changelog
+
+## [1.3.0] - 2025-09-25
+### Added
+- Kompletní Votifier modul (`votes.json`, VoteManager, VoteListener) s podporou NuVotifier V2 i legacy RSA v1 současně
+- Automatické generování 16-znakového shared secretu a RSA klíčů (pokud chybí) v konfiguraci hlasování
+- Pokročilé logování hlasů (plain text i NDJSON archiv) a možnost upozornit OP hráče při chybách
+
+### Changed
+- Startup sekvence nyní spouští VoteManager a publikuje verzi 1.3.0 v OP oznámení
+- V2 handshake zrcadlí oficiální NuVotifier (challenge, binární rámec, JSON odpovědi `{"status":"ok"}`)
+
+### Notes
+- `votes.json` je generován automaticky v `config/voidium/`; veřejný klíč najdete v `votifier_rsa_public.pem`
+- Pro tokenový provoz (NuVotifier V2) ponechte shared secret v configu, legacy V1 funguje paralelně přes RSA klíče
 
 ## [1.2.8] - 2025-09-15
 ### Added

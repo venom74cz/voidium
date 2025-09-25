@@ -11,24 +11,24 @@ import cz.voidium.config.GeneralConfig;
 import cz.voidium.server.RestartManager;
 import cz.voidium.server.AnnouncementManager;
 import cz.voidium.server.SkinRestorer;
+import cz.voidium.vote.VoteManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.BossEvent;
-import net.minecraft.server.level.ServerBossEvent;
 import net.neoforged.fml.loading.FMLPaths;
-import java.util.concurrent.ScheduledFuture;
 
 public class VoidiumCommand {
     private static RestartManager restartManager;
     private static AnnouncementManager announcementManager;
     private static SkinRestorer skinRestorer;
+    private static VoteManager voteManager;
     
     public static void setManagers(RestartManager restart, AnnouncementManager announcement) {
         restartManager = restart;
         announcementManager = announcement;
     }
     public static void setSkinRestorer(SkinRestorer restorer) { skinRestorer = restorer; }
+    public static void setVoteManager(VoteManager manager) { voteManager = manager; }
     
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("voidium")
@@ -109,6 +109,9 @@ public class VoidiumCommand {
     private static int reload(CommandContext<CommandSourceStack> context) {
         try {
             VoidiumConfig.init(FMLPaths.CONFIGDIR.get());
+            if (voteManager != null) {
+                voteManager.reload();
+            }
             context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aConfiguration reloaded successfully!"), false);
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cError loading configuration: " + e.getMessage()));

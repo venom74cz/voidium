@@ -6,6 +6,7 @@ import cz.voidium.server.AnnouncementManager;
 import cz.voidium.server.SkinRestorer;
 import cz.voidium.skin.SkinCache;
 import cz.voidium.commands.VoidiumCommand;
+import cz.voidium.vote.VoteManager;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
@@ -24,6 +25,7 @@ public class Voidium {
     private RestartManager restartManager;
     private AnnouncementManager announcementManager;
     private SkinRestorer skinRestorer;
+    private VoteManager voteManager;
 
     public Voidium() {
         if (FMLEnvironment.dist.isDedicatedServer()) {
@@ -59,6 +61,9 @@ public class Voidium {
             
             restartManager = new RestartManager(event.getServer());
             announcementManager = new AnnouncementManager(event.getServer());
+            voteManager = new VoteManager(event.getServer());
+            VoidiumCommand.setVoteManager(voteManager);
+            voteManager.start();
             // Start SkinRestorer only if server offline mode and enabled in config
             try {
                 LOGGER.info("Offline mode? {}", !event.getServer().usesAuthentication());
@@ -83,7 +88,7 @@ public class Voidium {
             
             // Oznámení pro OPs
             announcementManager.broadcastToOps("&aVOIDIUM - SERVER MANAGER loaded and running!");
-            announcementManager.broadcastToOps("&eVersion: 1.2.8");
+            announcementManager.broadcastToOps("&eVersion: 1.3.0");
             announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
         } catch (Exception e) {
             LOGGER.error("Failed to start Voidium managers: {}", e.getMessage(), e);
@@ -103,6 +108,9 @@ public class Voidium {
         }
         if (skinRestorer != null) {
             skinRestorer.shutdown();
+        }
+        if (voteManager != null) {
+            voteManager.shutdown();
         }
     }
 }

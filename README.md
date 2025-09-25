@@ -1,6 +1,6 @@
 # VOIDIUM – SERVER MANAGER
 
-Simple and powerful NeoForge server management: automated restarts, announcements, live performance metrics, and offline-mode skin restoration.
+Simple and powerful NeoForge server management: automated restarts, announcements, vote rewards, live performance metrics, and offline-mode skin restoration.
 
 _Mod made with AI_
 
@@ -19,6 +19,14 @@ _Mod made with AI_
 *   TPS, MSPT, memory usage
 *   Player list with ping
 *   Server and mod info, public status
+
+## 🎁 Vote Rewards (NuVotifier)
+
+*   Accepts NuVotifier V2 token packets and legacy RSA V1 payloads simultaneously
+*   Automatic handshake, signature validation, and configurable reward commands (`votes.json`)
+*   Auto-generated RSA keys and 16-character shared secret when missing
+*   Dual logging: `votes.log` (plain text) + `votes-history.ndjson` (analytics)
+*   Optional OP notifications and verbose diagnostics on listener failure
 
 ## 🧍 Offline-Mode Skin Restorer
 
@@ -44,5 +52,6 @@ Players: `/voidium status`
 *   `skinCacheHours` below 1 is forced to 1
 *   Expired cache entries refresh at next login
 *   Safe in online mode (skin feature auto-skips)
+*   `votes.json` lives in `config/voidium/` with generated shared secret + RSA keys
 
 **Professional server control, zero hassle.**
