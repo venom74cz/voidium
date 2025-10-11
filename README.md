@@ -24,9 +24,11 @@ _Mod made with AI_
 
 *   Accepts NuVotifier V2 token packets and legacy RSA V1 payloads simultaneously
 *   Automatic handshake, signature validation, and configurable reward commands (`votes.json`)
+*   **Pending vote queue** – offline votes are saved and delivered when player logs in
 *   Auto-generated RSA keys and 16-character shared secret when missing
 *   Dual logging: `votes.log` (plain text) + `votes-history.ndjson` (analytics)
 *   Optional OP notifications and verbose diagnostics on listener failure
+*   Admin commands: `/voidium votes pending [player]` · `/voidium votes clear`
 
 ## 🧍 Offline-Mode Skin Restorer
 
@@ -36,7 +38,7 @@ _Mod made with AI_
 
 ## ✅ Commands (Operators)
 
-`/voidium restart <minutes>` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium cancel` · `/voidium config` · `/voidium reload` · `/voidium skin <player>`  
+`/voidium restart <minutes>` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium cancel` · `/voidium config` · `/voidium reload` · `/voidium skin <player>` · `/voidium votes pending [player]` · `/voidium votes clear`  
 Players: `/voidium status`
 
 ## 🔧 Technical
@@ -53,5 +55,6 @@ Players: `/voidium status`
 *   Expired cache entries refresh at next login
 *   Safe in online mode (skin feature auto-skips)
 *   `votes.json` lives in `config/voidium/` with generated shared secret + RSA keys
+*   Offline votes are queued in `pending-votes.json` and delivered on player login
 
 **Professional server control, zero hassle.**

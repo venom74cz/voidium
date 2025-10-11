@@ -1,6 +1,23 @@
 # Changelog
 # Changelog
 
+## [1.3.1] - 2025-10-11
+### Added
+- **Pending Vote Queue** – hlasy přijaté když je hráč offline se ukládají do fronty (`pending-votes.json`)
+- Automatické doručení čekajících odměn při přihlášení hráče
+- Admin příkazy: `/voidium votes pending [player]` a `/voidium votes clear`
+- Notifikace pro hráče o počtu čekajících odměn při přihlášení
+
+### Changed
+- Vote system nyní kontroluje online stav hráče před vykonáním odměn
+- Offline hlasy se logují a ukládají pro pozdější doručení
+- Rozšířená konfigurace `votes.json` o `pendingQueueFile` parametr
+
+### Notes
+- Fronta se načítá při startu serveru a persistuje po každé změně
+- `/voidium votes pending` zobrazí celkový počet čekajících hlasů
+- `/voidium votes pending <player>` zobrazí počet hlasů pro konkrétního hráče
+
 ## [1.3.0] - 2025-09-25
 ### Added
 - Kompletní Votifier modul (`votes.json`, VoteManager, VoteListener) s podporou NuVotifier V2 i legacy RSA v1 současně

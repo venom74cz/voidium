@@ -4,7 +4,6 @@ import cz.voidium.config.VoidiumConfig;
 import cz.voidium.config.RestartConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.world.BossEvent;
 
@@ -14,13 +13,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.lang.reflect.Field;
 
 public class RestartManager {
     private final MinecraftServer server;
     private ScheduledExecutorService scheduler;
     private long lastRestartTime;
     private long serverStartTime;
+    @SuppressWarnings("unused")
     private ScheduledFuture<?> manualRestartTask;
     private ServerBossEvent restartBossBar;
 

@@ -49,17 +49,20 @@ public class VoteListener implements AutoCloseable {
     private final VoteConfig config;
     private final PrivateKey privateKey;
     private final String sharedSecret;
+    private final PendingVoteQueue pendingQueue;
     private final Logger logger;
     private final ExecutorService workerPool;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private ServerSocket serverSocket;
     private ExecutorService acceptExecutor;
 
-    public VoteListener(MinecraftServer server, VoteConfig config, PrivateKey privateKey, String sharedSecret, Logger logger) {
+    public VoteListener(MinecraftServer server, VoteConfig config, PrivateKey privateKey, String sharedSecret, 
+                        PendingVoteQueue pendingQueue, Logger logger) {
         this.server = server;
         this.config = config;
         this.privateKey = privateKey;
         this.sharedSecret = sharedSecret == null ? "" : sharedSecret;
+        this.pendingQueue = pendingQueue;
         this.logger = logger;
         this.workerPool = Executors.newFixedThreadPool(4, namedThread("Voidium-VoteWorker"));
     }
@@ -310,7 +313,20 @@ public class VoteListener implements AutoCloseable {
 
     private void processVote(VoteEvent event) {
         logVote(event);
-        executeCommands(event);
+        
+        // Check if player is online
+        boolean playerOnline = server.getPlayerList().getPlayerByName(event.username()) != null;
+        
+        if (playerOnline) {
+            // Player is online - execute commands immediately
+            executeCommands(event);
+            logger.info("Vote reward delivered immediately to online player: {}", event.username());
+        } else {
+            // Player is offline - queue for later delivery
+            pendingQueue.enqueue(event);
+            logger.info("Player {} is offline, vote queued for later delivery", event.username());
+        }
+        
         archiveVote(event);
     }
 

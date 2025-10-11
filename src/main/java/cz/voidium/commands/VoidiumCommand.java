@@ -61,6 +61,13 @@ public class VoidiumCommand {
             .then(Commands.literal("skin")
                 .then(Commands.argument("player", StringArgumentType.word())
                     .executes(VoidiumCommand::skinRefresh)))
+            .then(Commands.literal("votes")
+                .then(Commands.literal("pending")
+                    .executes(VoidiumCommand::votesPending)
+                    .then(Commands.argument("player", StringArgumentType.word())
+                        .executes(VoidiumCommand::votesPendingPlayer)))
+                .then(Commands.literal("clear")
+                    .executes(VoidiumCommand::votesClear)))
         );
         
         // Status příkaz pro všechny
@@ -81,6 +88,8 @@ public class VoidiumCommand {
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium config §7- Configuration settings"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium gui §7- Interactive settings"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium skin <player> §7- Try refresh player skin (offline mode)"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium votes pending [player] §7- Show pending votes"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium votes clear §7- Clear all pending votes"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium status §7- Show mod status (everyone)"), false);
         return 1;
     }
@@ -144,7 +153,7 @@ public class VoidiumCommand {
     private static int status(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fServer status:"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Server name: §e" + context.getSource().getServer().getMotd()), false);
-    context.getSource().sendSuccess(() -> Component.literal("§7Version: §e1.2.6"), false);
+    context.getSource().sendSuccess(() -> Component.literal("§7Version: §e1.3.1"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Mod count: §e" + net.neoforged.fml.ModList.get().size()), false);
         
         // TPS informace
@@ -250,8 +259,66 @@ public class VoidiumCommand {
         // General settings
         Component generalButton = Component.literal("§a[§eGeneral Settings§a] ")
             .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
-                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui general")));
+                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui")));
         source.sendSuccess(() -> generalButton, false);
+    }
+    
+    private static int votesPending(CommandContext<CommandSourceStack> context) {
+        if (voteManager == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cVote system not available"));
+            return 0;
+        }
+        
+        var queue = voteManager.getPendingQueue();
+        if (queue == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cPending queue not initialized"));
+            return 0;
+        }
+        
+        int total = queue.getTotalPending();
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fTotal pending votes: §e" + total), false);
+        return 1;
+    }
+    
+    private static int votesPendingPlayer(CommandContext<CommandSourceStack> context) {
+        if (voteManager == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cVote system not available"));
+            return 0;
+        }
+        
+        var queue = voteManager.getPendingQueue();
+        if (queue == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cPending queue not initialized"));
+            return 0;
+        }
+        
+        String playerName = StringArgumentType.getString(context, "player");
+        int count = queue.getPendingCount(playerName);
+        
+        if (count == 0) {
+            context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §7Player §e" + playerName + "§7 has no pending votes"), false);
+        } else {
+            context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aPlayer §e" + playerName + "§a has §e" + count + "§a pending vote" + (count > 1 ? "s" : "")), false);
+        }
+        return 1;
+    }
+    
+    private static int votesClear(CommandContext<CommandSourceStack> context) {
+        if (voteManager == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cVote system not available"));
+            return 0;
+        }
+        
+        var queue = voteManager.getPendingQueue();
+        if (queue == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cPending queue not initialized"));
+            return 0;
+        }
+        
+        int total = queue.getTotalPending();
+        queue.clear();
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aCleared §e" + total + "§a pending vote" + (total != 1 ? "s" : "")), false);
+        return 1;
     }
     
     private static int guiRestart(CommandContext<CommandSourceStack> context) {

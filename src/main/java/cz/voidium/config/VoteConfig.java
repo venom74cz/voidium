@@ -37,12 +37,14 @@ public class VoteConfig {
         private boolean archiveJson = true;
         private String archivePath = "votes-history.ndjson";
         private boolean notifyOpsOnError = true;
+        private String pendingQueueFile = "pending-votes.json";
 
         public boolean isVoteLog() { return voteLog; }
         public String getVoteLogFile() { return voteLogFile; }
         public boolean isArchiveJson() { return archiveJson; }
         public String getArchivePath() { return archivePath; }
         public boolean isNotifyOpsOnError() { return notifyOpsOnError; }
+        public String getPendingQueueFile() { return pendingQueueFile; }
     }
 
     public VoteConfig(Path configPath) {
@@ -102,7 +104,7 @@ public class VoteConfig {
                 writer.write("// rsaPublicKeyPath: path (relative) where public key will be written for vote sites\n");
                 writer.write("// sharedSecret: optional HMAC secret for NuVotifier V2 token validation (auto-generated 16 chars; leave blank for legacy-only mode)\n");
                 writer.write("// commands: list of server commands executed for every vote (%PLAYER% placeholder)\n");
-                writer.write("// logging: voteLog stores plaintext records, archiveJson appends NDJSON\n\n");
+                writer.write("// logging: voteLog stores plaintext records, archiveJson appends NDJSON, pendingQueueFile stores offline votes\n\n");
                 GSON.toJson(this, writer);
             }
         } catch (Exception e) {
@@ -154,6 +156,10 @@ public class VoteConfig {
 
     public Path getResolvedArchivePath() {
         return resolveConfigPath(logging.archivePath);
+    }
+
+    public Path getResolvedPendingQueueFile() {
+        return resolveConfigPath(logging.pendingQueueFile);
     }
 
     private static String generateSharedSecret() {

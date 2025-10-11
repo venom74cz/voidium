@@ -88,7 +88,7 @@ public class Voidium {
             
             // Oznámení pro OPs
             announcementManager.broadcastToOps("&aVOIDIUM - SERVER MANAGER loaded and running!");
-            announcementManager.broadcastToOps("&eVersion: 1.3.0");
+            announcementManager.broadcastToOps("&eVersion: 1.3.1");
             announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
         } catch (Exception e) {
             LOGGER.error("Failed to start Voidium managers: {}", e.getMessage(), e);

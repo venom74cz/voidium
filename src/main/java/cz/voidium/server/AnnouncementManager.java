@@ -4,7 +4,6 @@ import cz.voidium.config.VoidiumConfig;
 import cz.voidium.config.AnnouncementConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.network.chat.Component;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

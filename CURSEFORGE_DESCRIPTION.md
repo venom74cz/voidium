@@ -5,10 +5,11 @@
 
 ---
 
-## ✨ What's New (1.3.0)
-- NuVotifier-compatible vote listener (token-based V2 + legacy RSA V1 in parallel)
-- Automatic RSA key + shared-secret bootstrap with ready-made reward command slots
-- Plain-text + NDJSON vote logging and optional OP failure notifications
+## ✨ What's New (1.3.1)
+- **Pending vote queue** – votes received while player is offline are automatically saved
+- **Auto-delivery on login** – pending rewards delivered immediately when player joins server
+- **Admin vote commands** – `/voidium votes pending [player]` and `/voidium votes clear`
+- **Player notifications** – players are notified about pending vote rewards on login
 
 ---
 
@@ -34,9 +35,11 @@
 
 ## 🎁 Vote Rewards (NuVotifier)
 - Accepts NuVotifier V2 token packets and legacy RSA V1 payloads simultaneously
+- **Pending vote queue** – offline votes saved to `pending-votes.json` and delivered on login
 - `config/voidium/votes.json` auto-generates shared secret, RSA paths, and command placeholders
 - Logs every successful vote to `votes.log` (plain) + `votes-history.ndjson` (analytics)
 - Optional OP notifications and verbose diagnostics on listener failure
+- Admin commands: `/voidium votes pending [player]` · `/voidium votes clear`
 
 ## 🧍 Offline-Mode Skin Restorer
 - Early join injection (no relog required)
@@ -67,7 +70,7 @@ Example (general.json):
 ```
 
 ## ✅ Commands (Operators)
-`/voidium restart <minutes>` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium cancel` · `/voidium config` · `/voidium reload` · `/voidium skin <player>` · `/voidium gui`
+`/voidium restart <minutes>` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium cancel` · `/voidium config` · `/voidium reload` · `/voidium skin <player>` · `/voidium votes pending [player]` · `/voidium votes clear` · `/voidium gui`
 
 Players: `/voidium status`
 
@@ -83,6 +86,7 @@ Players: `/voidium status`
 - Expired cache entries re-fetch lazily at next login
 - Safe in online mode (skin feature auto-skips)
 - `votes.json` is created automatically with generated shared secret + RSA key pair
+- Offline votes are queued in `pending-votes.json` and delivered when player logs in
 
 ## 💡 Why Voidium?
 Fast setup · Strong observability · Clean code · Actively maintained · In‑game UX · Configurable persistence
