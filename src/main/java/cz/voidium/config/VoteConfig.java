@@ -38,6 +38,7 @@ public class VoteConfig {
         private String archivePath = "votes-history.ndjson";
         private boolean notifyOpsOnError = true;
         private String pendingQueueFile = "pending-votes.json";
+        private String pendingVoteMessage = "&8[&bVoidium&8] &aVyplaceno &e%COUNT% &aodložených hlasů!";
 
         public boolean isVoteLog() { return voteLog; }
         public String getVoteLogFile() { return voteLogFile; }
@@ -45,6 +46,7 @@ public class VoteConfig {
         public String getArchivePath() { return archivePath; }
         public boolean isNotifyOpsOnError() { return notifyOpsOnError; }
         public String getPendingQueueFile() { return pendingQueueFile; }
+        public String getPendingVoteMessage() { return pendingVoteMessage; }
     }
 
     public VoteConfig(Path configPath) {

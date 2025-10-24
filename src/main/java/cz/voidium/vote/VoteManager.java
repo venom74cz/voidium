@@ -107,11 +107,6 @@ public class VoteManager {
                 return;
             }
 
-            // Notify player
-            player.sendSystemMessage(Component.literal("§8[§bVoidium§8] §aYou have §e" + pendingVotes.size() + 
-                    "§a pending vote reward" + (pendingVotes.size() > 1 ? "s" : "") + "!"));
-
-            // Execute rewards for each pending vote
             VoteConfig config = VoteConfig.getInstance();
             if (config == null) {
                 return;
@@ -122,11 +117,15 @@ public class VoteManager {
                 return;
             }
 
+            LOGGER.info("Delivering {} pending vote reward(s) to {}", pendingVotes.size(), username);
+            
             for (PendingVoteQueue.PendingVote vote : pendingVotes) {
-                LOGGER.info("Delivering pending vote reward to {} from {}", username, vote.getServiceName());
-                
                 for (String commandTemplate : commands) {
                     String command = commandTemplate.replace("%PLAYER%", username);
+                    String cmdLower = command.toLowerCase().trim();
+                    if (cmdLower.startsWith("broadcast ") || cmdLower.startsWith("say ")) {
+                        continue;
+                    }
                     try {
                         var source = server.createCommandSourceStack();
                         server.getCommands().performPrefixedCommand(source, command);
@@ -136,8 +135,10 @@ public class VoteManager {
                 }
             }
 
-            // Final confirmation message
-            player.sendSystemMessage(Component.literal("§8[§bVoidium§8] §aAll pending vote rewards delivered!"));
+            String message = config.getLogging().getPendingVoteMessage()
+                    .replace("%COUNT%", String.valueOf(pendingVotes.size()))
+                    .replace("&", "§");
+            player.sendSystemMessage(Component.literal(message));
         });
     }
 
