@@ -157,7 +157,7 @@ public class VoidiumCommand {
     private static int status(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fServer status:"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Server name: §e" + context.getSource().getServer().getMotd()), false);
-    context.getSource().sendSuccess(() -> Component.literal("§7Version: §e1.3.1"), false);
+    context.getSource().sendSuccess(() -> Component.literal("§7Version: §e1.3.2"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Mod count: §e" + net.neoforged.fml.ModList.get().size()), false);
         
         // TPS informace
