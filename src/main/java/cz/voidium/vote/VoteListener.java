@@ -313,21 +313,68 @@ public class VoteListener implements AutoCloseable {
 
     private void processVote(VoteEvent event) {
         logVote(event);
-        
-        // Check if player is online
+
+        // Vždy proveď /say nebo broadcast příkaz (oznámení), i když hráč není online
+        executeAnnounceCommands(event);
+
+        // Ostatní příkazy pouze pokud je hráč online
         boolean playerOnline = server.getPlayerList().getPlayerByName(event.username()) != null;
-        
         if (playerOnline) {
-            // Player is online - execute commands immediately
-            executeCommands(event);
+            executeRewardCommands(event);
             logger.info("Vote reward delivered immediately to online player: {}", event.username());
         } else {
-            // Player is offline - queue for later delivery
             pendingQueue.enqueue(event);
             logger.info("Player {} is offline, vote queued for later delivery", event.username());
         }
-        
+
         archiveVote(event);
+    }
+
+    // Provede pouze /say nebo broadcast příkazy
+    private void executeAnnounceCommands(VoteEvent event) {
+        List<String> commands = config.getCommands();
+        if (commands == null || commands.isEmpty()) {
+            return;
+        }
+        for (String commandTemplate : commands) {
+            String command = commandTemplate.replace("%PLAYER%", event.username());
+            String cmdLower = command.toLowerCase().trim();
+            if (cmdLower.startsWith("say ") || cmdLower.startsWith("broadcast ")) {
+                server.execute(() -> {
+                    try {
+                        CommandSourceStack source = server.createCommandSourceStack();
+                        server.getCommands().performPrefixedCommand(source, command);
+                    } catch (Exception e) {
+                        logger.error("Announce command execution failed for vote", e);
+                        notifyOps("§cVote announce command failed: " + e.getMessage());
+                    }
+                });
+            }
+        }
+    }
+
+    // Provede všechny příkazy kromě /say a broadcast
+    private void executeRewardCommands(VoteEvent event) {
+        List<String> commands = config.getCommands();
+        if (commands == null || commands.isEmpty()) {
+            return;
+        }
+        for (String commandTemplate : commands) {
+            String command = commandTemplate.replace("%PLAYER%", event.username());
+            String cmdLower = command.toLowerCase().trim();
+            if (cmdLower.startsWith("say ") || cmdLower.startsWith("broadcast ")) {
+                continue;
+            }
+            server.execute(() -> {
+                try {
+                    CommandSourceStack source = server.createCommandSourceStack();
+                    server.getCommands().performPrefixedCommand(source, command);
+                } catch (Exception e) {
+                    logger.error("Reward command execution failed for vote", e);
+                    notifyOps("§cVote reward command failed: " + e.getMessage());
+                }
+            });
+        }
     }
 
     private void logVote(VoteEvent event) {
@@ -377,24 +424,7 @@ public class VoteListener implements AutoCloseable {
         }
     }
 
-    private void executeCommands(VoteEvent event) {
-        List<String> commands = config.getCommands();
-        if (commands == null || commands.isEmpty()) {
-            return;
-        }
-        for (String commandTemplate : commands) {
-            String command = commandTemplate.replace("%PLAYER%", event.username());
-            server.execute(() -> {
-                try {
-                    CommandSourceStack source = server.createCommandSourceStack();
-                    server.getCommands().performPrefixedCommand(source, command);
-                } catch (Exception e) {
-                    logger.error("Command execution failed for vote", e);
-                    notifyOps("§cVote reward command failed: " + e.getMessage());
-                }
-            });
-        }
-    }
+    // původní executeCommands odstraněna, logika je nyní rozdělena do executeAnnounceCommands a executeRewardCommands
 
     private void notifyOps(String message) {
         if (!config.getLogging().isNotifyOpsOnError()) {

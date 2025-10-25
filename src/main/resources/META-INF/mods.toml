@@ -6,7 +6,7 @@ issueTrackerURL="https://github.com/yourusername/voidium/issues"
 
 [[mods]]
 modId="voidium"
-version="1.3.1"
+version="1.3.3"
 displayName="VOIDIUM - SERVER MANAGER"
 # updateJSONURL="https://change.me.example.invalid/updates.json"
 displayURL="https://github.com/yourusername/voidium"
