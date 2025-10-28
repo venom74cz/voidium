@@ -1,6 +1,16 @@
 # Changelog
 # Changelog
 
+## [1.3.3] - 2025-10-25
+### Changed
+- /say (oznámení o hlasu) se nyní provádí vždy ihned po přijetí hlasu, i když hráč není online
+- Ostatní příkazy (např. /give) se provádí pouze pokud je hráč online
+- Při vyplácení pending votes (po přihlášení) se /say již nespouští, pouze odměna
+
+### Notes
+- Úprava zajišťuje, že hlasování je vždy veřejně oznámeno v chatu, i když hráč není přítomen
+- Verze zvýšena na 1.3.3
+
 ## [1.3.1] - 2025-10-11
 ### Added
 - **Pending Vote Queue** – hlasy přijaté když je hráč offline se ukládají do fronty (`pending-votes.json`)
