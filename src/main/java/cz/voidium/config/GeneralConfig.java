@@ -29,6 +29,21 @@ public class GeneralConfig {
     // Enable/disable Skin Restorer (fetch real skins in offline mode)
     private boolean enableSkinRestorer = true;
 
+    // Enable/disable Discord Integration (Bot, Chat Bridge, Whitelist)
+    private boolean enableDiscord = true;
+
+    // Enable/disable Web Control Interface
+    private boolean enableWeb = true;
+
+    // Enable/disable Statistics Tracking
+    private boolean enableStats = true;
+
+    // Enable/disable Auto Ranks (Playtime based)
+    private boolean enableRanks = true;
+
+    // Enable/disable Vote Manager (Votifier)
+    private boolean enableVote = true;
+
     // Number of hours to keep a cached skin entry (value+signature) before refetch.
     // Minimum enforced internally is 1. Set higher (e.g. 48) to reduce Mojang API calls,
     // or lower (e.g. 6) if players frequently change skins. Default 24.
@@ -98,7 +113,12 @@ public class GeneralConfig {
     public boolean isEnableRestarts() { return enableRestarts; }
     public boolean isEnableAnnouncements() { return enableAnnouncements; }
     public boolean isEnableBossBar() { return enableBossBar; }
-    public String getModPrefix() { return modPrefix; }
     public boolean isEnableSkinRestorer() { return enableSkinRestorer; }
+    public boolean isEnableDiscord() { return enableDiscord; }
+    public boolean isEnableWeb() { return enableWeb; }
+    public boolean isEnableStats() { return enableStats; }
+    public boolean isEnableRanks() { return enableRanks; }
+    public boolean isEnableVote() { return enableVote; }
     public int getSkinCacheHours() { return skinCacheHours; }
+    public String getModPrefix() { return modPrefix; }
 }

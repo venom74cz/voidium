@@ -120,6 +120,12 @@ public class VoteListener implements AutoCloseable {
                 message = new String(payload, StandardCharsets.UTF_8).trim();
                 event = parseLegacyOrFallback(message, payload);
             }
+            
+            if (event == null) {
+                logger.warn("Ignored invalid/unrecognized vote payload from {}", socket.getRemoteSocketAddress());
+                return;
+            }
+
             processVote(event);
             logger.info("Vote received from {} for player {}", event.serviceName(), event.username());
             if (v2Result.event() != null) {
@@ -308,10 +314,11 @@ public class VoteListener implements AutoCloseable {
             long timestamp = Long.parseLong(lines[4].trim());
             return new VoteEvent(serviceName, username, address, timestamp);
         }
-        throw new IllegalArgumentException("Unrecognised vote payload");
+        return null;
     }
 
     private void processVote(VoteEvent event) {
+        if (event == null) return;
         logVote(event);
 
         // Vždy proveď /say nebo broadcast příkaz (oznámení), i když hráč není online

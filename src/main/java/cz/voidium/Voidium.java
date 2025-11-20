@@ -1,5 +1,7 @@
 package cz.voidium;
 
+import java.nio.file.Path;
+import java.nio.file.Files;
 import cz.voidium.config.VoidiumConfig;
 import cz.voidium.server.RestartManager;
 import cz.voidium.server.AnnouncementManager;
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory;
 public class Voidium {
     public static final String MOD_ID = "voidium";
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static Voidium instance;
     
     private RestartManager restartManager;
     private AnnouncementManager announcementManager;
@@ -28,21 +31,35 @@ public class Voidium {
     private VoteManager voteManager;
 
     public Voidium() {
+        instance = this;
         if (FMLEnvironment.dist.isDedicatedServer()) {
             LOGGER.info("VOIDIUM - SERVER MANAGER is loading...");
             
+            Path configDir = FMLPaths.CONFIGDIR.get();
+            Path voidiumDir = configDir.resolve("voidium");
+            try {
+                Files.createDirectories(voidiumDir);
+            } catch (Exception e) {
+                LOGGER.error("Failed to create voidium config directory", e);
+            }
+
             // Inicializace konfigurace
-            VoidiumConfig.init(FMLPaths.CONFIGDIR.get());
+            VoidiumConfig.init(voidiumDir);
+            cz.voidium.config.DiscordConfig.init(voidiumDir);
+            cz.voidium.config.WebConfig.init(voidiumDir);
+            cz.voidium.config.StatsConfig.init(voidiumDir);
+            cz.voidium.config.RanksConfig.init(voidiumDir);
             
             // Registrace event listenerů
             NeoForge.EVENT_BUS.addListener(this::onServerStarted);
             NeoForge.EVENT_BUS.addListener(this::onServerStopping);
             NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+            NeoForge.EVENT_BUS.register(new cz.voidium.discord.DiscordWhitelist());
             
             LOGGER.info("Voidium configuration loaded successfully!");
             // Init persistent skin cache directory + apply TTL from general config once it exists
             try {
-                SkinCache.init(FMLPaths.CONFIGDIR.get());
+                SkinCache.init(voidiumDir);
                 var gc = cz.voidium.config.GeneralConfig.getInstance();
                 if (gc != null) {
                     int hours = Math.max(1, gc.getSkinCacheHours());
@@ -55,21 +72,65 @@ public class Voidium {
         }
     }
 
+    public static Voidium getInstance() {
+        return instance;
+    }
+
+    public RestartManager getRestartManager() {
+        return restartManager;
+    }
+
+    public VoteManager getVoteManager() {
+        return voteManager;
+    }
+
     private void onServerStarted(ServerStartedEvent event) {
         try {
             LOGGER.info("Starting Voidium managers...");
+            cz.voidium.config.GeneralConfig gc = cz.voidium.config.GeneralConfig.getInstance();
             
-            restartManager = new RestartManager(event.getServer());
-            announcementManager = new AnnouncementManager(event.getServer());
-            voteManager = new VoteManager(event.getServer());
-            VoidiumCommand.setVoteManager(voteManager);
-            voteManager.start();
+            if (gc.isEnableRestarts()) {
+                restartManager = new RestartManager(event.getServer());
+            }
+            
+            if (gc.isEnableAnnouncements()) {
+                announcementManager = new AnnouncementManager(event.getServer());
+            }
+            
+            if (gc.isEnableVote()) {
+                voteManager = new VoteManager(event.getServer());
+                VoidiumCommand.setVoteManager(voteManager);
+                voteManager.start();
+            }
+            
+            // Start Discord Manager
+            if (gc.isEnableDiscord()) {
+                cz.voidium.discord.DiscordManager.getInstance().setServer(event.getServer());
+                cz.voidium.discord.DiscordManager.getInstance().start();
+            }
+            
+            // Start Web Manager
+            if (gc.isEnableWeb()) {
+                cz.voidium.web.WebManager.getInstance().setServer(event.getServer());
+                cz.voidium.web.WebManager.getInstance().start();
+            }
+            
+            // Start Stats Manager
+            if (gc.isEnableStats()) {
+                cz.voidium.stats.StatsManager.getInstance().start(event.getServer());
+            }
+            
+            // Start Rank Manager
+            if (gc.isEnableRanks()) {
+                cz.voidium.ranks.RankManager.getInstance().start(event.getServer());
+            }
+
             // Start SkinRestorer only if server offline mode and enabled in config
             try {
                 LOGGER.info("Offline mode? {}", !event.getServer().usesAuthentication());
-                LOGGER.info("SkinRestorer enabled in config? {}", cz.voidium.config.GeneralConfig.getInstance().isEnableSkinRestorer());
+                LOGGER.info("SkinRestorer enabled in config? {}", gc.isEnableSkinRestorer());
                 if (!event.getServer().usesAuthentication()) {
-                    if (cz.voidium.config.GeneralConfig.getInstance().isEnableSkinRestorer()) {
+                    if (gc.isEnableSkinRestorer()) {
                         skinRestorer = new SkinRestorer(event.getServer());
                         cz.voidium.commands.VoidiumCommand.setSkinRestorer(skinRestorer);
                         LOGGER.info("SkinRestorer instance created.");
@@ -81,15 +142,24 @@ public class Voidium {
                 }
             } catch (Exception ignored) {}
             
+            // Start Chat Bridge
+            if (gc.isEnableDiscord()) {
+                cz.voidium.discord.ChatBridge.getInstance().setServer(event.getServer());
+                NeoForge.EVENT_BUS.register(cz.voidium.discord.ChatBridge.getInstance());
+                NeoForge.EVENT_BUS.register(new cz.voidium.discord.DiscordChatListener());
+            }
+            
             // Nastavení managerů pro příkazy
             VoidiumCommand.setManagers(restartManager, announcementManager);
             
             LOGGER.info("Voidium managers started successfully!");
             
             // Oznámení pro OPs
-            announcementManager.broadcastToOps("&aVOIDIUM - SERVER MANAGER loaded and running!");
-            announcementManager.broadcastToOps("&eVersion: 1.3.1");
-            announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
+            if (announcementManager != null) {
+                announcementManager.broadcastToOps("&aVOIDIUM - SERVER MANAGER loaded and running!");
+                announcementManager.broadcastToOps("&eVersion: 1.3.1");
+                announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to start Voidium managers: {}", e.getMessage(), e);
         }
@@ -112,5 +182,9 @@ public class Voidium {
         if (voteManager != null) {
             voteManager.shutdown();
         }
+        cz.voidium.discord.DiscordManager.getInstance().stop();
+        cz.voidium.web.WebManager.getInstance().stop();
+        cz.voidium.stats.StatsManager.getInstance().stop();
+        cz.voidium.ranks.RankManager.getInstance().stop();
     }
 }

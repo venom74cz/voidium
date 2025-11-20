@@ -66,15 +66,15 @@ public class VoteManager {
         if (listener != null) {
             try {
                 listener.close();
-                LOGGER.info("Vote listener stopped");
             } catch (Exception e) {
-                LOGGER.error("Error while stopping vote listener", e);
+                LOGGER.error("Failed to close vote listener", e);
             }
             listener = null;
         }
     }
 
     public void reload() {
+        shutdown();
         start();
     }
 

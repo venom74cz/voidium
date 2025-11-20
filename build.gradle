@@ -136,6 +136,27 @@ dependencies {
     // For more info:
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
+
+    // Discord JDA
+    implementation("net.dv8tion:JDA:5.0.0-beta.24") {
+        exclude module: 'opus-java'
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    
+    // Include JDA and its dependencies in the mod jar using JarJar
+    jarJar("net.dv8tion:JDA:5.0.0-beta.24") {
+        exclude module: 'opus-java'
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    jarJar("com.neovisionaries:nv-websocket-client:2.14")
+    jarJar("com.squareup.okhttp3:okhttp:4.10.0")
+    jarJar("com.squareup.okio:okio:3.2.0")
+    jarJar("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
+    jarJar("org.apache.commons:commons-collections4:4.4")
+    jarJar("net.sf.trove4j:trove4j:3.0.3")
+    jarJar("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    jarJar("com.fasterxml.jackson.core:jackson-core:2.17.2")
+    jarJar("com.fasterxml.jackson.core:jackson-annotations:2.17.2")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

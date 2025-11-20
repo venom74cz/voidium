@@ -60,17 +60,11 @@ public class VoidiumConfig {
     }
 
     public static void init(Path configDir) {
-        Path voidiumDir = configDir.resolve("voidium");
-        try {
-            Files.createDirectories(voidiumDir);
-        } catch (IOException e) {
-            System.err.println("Failed to create voidium folder: " + e.getMessage());
-        }
-        
-        RestartConfig.init(voidiumDir);
-        AnnouncementConfig.init(voidiumDir);
-        GeneralConfig.init(voidiumDir);
-        VoteConfig.init(voidiumDir);
+        // configDir is now the voidium directory
+        RestartConfig.init(configDir);
+        AnnouncementConfig.init(configDir);
+        GeneralConfig.init(configDir);
+        VoteConfig.init(configDir);
         
         // Zachování kompatibility
         Path oldConfigPath = configDir.resolve("voidium.json");

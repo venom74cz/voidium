@@ -1,0 +1,60 @@
+PLÁN NOVÝCH FUNKCÍ PRO VOIDIUM
+
+1. Implementace Discord Integrace (Nové)
+   - Cíl: Vytvořit od nuly nové moduly pro Discord Whitelist (WL) a Chat.
+   - Důraz na jednoduchost, stabilitu a funkčnost.
+   - Whitelist Workflow:
+     - Hráč se připojí -> Kick s ověřovacím kódem.
+     - Hráč zadá kód na Discordu -> Link účtu.
+     - Automatická změna Discord přezdívky na MC nick (konfigurovatelné).
+     - Limit počtu MC účtů na jeden Discord profil (konfigurovatelné).
+
+2. Web Control Interface
+   - Vytvořit webové rozhraní pro správu serveru/módu.
+   - Funkce:
+     - Editace konfiguračních souborů (cfg) přímo přes web.
+
+3. FTB Ranks Integrace (Playtime)
+   - Přidat automatické nastavování prefixů/ranků v FTB Ranks na základě odehraného času hráče.
+
+4. Statistiky a Discord Reporting
+   - Sběr dat:
+     - Zaznamenávat "Players Online Peak" (maximální počet hráčů).
+     - Počítat průměr online hráčů za předešlý den (cyklus 00:00 - 24:00).
+   - Reporting:
+     - Automaticky vypsat tyto statistiky na Discord.
+     - Odeslání proběhne následující den v čase určeném v konfiguraci (cfg).
+
+---
+NÁVRHY A VYLEPŠENÍ (AI):
+
+1. Discord Moduly
+   - Slash Commands: Použití moderních Discord příkazů (např. /whitelist add <nick>) místo psaní do chatu.
+   - Role Sync: Synchronizace Discord rolí s FTB Ranks (např. Subscriber na Discordu = VIP ve hře).
+   - Embed Zprávy: Použití formátovaných "Embed" zpráv pro hezčí vzhled chatu a logů.
+
+2. Web Control Interface
+   - Zabezpečení: Nutnost implementovat API Key nebo Discord OAuth přihlášení, aby se k configům nedostal nikdo cizí.
+   - Live Console: Možnost vidět serverovou konzoli v reálném čase na webu.
+   - Lightweight: Použít lehké řešení (např. Javalin nebo vestavěný HTTP server), aby to nezpomalovalo server.
+
+3. FTB Ranks (Playtime)
+   - AFK Detekce: Počítat pouze aktivní čas (ignorovat AFK), aby hráči jen nestáli na spawnu pro rank.
+   - Odměny: Kromě prefixu možnost spustit příkaz (např. dát hráči itemy nebo herní měnu při postupu).
+
+4. Statistiky
+   - Server Health: Přidat do denního reportu i průměrné TPS a využití RAM.
+   - Top Hráč: Vyhlásit "Hráče dne" (kdo hrál nejdéle).
+   - Grafy: (Pokročilé) Generovat jednoduchý graf aktivity jako obrázek pro Discord report.
+
+5. Další nápady (AI)
+   - Ticket System: Hráč napíše /ticket <zpráva> ve hře -> vytvoří se vlákno/ticket na Discordu. Admin odpoví na Discordu -> hráči přijde zpráva do hry.
+   - Maintenance Mode: Příkaz /maintenance on, který zapne whitelist, vykopne hráče s custom zprávou a změní status bota na Discordu na "Údržba".
+   - Event Logger: Oddělené kanály na Discordu pro:
+     - Smrti (včetně souřadnic - konfigurovatelné).
+     - Advancementy (úspěchy).
+     - Admin příkazy (audit log).
+   - Chat Bridge Vylepšení:
+     - Podpora Markdownu z Discordu do MC (tučné, kurzíva).
+     - Překlad emoji (:smile: -> ☺).
+     - Klikatelné odkazy v MC chatu z Discordu.

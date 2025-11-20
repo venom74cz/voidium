@@ -25,11 +25,10 @@ public final class SkinCache {
 
     public static void init(Path configDir) {
         try {
-            Path dir = configDir.resolve("voidium");
-            Files.createDirectories(dir);
-            filePath = dir.resolve("skin-cache.json");
+            // configDir is now the voidium directory
+            filePath = configDir.resolve("skin-cache.json");
             load();
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.warn("SkinCache init failed: {}", e.getMessage());
         }
     }

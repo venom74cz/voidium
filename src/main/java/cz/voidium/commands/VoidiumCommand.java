@@ -78,6 +78,9 @@ public class VoidiumCommand {
                         .executes(VoidiumCommand::votesPendingPlayer)))
                 .then(Commands.literal("clear")
                     .executes(VoidiumCommand::votesClear)))
+            .then(Commands.literal("web")
+                .requires(source -> source.hasPermission(2))
+                .executes(VoidiumCommand::web))
         );
     }
     
@@ -387,6 +390,12 @@ public class VoidiumCommand {
             .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
                 net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui")));
         source.sendSuccess(() -> backButton, false);
+        return 1;
+    }
+
+    private static int web(CommandContext<CommandSourceStack> context) {
+        String url = cz.voidium.web.WebManager.getInstance().getWebUrl();
+        context.getSource().sendSuccess(() -> Component.literal("§aWeb Control Interface: §b" + url), false);
         return 1;
     }
 }

@@ -24,7 +24,7 @@ license="MIT"
 modId="voidium" #mandatory
 
 # The version number of the mod
-version="1.3.3" #mandatory
+version="1.3.4" #mandatory
 
 # A display name for the mod
 displayName="VOIDIUM" #mandatory

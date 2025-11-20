@@ -31,6 +31,18 @@ public class RestartManager {
         scheduleNextRestart();
     }
 
+    public void reload() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        if (restartBossBar != null) {
+            restartBossBar.removeAllPlayers();
+            restartBossBar = null;
+        }
+        scheduleNextRestart();
+    }
+
     private void scheduleNextRestart() {
         RestartConfig config = RestartConfig.getInstance();
         if (config == null) {
