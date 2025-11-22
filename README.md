@@ -33,6 +33,9 @@ _Mod made with AI_
 *   **Whitelist System**: Require players to link their Discord account to join.
 *   **Account Linking**: Secure code-based verification (`/link <code>`).
 *   **Chat Bridge**: Two-way chat synchronization between Minecraft and Discord.
+*   **Console Streaming**: Stream server console logs directly to a Discord channel.
+*   **Status Messages**: Automated server lifecycle announcements (Starting, Online, Stopping, Offline).
+*   **Channel Topic Updater**: Automatically updates channel topic with live stats (Online/Max players, Uptime).
 *   **Ban Synchronization**: Sync bans between game and Discord server.
 *   **Daily Stats**: Automated performance reports sent to a specific channel.
 *   **Webhooks**: Support for logging events via webhooks.
