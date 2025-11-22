@@ -22,10 +22,6 @@ public class GeneralConfig {
     // If false, only manual announcements via commands will work
     private boolean enableAnnouncements = true;
     
-    // Enable/disable boss bar countdown during restarts (10+ minutes)
-    // Shows a red progress bar at the top of players' screens
-    private boolean enableBossBar = true;
-    
     // Enable/disable Skin Restorer (fetch real skins in offline mode)
     private boolean enableSkinRestorer = true;
 
@@ -95,8 +91,6 @@ public class GeneralConfig {
                 writer.write("// If false, only manual restarts via commands will work\n");
                 writer.write("// Enable/disable automatic announcements\n");
                 writer.write("// If false, only manual announcements via commands will work\n");
-                writer.write("// Enable/disable boss bar countdown during restarts (10+ minutes)\n");
-                writer.write("// Shows a red progress bar at the top of players' screens\n");
                 writer.write("// Enable/disable Skin Restorer (real skins in offline mode)\n");
                 writer.write("// skinCacheHours - retention time for cached skins (hours) – min 1\n");
                 writer.write("// Default prefix for mod messages (used in commands and notifications)\n");
@@ -112,7 +106,6 @@ public class GeneralConfig {
     public boolean isEnableMod() { return enableMod; }
     public boolean isEnableRestarts() { return enableRestarts; }
     public boolean isEnableAnnouncements() { return enableAnnouncements; }
-    public boolean isEnableBossBar() { return enableBossBar; }
     public boolean isEnableSkinRestorer() { return enableSkinRestorer; }
     public boolean isEnableDiscord() { return enableDiscord; }
     public boolean isEnableWeb() { return enableWeb; }
@@ -121,4 +114,11 @@ public class GeneralConfig {
     public boolean isEnableVote() { return enableVote; }
     public int getSkinCacheHours() { return skinCacheHours; }
     public String getModPrefix() { return modPrefix; }
+    
+    // Apply locale preset
+    public void applyLocale(String locale) {
+        java.util.Map<String, String> messages = LocalePresets.getGeneralMessages(locale);
+        this.modPrefix = messages.get("modPrefix");
+        save();
+    }
 }

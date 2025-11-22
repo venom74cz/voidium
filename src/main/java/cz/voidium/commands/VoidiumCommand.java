@@ -7,11 +7,11 @@ import com.mojang.brigadier.context.CommandContext;
 import cz.voidium.config.VoidiumConfig;
 import cz.voidium.config.RestartConfig;
 import cz.voidium.config.AnnouncementConfig;
-import cz.voidium.config.GeneralConfig;
 import cz.voidium.server.RestartManager;
 import cz.voidium.server.AnnouncementManager;
 import cz.voidium.server.SkinRestorer;
 import cz.voidium.vote.VoteManager;
+import cz.voidium.discord.DiscordManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -57,15 +57,6 @@ public class VoidiumCommand {
             .then(Commands.literal("config")
                 .requires(source -> source.hasPermission(2))
                 .executes(VoidiumCommand::config))
-            .then(Commands.literal("gui")
-                .requires(source -> source.hasPermission(2))
-                .executes(VoidiumCommand::gui)
-                .then(Commands.literal("restart")
-                    .executes(VoidiumCommand::guiRestart))
-                .then(Commands.literal("announce")
-                    .executes(VoidiumCommand::guiAnnounce))
-                .then(Commands.literal("general")
-                    .executes(VoidiumCommand::guiGeneral)))
             .then(Commands.literal("skin")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.argument("player", StringArgumentType.word())
@@ -81,9 +72,9 @@ public class VoidiumCommand {
             .then(Commands.literal("web")
                 .requires(source -> source.hasPermission(2))
                 .executes(VoidiumCommand::web))
+            .executes(VoidiumCommand::showHelp)
         );
     }
-    
     private static int showHelp(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fAvailable commands:"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium reload §7- Reload configuration"), false);
@@ -93,11 +84,11 @@ public class VoidiumCommand {
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium memory §7- Server memory usage"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium cancel §7- Cancel scheduled restart"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium config §7- Configuration settings"), false);
-        context.getSource().sendSuccess(() -> Component.literal("§e/voidium gui §7- Interactive settings"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium skin <player> §7- Try refresh player skin (offline mode)"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium votes pending [player] §7- Show pending votes"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium votes clear §7- Clear all pending votes"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium status §7- Show mod status (everyone)"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium web §7- Show Web Control URL"), false);
         return 1;
     }
 
@@ -128,6 +119,10 @@ public class VoidiumCommand {
             if (voteManager != null) {
                 voteManager.reload();
             }
+            
+            DiscordManager.getInstance().setServer(context.getSource().getServer());
+            DiscordManager.getInstance().reload();
+
             context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aConfiguration reloaded successfully!"), false);
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cError loading configuration: " + e.getMessage()));
@@ -243,33 +238,6 @@ public class VoidiumCommand {
         return 1;
     }
     
-    private static int gui(CommandContext<CommandSourceStack> context) {
-        showMainMenu(context.getSource());
-        return 1;
-    }
-    
-    private static void showMainMenu(CommandSourceStack source) {
-        source.sendSuccess(() -> Component.literal("§8[§bVoidium GUI§8] §fMain menu:"), false);
-        
-        // Restart settings
-        Component restartButton = Component.literal("§a[§eRestart Settings§a] ")
-            .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
-                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui restart")));
-        source.sendSuccess(() -> restartButton, false);
-        
-        // Announcements settings
-        Component announceButton = Component.literal("§a[§eAnnouncements§a] ")
-            .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
-                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui announce")));
-        source.sendSuccess(() -> announceButton, false);
-        
-        // General settings
-        Component generalButton = Component.literal("§a[§eGeneral Settings§a] ")
-            .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
-                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui")));
-        source.sendSuccess(() -> generalButton, false);
-    }
-    
     private static int votesPending(CommandContext<CommandSourceStack> context) {
         if (voteManager == null) {
             context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cVote system not available"));
@@ -328,71 +296,6 @@ public class VoidiumCommand {
         return 1;
     }
     
-    private static int guiRestart(CommandContext<CommandSourceStack> context) {
-        RestartConfig config = RestartConfig.getInstance();
-        CommandSourceStack source = context.getSource();
-        
-        source.sendSuccess(() -> Component.literal("§8[§bRestart GUI§8] §fComplete settings:"), false);
-        source.sendSuccess(() -> Component.literal("§7Restart type: §e" + config.getRestartType()), false);
-        
-        if (config.getRestartType() == RestartConfig.RestartType.FIXED_TIME) {
-            source.sendSuccess(() -> Component.literal("§7Fixed restart times:"), false);
-            for (int i = 0; i < config.getFixedRestartTimes().size(); i++) {
-                final int index = i;
-                source.sendSuccess(() -> Component.literal("§7  " + (index+1) + ". §e" + config.getFixedRestartTimes().get(index)), false);
-            }
-        } else {
-            source.sendSuccess(() -> Component.literal("§7Restart interval: §e" + config.getIntervalHours() + " hours"), false);
-        }
-        
-        Component backButton = Component.literal("§c[§fBack§c] ")
-            .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
-                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui")));
-        source.sendSuccess(() -> backButton, false);
-        return 1;
-    }
-    
-    private static int guiAnnounce(CommandContext<CommandSourceStack> context) {
-        AnnouncementConfig config = AnnouncementConfig.getInstance();
-        CommandSourceStack source = context.getSource();
-        
-        source.sendSuccess(() -> Component.literal("§8[§bAnnouncement GUI§8] §fComplete settings:"), false);
-        source.sendSuccess(() -> Component.literal("§7Announcement interval: §e" + config.getAnnouncementIntervalMinutes() + " minutes"), false);
-        source.sendSuccess(() -> Component.literal("§7Message prefix: §e" + config.getPrefix().replace("&", "§")), false);
-        source.sendSuccess(() -> Component.literal("§7Message count: §e" + config.getAnnouncements().size()), false);
-        source.sendSuccess(() -> Component.literal("§7Message list:"), false);
-        
-        for (int i = 0; i < config.getAnnouncements().size(); i++) {
-            final int index = i;
-            final String message = config.getAnnouncements().get(i).replace("&", "§");
-            source.sendSuccess(() -> Component.literal("§7  " + (index+1) + ". §f" + message), false);
-        }
-        
-        Component backButton = Component.literal("§c[§fBack§c] ")
-            .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
-                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui")));
-        source.sendSuccess(() -> backButton, false);
-        return 1;
-    }
-    
-    private static int guiGeneral(CommandContext<CommandSourceStack> context) {
-        GeneralConfig config = GeneralConfig.getInstance();
-        CommandSourceStack source = context.getSource();
-        
-        source.sendSuccess(() -> Component.literal("§8[§bGeneral GUI§8] §fComplete settings:"), false);
-        source.sendSuccess(() -> Component.literal("§7Mod enabled: §e" + (config.isEnableMod() ? "§aYES" : "§cNO")), false);
-        source.sendSuccess(() -> Component.literal("§7Auto restarts: §e" + (config.isEnableRestarts() ? "§aYES" : "§cNO")), false);
-        source.sendSuccess(() -> Component.literal("§7Auto announcements: §e" + (config.isEnableAnnouncements() ? "§aYES" : "§cNO")), false);
-        source.sendSuccess(() -> Component.literal("§7Boss bar on restart: §e" + (config.isEnableBossBar() ? "§aYES" : "§cNO")), false);
-        source.sendSuccess(() -> Component.literal("§7Mod prefix: §e" + config.getModPrefix().replace("&", "§")), false);
-        
-        Component backButton = Component.literal("§c[§fBack§c] ")
-            .withStyle(style -> style.withClickEvent(new net.minecraft.network.chat.ClickEvent(
-                net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/voidium gui")));
-        source.sendSuccess(() -> backButton, false);
-        return 1;
-    }
-
     private static int web(CommandContext<CommandSourceStack> context) {
         String url = cz.voidium.web.WebManager.getInstance().getWebUrl();
         context.getSource().sendSuccess(() -> Component.literal("§aWeb Control Interface: §b" + url), false);

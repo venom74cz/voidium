@@ -8,10 +8,15 @@ import net.minecraft.stats.Stats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 public class RankManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("Voidium-Ranks");
@@ -34,6 +39,8 @@ public class RankManager {
         RanksConfig config = RanksConfig.getInstance();
         if (!config.isEnableAutoRanks()) return;
 
+        NeoForge.EVENT_BUS.register(this);
+
         scheduler = Executors.newScheduledThreadPool(1);
         int interval = Math.max(1, config.getCheckIntervalMinutes());
         
@@ -45,6 +52,7 @@ public class RankManager {
         if (scheduler != null) {
             scheduler.shutdown();
         }
+        NeoForge.EVENT_BUS.unregister(this);
     }
 
     public void reload() {
@@ -52,65 +60,77 @@ public class RankManager {
         start(server);
     }
 
-    private void checkRanks() {
-        if (server == null) return;
-        RanksConfig config = RanksConfig.getInstance();
-        Map<String, Integer> ranks = config.getPlaytimeRanks();
+    @SubscribeEvent
+    public void onNameFormat(PlayerEvent.NameFormat event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
         
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            // Get playtime in hours
-            // STAT_PLAY_ONE_MINUTE is actually in ticks (1/20 sec)
-            int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
-            double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
-            
-            for (Map.Entry<String, Integer> entry : ranks.entrySet()) {
-                String rankName = entry.getKey();
-                int requiredHours = entry.getValue();
-                
-                if (hoursPlayed >= requiredHours) {
-                    // Check if player already has rank? 
-                    // FTB Ranks doesn't have easy API check without dependency.
-                    // We can just try to add it. FTB Ranks usually handles duplicates gracefully.
-                    // Or we can track given ranks in a file to avoid spamming commands.
-                    // For now, let's assume we run the command. 
-                    // To avoid spam, we should probably store "highest rank given" in player data or local file.
-                    
-                    // TODO: Implement a check to see if we already gave this rank.
-                    // For simplicity in this version, we will execute command.
-                    // BUT executing it every 5 mins is bad.
-                    // We need to store state.
-                    
-                    promoteIfNew(player, rankName);
+        RanksConfig config = RanksConfig.getInstance();
+        if (!config.isEnableAutoRanks()) return;
+
+        int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+        double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
+
+        List<RanksConfig.RankDefinition> ranks = config.getRanks();
+        
+        // Find highest priority prefix and suffix
+        RanksConfig.RankDefinition bestPrefix = null;
+        RanksConfig.RankDefinition bestSuffix = null;
+
+        for (RanksConfig.RankDefinition rank : ranks) {
+            if (hoursPlayed >= rank.hours) {
+                if ("PREFIX".equalsIgnoreCase(rank.type)) {
+                    if (bestPrefix == null || rank.hours > bestPrefix.hours) {
+                        bestPrefix = rank;
+                    }
+                } else if ("SUFFIX".equalsIgnoreCase(rank.type)) {
+                    if (bestSuffix == null || rank.hours > bestSuffix.hours) {
+                        bestSuffix = rank;
+                    }
                 }
             }
         }
+
+        Component currentName = event.getDisplayname();
+        Component finalName = currentName;
+
+        if (bestPrefix != null) {
+            finalName = Component.literal(bestPrefix.value.replace("&", "§")).append(finalName);
+        }
+        if (bestSuffix != null) {
+            finalName = finalName.copy().append(Component.literal(bestSuffix.value.replace("&", "§")));
+        }
+
+        event.setDisplayname(finalName);
     }
-    
-    private void promoteIfNew(ServerPlayer player, String rankName) {
-        // We need a way to know if player already has this rank from US.
-        // We can use PersistentDataContainer or a simple JSON file.
-        // Let's use a simple in-memory cache backed by JSON for now, similar to LinkManager.
+
+    private void checkRanks() {
+        if (server == null) return;
+        RanksConfig config = RanksConfig.getInstance();
+        List<RanksConfig.RankDefinition> ranks = config.getRanks();
         
-        if (!RankStorage.getInstance().hasRank(player.getUUID(), rankName)) {
-            LOGGER.info("Promoting {} to rank {} (Playtime reached)", player.getName().getString(), rankName);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+            double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
             
-            // Execute command
-            String cmd = RanksConfig.getInstance().getPromotionCommand()
-                    .replace("%player%", player.getName().getString())
-                    .replace("%rank%", rankName);
-            
-            server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), cmd);
-            
-            // Send message
-            String msg = RanksConfig.getInstance().getPromotionMessage()
-                    .replace("%player%", player.getName().getString())
-                    .replace("%rank%", rankName)
-                    .replace("&", "§");
-            
-            player.sendSystemMessage(Component.literal(msg));
-            
-            // Mark as given
-            RankStorage.getInstance().addRank(player.getUUID(), rankName);
+            for (RanksConfig.RankDefinition rank : ranks) {
+                if (hoursPlayed >= rank.hours) {
+                    String rankId = rank.type + ":" + rank.hours;
+                    
+                    if (!RankStorage.getInstance().hasRank(player.getUUID(), rankId)) {
+                        LOGGER.info("Player {} reached {} hours, awarding {} '{}'", 
+                            player.getName().getString(), rank.hours, rank.type, rank.value);
+                        
+                        RankStorage.getInstance().addRank(player.getUUID(), rankId);
+                        
+                        String msg = config.getPromotionMessage()
+                                .replace("%rank%", rank.value.replace("&", "§"))
+                                .replace("{rank}", rank.value.replace("&", "§"))
+                                .replace("{player}", player.getName().getString())
+                                .replace("{hours}", String.valueOf(rank.hours));
+                        player.sendSystemMessage(Component.literal(msg.replace("&", "§")));
+                    }
+                }
+            }
         }
     }
 }

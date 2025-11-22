@@ -15,10 +15,18 @@ import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.EmbedBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import java.awt.Color;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.network.chat.Component;
@@ -33,6 +41,13 @@ public class DiscordManager extends ListenerAdapter {
     private static DiscordManager instance;
     private JDA jda;
     private MinecraftServer server;
+    
+    private ScheduledExecutorService consoleExecutor;
+    private final ConcurrentLinkedQueue<String> consoleQueue = new ConcurrentLinkedQueue<>();
+    private DiscordConsoleAppender consoleAppender;
+    
+    private ScheduledExecutorService topicExecutor;
+    private long serverStartTime;
 
     private DiscordManager() {
     }
@@ -60,6 +75,8 @@ public class DiscordManager extends ListenerAdapter {
             LOGGER.warn("Discord bot token is invalid. Discord integration will not start.");
             return;
         }
+        
+        serverStartTime = System.currentTimeMillis();
 
         try {
             jda = JDABuilder.createDefault(token)
@@ -78,6 +95,9 @@ public class DiscordManager extends ListenerAdapter {
                 Commands.slash("unlink", "Odpoji tvuj Discord ucet od Minecraft uctu")
             ).queue();
             
+            startConsoleLogger();
+            startTopicUpdater();
+            
         } catch (InvalidTokenException e) {
             LOGGER.error("Invalid Discord Bot Token! Please check your configuration in config/voidium/discord.json.");
             LOGGER.error("Discord integration will be disabled until a valid token is provided.");
@@ -87,6 +107,8 @@ public class DiscordManager extends ListenerAdapter {
     }
 
     public void stop() {
+        stopConsoleLogger();
+        stopTopicUpdater();
         if (jda != null) {
             jda.shutdown();
             jda = null;
@@ -348,7 +370,140 @@ public class DiscordManager extends ListenerAdapter {
         }
     }
     
+    private void startTopicUpdater() {
+        if (topicExecutor != null) return;
+        if (!DiscordConfig.getInstance().isEnableTopicUpdate()) return;
+        
+        topicExecutor = Executors.newSingleThreadScheduledExecutor();
+        topicExecutor.scheduleAtFixedRate(this::updateChannelTopic, 1, 6, TimeUnit.MINUTES);
+    }
+
+    private void stopTopicUpdater() {
+        if (topicExecutor != null) {
+            topicExecutor.shutdownNow();
+            topicExecutor = null;
+        }
+    }
+
+    private void updateChannelTopic() {
+        if (jda == null || server == null) return;
+        String channelId = DiscordConfig.getInstance().getChatChannelId();
+        if (channelId == null || channelId.isEmpty()) return;
+
+        net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) return;
+
+        int online = server.getPlayerCount();
+        int max = server.getMaxPlayers();
+        long uptimeMillis = System.currentTimeMillis() - serverStartTime;
+        String uptime = formatDuration(uptimeMillis);
+
+        String format = DiscordConfig.getInstance().getChannelTopicFormat();
+        String topic = format
+                .replace("%online%", String.valueOf(online))
+                .replace("%max%", String.valueOf(max))
+                .replace("%uptime%", uptime);
+        
+        // Check if topic is different to avoid API calls
+        if (topic.equals(channel.getTopic())) return;
+
+        channel.getManager().setTopic(topic).queue();
+    }
+
+    private String formatDuration(long millis) {
+        long seconds = millis / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+        
+        String format = DiscordConfig.getInstance().getUptimeFormat();
+        if (format == null || format.isEmpty()) {
+             format = "%days%d %hours%h %minutes%m";
+        }
+        
+        return format
+                .replace("%days%", String.valueOf(days))
+                .replace("%hours%", String.valueOf(hours % 24))
+                .replace("%minutes%", String.valueOf(minutes % 60))
+                .replace("%seconds%", String.valueOf(seconds % 60));
+    }
+
     public JDA getJda() {
         return jda;
+    }
+
+    public void queueConsoleMessage(String message) {
+        consoleQueue.offer(message);
+    }
+
+    private void startConsoleLogger() {
+        if (!DiscordConfig.getInstance().isEnableConsoleLog()) return;
+        
+        // Attach Appender
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        consoleAppender = DiscordConsoleAppender.createAppender("DiscordConsole", null, PatternLayout.createDefaultLayout());
+        consoleAppender.start();
+        config.addAppender(consoleAppender);
+        config.getRootLogger().addAppender(consoleAppender, null, null);
+        ctx.updateLoggers();
+
+        // Start Consumer Task
+        consoleExecutor = Executors.newSingleThreadScheduledExecutor();
+        consoleExecutor.scheduleAtFixedRate(this::processConsoleQueue, 1, 2, TimeUnit.SECONDS);
+    }
+
+    private void stopConsoleLogger() {
+        if (consoleExecutor != null) {
+            consoleExecutor.shutdownNow();
+            consoleExecutor = null;
+        }
+        
+        if (consoleAppender != null) {
+            LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+            Configuration config = ctx.getConfiguration();
+            consoleAppender.stop();
+            config.getRootLogger().removeAppender("DiscordConsole");
+            ctx.updateLoggers();
+            consoleAppender = null;
+        }
+        consoleQueue.clear();
+    }
+
+    private void processConsoleQueue() {
+        if (jda == null || consoleQueue.isEmpty()) return;
+        
+        String channelId = DiscordConfig.getInstance().getConsoleChannelId();
+        if (channelId == null || channelId.isEmpty()) return;
+        
+        net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) return;
+
+        StringBuilder batch = new StringBuilder();
+        while (!consoleQueue.isEmpty()) {
+            String line = consoleQueue.poll();
+            if (batch.length() + line.length() + 1 > 1900) {
+                // Send current batch
+                channel.sendMessage("```" + batch.toString() + "```").queue();
+                batch.setLength(0);
+            }
+            batch.append(line).append("\n");
+        }
+        
+        if (batch.length() > 0) {
+            channel.sendMessage("```" + batch.toString() + "```").queue();
+        }
+    }
+    
+    public void sendStatusMessage(String message) {
+        if (jda == null || !DiscordConfig.getInstance().isEnableStatusMessages()) return;
+        
+        String channelId = DiscordConfig.getInstance().getStatusChannelId();
+        if (channelId == null || channelId.isEmpty()) return;
+        
+        net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
+        if (channel != null) {
+            channel.sendMessage(message).queue();
+        }
     }
 }

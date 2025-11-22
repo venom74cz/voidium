@@ -83,4 +83,15 @@ public class AnnouncementConfig {
     public List<String> getAnnouncements() { return announcements; }
     public int getAnnouncementIntervalMinutes() { return announcementIntervalMinutes; }
     public String getPrefix() { return prefix; }
+    
+    // Apply locale preset
+    public void applyLocale(String locale) {
+        java.util.Map<String, Object> messages = LocalePresets.getAnnouncementMessages(locale);
+        this.prefix = (String) messages.get("prefix");
+        Object announcementsObj = messages.get("announcements");
+        if (announcementsObj instanceof String[]) {
+            this.announcements = new ArrayList<>(java.util.Arrays.asList((String[]) announcementsObj));
+        }
+        save();
+    }
 }

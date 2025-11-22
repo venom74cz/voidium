@@ -1,6 +1,7 @@
 package cz.voidium.mixin;
 
 import com.mojang.authlib.GameProfile;
+import cz.voidium.skin.EarlySkinInjector;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerLoginPacketListenerImpl;
 import net.minecraft.network.protocol.login.ServerboundHelloPacket;

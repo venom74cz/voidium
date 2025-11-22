@@ -26,8 +26,12 @@ public class VoteConfig {
     private String rsaPrivateKeyPath = "votifier_rsa.pem";
     private String rsaPublicKeyPath = "votifier_rsa_public.pem";
     private String sharedSecret = generateSharedSecret();
+    private boolean announceVotes = true;
+    private String announcementMessage = "&b%PLAYER% &7hlasoval pro server a získal odměnu!";
+    private int announcementCooldown = 300; // seconds
     private List<String> commands = new ArrayList<>(List.of(
-            "tellraw %PLAYER% {\"text\":\"Thank you for voting!\",\"color\":\"green\"}"
+            "tellraw %PLAYER% {\"text\":\"Děkujeme za hlasování!\",\"color\":\"green\"}",
+            "give %PLAYER% diamond 1"
     ));
     private Logging logging = new Logging();
 
@@ -120,8 +124,17 @@ public class VoteConfig {
     public String getRsaPrivateKeyPath() { return rsaPrivateKeyPath; }
     public String getRsaPublicKeyPath() { return rsaPublicKeyPath; }
     public String getSharedSecret() { return sharedSecret; }
+    public boolean isAnnounceVotes() { return announceVotes; }
+    public String getAnnouncementMessage() { return announcementMessage; }
+    public int getAnnouncementCooldown() { return announcementCooldown; }
     public List<String> getCommands() { return commands; }
     public Logging getLogging() { return logging; }
+
+    public void applyLocale(String locale) {
+        java.util.Map<String, String> messages = LocalePresets.getVoteMessages(locale);
+        this.announcementMessage = messages.get("announcementMessage");
+        save();
+    }
 
     private Path resolveConfigPath(String value) {
         if (value == null || value.isBlank()) {

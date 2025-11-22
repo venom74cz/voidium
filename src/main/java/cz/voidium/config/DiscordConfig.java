@@ -26,6 +26,15 @@ public class DiscordConfig {
     private String chatChannelId = "";
     private String consoleChannelId = "";
     private String linkChannelId = "";
+    private String statusChannelId = ""; // If empty, uses consoleChannelId
+
+    // Console & Status settings
+    private boolean enableConsoleLog = false;
+    private boolean enableStatusMessages = true;
+    private String statusMessageStarting = ":yellow_circle: **Server is starting...**";
+    private String statusMessageStarted = ":green_circle: **Server is online!**";
+    private String statusMessageStopping = ":orange_circle: **Server is stopping...**";
+    private String statusMessageStopped = ":red_circle: **Server is offline.**";
 
     // Role settings
     private String linkedRoleId = "";
@@ -42,6 +51,11 @@ public class DiscordConfig {
 
     // Webhook URL
     private String chatWebhookUrl = "";
+
+    // Channel Topic settings
+    private boolean enableTopicUpdate = true;
+    private String channelTopicFormat = "Online: %online%/%max% | Uptime: %uptime% | Voidium Server";
+    private String uptimeFormat = "%days%d %hours%h %minutes%m";
 
     public DiscordConfig(Path configPath) {
         this.configPath = configPath;
@@ -87,6 +101,7 @@ public class DiscordConfig {
     public String getChatChannelId() { return chatChannelId; }
     public String getConsoleChannelId() { return consoleChannelId; }
     public String getLinkChannelId() { return linkChannelId; }
+    public String getStatusChannelId() { return statusChannelId != null && !statusChannelId.isEmpty() ? statusChannelId : chatChannelId; }
     public String getLinkedRoleId() { return linkedRoleId; }
     public boolean isSyncBansDiscordToMc() { return syncBansDiscordToMc; }
     public boolean isSyncBansMcToDiscord() { return syncBansMcToDiscord; }
@@ -95,4 +110,34 @@ public class DiscordConfig {
     public String getDiscordToMinecraftFormat() { return discordToMinecraftFormat; }
     public boolean isTranslateEmojis() { return translateEmojis; }
     public String getChatWebhookUrl() { return chatWebhookUrl; }
+    
+    public boolean isEnableTopicUpdate() { return enableTopicUpdate; }
+    public String getChannelTopicFormat() { return channelTopicFormat; }
+    public String getUptimeFormat() { return uptimeFormat; }
+    
+    public boolean isEnableConsoleLog() { return enableConsoleLog; }
+    public boolean isEnableStatusMessages() { return enableStatusMessages; }
+    public String getStatusMessageStarting() { return statusMessageStarting; }
+    public String getStatusMessageStarted() { return statusMessageStarted; }
+    public String getStatusMessageStopping() { return statusMessageStopping; }
+    public String getStatusMessageStopped() { return statusMessageStopped; }
+    
+    // Apply locale preset
+    public void applyLocale(String locale) {
+        java.util.Map<String, String> messages = LocalePresets.getDiscordMessages(locale);
+        this.kickMessage = messages.get("kickMessage");
+        this.linkSuccessMessage = messages.get("linkSuccessMessage");
+        this.alreadyLinkedMessage = messages.get("alreadyLinkedMessage");
+        this.minecraftToDiscordFormat = messages.get("minecraftToDiscordFormat");
+        this.discordToMinecraftFormat = messages.get("discordToMinecraftFormat");
+        
+        this.statusMessageStarting = messages.get("statusMessageStarting");
+        this.statusMessageStarted = messages.get("statusMessageStarted");
+        this.statusMessageStopping = messages.get("statusMessageStopping");
+        this.statusMessageStopped = messages.get("statusMessageStopped");
+        this.channelTopicFormat = messages.get("channelTopicFormat");
+        this.uptimeFormat = messages.get("uptimeFormat");
+        
+        save();
+    }
 }

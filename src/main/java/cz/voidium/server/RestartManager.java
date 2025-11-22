@@ -4,8 +4,6 @@ import cz.voidium.config.VoidiumConfig;
 import cz.voidium.config.RestartConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerBossEvent;
-import net.minecraft.world.BossEvent;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -21,7 +19,6 @@ public class RestartManager {
     private long serverStartTime;
     @SuppressWarnings("unused")
     private ScheduledFuture<?> manualRestartTask;
-    private ServerBossEvent restartBossBar;
 
     public RestartManager(MinecraftServer server) {
         this.server = server;
@@ -36,10 +33,6 @@ public class RestartManager {
             scheduler.shutdownNow();
         }
         scheduler = Executors.newSingleThreadScheduledExecutor();
-        if (restartBossBar != null) {
-            restartBossBar.removeAllPlayers();
-            restartBossBar = null;
-        }
         scheduleNextRestart();
     }
 
@@ -134,12 +127,6 @@ public class RestartManager {
     private void performRestart() {
         System.out.println("Performing server restart...");
         
-        // Odstranění boss baru
-        if (restartBossBar != null) {
-            restartBossBar.removeAllPlayers();
-            restartBossBar = null;
-        }
-        
         // Finální zpráva hráčům
         server.getPlayerList().getPlayers().forEach(player -> 
             player.sendSystemMessage(Component.literal("§cServer is restarting now!"))
@@ -162,9 +149,6 @@ public class RestartManager {
     }
 
     public void scheduleManualRestart(int minutes) {
-        if (minutes >= 10) {
-            startRestartBossBar(minutes);
-        }
         scheduleRestart(minutes);
     }
     
@@ -175,52 +159,13 @@ public class RestartManager {
         // Vytvoř nový scheduler
         scheduler = Executors.newSingleThreadScheduledExecutor();
         
-        // Odstran boss bar
-        if (restartBossBar != null) {
-            restartBossBar.removeAllPlayers();
-            restartBossBar = null;
-        }
-        
         // Naplánuj znovu automatické restarty
         scheduleNextRestart();
         
         System.out.println("Manual restart cancelled and automatic restarts rescheduled");
     }
     
-    private void startRestartBossBar(int totalMinutes) {
-        if (totalMinutes < 10) return;
-        
-        restartBossBar = new ServerBossEvent(
-            Component.literal("§cServer restart in " + totalMinutes + " minutes"),
-            BossEvent.BossBarColor.RED,
-            BossEvent.BossBarOverlay.PROGRESS
-        );
-        
-        server.getPlayerList().getPlayers().forEach(restartBossBar::addPlayer);
-        
-        final long startTime = System.currentTimeMillis();
-        final long totalTimeMs = totalMinutes * 60 * 1000;
-        
-        // Aktualizace každých 30 sekund
-        scheduler.scheduleAtFixedRate(() -> {
-            if (restartBossBar == null) return;
-            
-            long elapsed = System.currentTimeMillis() - startTime;
-            long timeLeft = totalTimeMs - elapsed;
-            int minutesLeft = (int) (timeLeft / 60000);
-            
-            if (minutesLeft <= 0) {
-                restartBossBar.removeAllPlayers();
-                restartBossBar = null;
-                return;
-            }
-            
-            restartBossBar.setName(Component.literal("§cServer restart in " + minutesLeft + " minutes"));
-            restartBossBar.setProgress(Math.max(0.0f, (float) timeLeft / totalTimeMs));
-            
-        }, 30, 30, TimeUnit.SECONDS);
-    }
-    
+
     public String getNextRestartInfo() {
         RestartConfig config = RestartConfig.getInstance();
         if (config.getRestartType() == RestartConfig.RestartType.FIXED_TIME) {

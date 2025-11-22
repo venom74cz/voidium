@@ -10,9 +10,9 @@ public class WebConfig {
     private static WebConfig instance;
     private transient Path configPath;
 
-    private boolean enableWeb = true;
     private int port = 8081;
-    private String publicHostname = "localhost"; // Hostname/IP to display in console URL
+    private String language = "en"; // Options: "en", "cz"
+    private String publicHostname = "localhost";
 
     public WebConfig(Path configPath) {
         this.configPath = configPath;
@@ -46,7 +46,7 @@ public class WebConfig {
         }
     }
     
-    public boolean isEnableWeb() { return enableWeb; }
     public int getPort() { return port; }
+    public String getLanguage() { return language; }
     public String getPublicHostname() { return publicHostname; }
 }

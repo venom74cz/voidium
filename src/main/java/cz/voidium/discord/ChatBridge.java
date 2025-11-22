@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.ServerChatEvent;
+import net.neoforged.neoforge.event.CommandEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,6 +52,34 @@ public class ChatBridge {
         
         // Send to Discord
         DiscordManager.getInstance().sendChatMessage(player, uuid, message);
+    }
+
+    @SubscribeEvent
+    public void onCommand(CommandEvent event) {
+        DiscordConfig config = DiscordConfig.getInstance();
+        if (!config.isEnableDiscord() || !config.isEnableChatBridge()) return;
+
+        String command = event.getParseResults().getReader().getString();
+        if (command.startsWith("say ")) {
+            String msg = command.substring(4).trim();
+            if (msg.isEmpty()) return;
+
+            String sourceName;
+            try {
+                sourceName = event.getParseResults().getContext().getSource().getTextName();
+            } catch (Exception e) {
+                sourceName = "Server";
+            }
+            
+            java.util.UUID uuid = null;
+            try {
+                 if (event.getParseResults().getContext().getSource().getEntity() instanceof net.minecraft.world.entity.player.Player player) {
+                     uuid = player.getUUID();
+                 }
+            } catch (Exception ignored) {}
+
+            DiscordManager.getInstance().sendChatMessage(sourceName, uuid, msg);
+        }
     }
     
     public void onDiscordMessage(String user, String message) {

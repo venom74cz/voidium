@@ -13,8 +13,10 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +53,10 @@ public class Voidium {
             cz.voidium.config.RanksConfig.init(voidiumDir);
             
             // Registrace event listenerů
+            NeoForge.EVENT_BUS.addListener(this::onServerStarting);
             NeoForge.EVENT_BUS.addListener(this::onServerStarted);
             NeoForge.EVENT_BUS.addListener(this::onServerStopping);
+            NeoForge.EVENT_BUS.addListener(this::onServerStopped);
             NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
             NeoForge.EVENT_BUS.register(new cz.voidium.discord.DiscordWhitelist());
             
@@ -84,6 +88,16 @@ public class Voidium {
         return voteManager;
     }
 
+    private void onServerStarting(ServerStartingEvent event) {
+        cz.voidium.config.GeneralConfig gc = cz.voidium.config.GeneralConfig.getInstance();
+        // Start Discord Manager early to send "Starting" message
+        if (gc.isEnableDiscord()) {
+            cz.voidium.discord.DiscordManager.getInstance().setServer(event.getServer());
+            cz.voidium.discord.DiscordManager.getInstance().start();
+            cz.voidium.discord.DiscordManager.getInstance().sendStatusMessage(cz.voidium.config.DiscordConfig.getInstance().getStatusMessageStarting());
+        }
+    }
+
     private void onServerStarted(ServerStartedEvent event) {
         try {
             LOGGER.info("Starting Voidium managers...");
@@ -103,10 +117,9 @@ public class Voidium {
                 voteManager.start();
             }
             
-            // Start Discord Manager
+            // Discord Manager is already started in onServerStarting
             if (gc.isEnableDiscord()) {
-                cz.voidium.discord.DiscordManager.getInstance().setServer(event.getServer());
-                cz.voidium.discord.DiscordManager.getInstance().start();
+                cz.voidium.discord.DiscordManager.getInstance().sendStatusMessage(cz.voidium.config.DiscordConfig.getInstance().getStatusMessageStarted());
             }
             
             // Start Web Manager
@@ -114,7 +127,7 @@ public class Voidium {
                 cz.voidium.web.WebManager.getInstance().setServer(event.getServer());
                 cz.voidium.web.WebManager.getInstance().start();
             }
-            
+
             // Start Stats Manager
             if (gc.isEnableStats()) {
                 cz.voidium.stats.StatsManager.getInstance().start(event.getServer());
@@ -182,9 +195,19 @@ public class Voidium {
         if (voteManager != null) {
             voteManager.shutdown();
         }
-        cz.voidium.discord.DiscordManager.getInstance().stop();
+        
+        cz.voidium.discord.DiscordManager.getInstance().sendStatusMessage(cz.voidium.config.DiscordConfig.getInstance().getStatusMessageStopping());
+        
         cz.voidium.web.WebManager.getInstance().stop();
         cz.voidium.stats.StatsManager.getInstance().stop();
         cz.voidium.ranks.RankManager.getInstance().stop();
+    }
+
+    private void onServerStopped(ServerStoppedEvent event) {
+        cz.voidium.discord.DiscordManager.getInstance().sendStatusMessage(cz.voidium.config.DiscordConfig.getInstance().getStatusMessageStopped());
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ignored) {}
+        cz.voidium.discord.DiscordManager.getInstance().stop();
     }
 }

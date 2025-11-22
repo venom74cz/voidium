@@ -33,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -53,6 +54,7 @@ public class VoteListener implements AutoCloseable {
     private final Logger logger;
     private final ExecutorService workerPool;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final java.util.Map<String, Long> lastAnnouncementTime = new ConcurrentHashMap<>();
     private ServerSocket serverSocket;
     private ExecutorService acceptExecutor;
 
@@ -339,28 +341,33 @@ public class VoteListener implements AutoCloseable {
 
     // Provede pouze /say nebo broadcast příkazy
     private void executeAnnounceCommands(VoteEvent event) {
-        List<String> commands = config.getCommands();
-        if (commands == null || commands.isEmpty()) {
+        if (!config.isAnnounceVotes()) {
             return;
         }
-        for (String commandTemplate : commands) {
-            String command = commandTemplate.replace("%PLAYER%", event.username());
-            String cmdLower = command.toLowerCase().trim();
-            if (cmdLower.startsWith("say ") || cmdLower.startsWith("broadcast ")) {
-                server.execute(() -> {
-                    try {
-                        CommandSourceStack source = server.createCommandSourceStack();
-                        server.getCommands().performPrefixedCommand(source, command);
-                    } catch (Exception e) {
-                        logger.error("Announce command execution failed for vote", e);
-                        notifyOps("§cVote announce command failed: " + e.getMessage());
-                    }
-                });
-            }
+
+        String username = event.username().toLowerCase();
+        long now = System.currentTimeMillis();
+        long lastTime = lastAnnouncementTime.getOrDefault(username, 0L);
+        long cooldownMillis = config.getAnnouncementCooldown() * 1000L;
+
+        if (now - lastTime < cooldownMillis) {
+            logger.info("Skipping vote announcement for {} due to cooldown ({}s remaining)", 
+                event.username(), (cooldownMillis - (now - lastTime)) / 1000);
+            return;
+        }
+
+        lastAnnouncementTime.put(username, now);
+
+        String message = config.getAnnouncementMessage();
+        if (message != null && !message.isBlank()) {
+            String formatted = message.replace("%PLAYER%", event.username()).replace("&", "§");
+            server.execute(() -> {
+                server.getPlayerList().broadcastSystemMessage(Component.literal(formatted), false);
+            });
         }
     }
 
-    // Provede všechny příkazy kromě /say a broadcast
+    // Provede všechny příkazy (odměny)
     private void executeRewardCommands(VoteEvent event) {
         List<String> commands = config.getCommands();
         if (commands == null || commands.isEmpty()) {
@@ -368,10 +375,6 @@ public class VoteListener implements AutoCloseable {
         }
         for (String commandTemplate : commands) {
             String command = commandTemplate.replace("%PLAYER%", event.username());
-            String cmdLower = command.toLowerCase().trim();
-            if (cmdLower.startsWith("say ") || cmdLower.startsWith("broadcast ")) {
-                continue;
-            }
             server.execute(() -> {
                 try {
                     CommandSourceStack source = server.createCommandSourceStack();
@@ -456,6 +459,7 @@ public class VoteListener implements AutoCloseable {
             acceptExecutor.shutdownNow();
         }
         workerPool.shutdownNow();
+        lastAnnouncementTime.clear();
     }
 
     private ThreadFactory namedThread(String name) {

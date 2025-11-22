@@ -15,12 +15,21 @@ public class RanksConfig {
     private int checkIntervalMinutes = 5;
     private boolean countAfkTime = false; // If false, we need custom tracking (TODO)
     
-    // Rank definitions: Rank Name -> Hours required
-    private Map<String, Integer> playtimeRanks = new LinkedHashMap<>();
-    
-    // Commands to execute when player reaches a rank
-    // %player% = player name, %rank% = rank name
-    private String promotionCommand = "ftbranks add %player% %rank%";
+    public static class RankDefinition {
+        public String type; // "PREFIX" or "SUFFIX"
+        public String value; // e.g. "[Veteran] "
+        public int hours; // e.g. 100
+
+        public RankDefinition() {}
+        public RankDefinition(String type, String value, int hours) {
+            this.type = type;
+            this.value = value;
+            this.hours = hours;
+        }
+    }
+
+    // List of rank definitions
+    private List<RankDefinition> ranks = new ArrayList<>();
     
     // Message to player
     private String promotionMessage = "&aGratulujeme! Za nahrany cas jsi ziskal rank &b%rank%&a!";
@@ -28,9 +37,9 @@ public class RanksConfig {
     public RanksConfig(Path configPath) {
         this.configPath = configPath;
         // Default examples
-        playtimeRanks.put("Member", 10);
-        playtimeRanks.put("Regular", 50);
-        playtimeRanks.put("Veteran", 100);
+        ranks.add(new RankDefinition("PREFIX", "&7[Member] ", 10));
+        ranks.add(new RankDefinition("PREFIX", "&6[Veteran] ", 100));
+        ranks.add(new RankDefinition("SUFFIX", " &e★", 500));
     }
 
     public static RanksConfig getInstance() {
@@ -43,6 +52,7 @@ public class RanksConfig {
             try (Reader reader = Files.newBufferedReader(configPath)) {
                 instance = GSON.fromJson(reader, RanksConfig.class);
                 instance.configPath = configPath;
+                if (instance.ranks == null) instance.ranks = new ArrayList<>();
             } catch (IOException e) {
                 e.printStackTrace();
                 instance = new RanksConfig(configPath);
@@ -63,7 +73,13 @@ public class RanksConfig {
 
     public boolean isEnableAutoRanks() { return enableAutoRanks; }
     public int getCheckIntervalMinutes() { return checkIntervalMinutes; }
-    public Map<String, Integer> getPlaytimeRanks() { return playtimeRanks; }
-    public String getPromotionCommand() { return promotionCommand; }
+    public List<RankDefinition> getRanks() { return ranks; }
     public String getPromotionMessage() { return promotionMessage; }
+    
+    // Apply locale preset
+    public void applyLocale(String locale) {
+        java.util.Map<String, String> messages = LocalePresets.getRankMessages(locale);
+        this.promotionMessage = messages.get("promotionMessage");
+        save();
+    }
 }
