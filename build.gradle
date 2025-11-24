@@ -155,9 +155,12 @@ dependencies {
     jarJar("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
     jarJar("org.apache.commons:commons-collections4:4.4")
     jarJar("net.sf.trove4j:trove4j:3.0.3")
-    jarJar("com.fasterxml.jackson.core:jackson-databind:2.17.2")
-    jarJar("com.fasterxml.jackson.core:jackson-core:2.17.2")
-    jarJar("com.fasterxml.jackson.core:jackson-annotations:2.17.2")
+    // Only shade Jackson for NeoForge < 21.1.8 (MC < 1.21.8)
+    if (project.neo_version < "21.1.208") {
+        jarJar("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+        jarJar("com.fasterxml.jackson.core:jackson-core:2.17.2")
+        jarJar("com.fasterxml.jackson.core:jackson-annotations:2.17.2")
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
