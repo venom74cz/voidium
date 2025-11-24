@@ -119,7 +119,10 @@ public class VoteManager {
 
             LOGGER.info("Delivering {} pending vote reward(s) to {}", pendingVotes.size(), username);
             
+            int rewardCount = 0;
             for (PendingVoteQueue.PendingVote vote : pendingVotes) {
+                rewardCount++;
+                LOGGER.debug("Processing pending vote #{} from {} at {}", rewardCount, vote.getUsername(), vote.getTimestamp());
                 for (String commandTemplate : commands) {
                     String command = commandTemplate.replace("%PLAYER%", username);
                     String cmdLower = command.toLowerCase().trim();

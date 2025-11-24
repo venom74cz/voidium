@@ -8,7 +8,6 @@ import net.minecraft.stats.Stats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,7 +49,8 @@ public class RankManager {
 
     public void stop() {
         if (scheduler != null) {
-            scheduler.shutdown();
+            scheduler.shutdownNow();
+            scheduler = null;
         }
         NeoForge.EVENT_BUS.unregister(this);
     }
@@ -69,6 +69,7 @@ public class RankManager {
 
         int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
         double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
+        String uuid = player.getUUID().toString();
 
         List<RanksConfig.RankDefinition> ranks = config.getRanks();
         
@@ -77,15 +78,29 @@ public class RankManager {
         RanksConfig.RankDefinition bestSuffix = null;
 
         for (RanksConfig.RankDefinition rank : ranks) {
-            if (hoursPlayed >= rank.hours) {
-                if ("PREFIX".equalsIgnoreCase(rank.type)) {
-                    if (bestPrefix == null || rank.hours > bestPrefix.hours) {
-                        bestPrefix = rank;
+            if (hoursPlayed < rank.hours) continue;
+            
+            // Check custom conditions
+            boolean meetsCustomConditions = true;
+            if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
+                for (RanksConfig.CustomCondition condition : rank.customConditions) {
+                    if (!ProgressTracker.getInstance().meetsCondition(uuid, condition.type, condition.target, condition.count)) {
+                        meetsCustomConditions = false;
+                        break;
                     }
-                } else if ("SUFFIX".equalsIgnoreCase(rank.type)) {
-                    if (bestSuffix == null || rank.hours > bestSuffix.hours) {
-                        bestSuffix = rank;
-                    }
+                }
+            }
+            
+            if (!meetsCustomConditions) continue;
+            
+            // Player meets all requirements
+            if ("PREFIX".equalsIgnoreCase(rank.type)) {
+                if (bestPrefix == null || rank.hours > bestPrefix.hours) {
+                    bestPrefix = rank;
+                }
+            } else if ("SUFFIX".equalsIgnoreCase(rank.type)) {
+                if (bestSuffix == null || rank.hours > bestSuffix.hours) {
+                    bestSuffix = rank;
                 }
             }
         }
@@ -111,24 +126,47 @@ public class RankManager {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
             double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
+            String uuid = player.getUUID().toString();
             
             for (RanksConfig.RankDefinition rank : ranks) {
-                if (hoursPlayed >= rank.hours) {
-                    String rankId = rank.type + ":" + rank.hours;
-                    
-                    if (!RankStorage.getInstance().hasRank(player.getUUID(), rankId)) {
-                        LOGGER.info("Player {} reached {} hours, awarding {} '{}'", 
-                            player.getName().getString(), rank.hours, rank.type, rank.value);
+                // Check playtime requirement
+                if (hoursPlayed < rank.hours) continue;
+                
+                // Check custom conditions (if any)
+                boolean meetsCustomConditions = true;
+                if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
+                    for (RanksConfig.CustomCondition condition : rank.customConditions) {
+                        boolean meets = ProgressTracker.getInstance().meetsCondition(
+                            uuid,
+                            condition.type,
+                            condition.target,
+                            condition.count
+                        );
                         
-                        RankStorage.getInstance().addRank(player.getUUID(), rankId);
-                        
-                        String msg = config.getPromotionMessage()
-                                .replace("%rank%", rank.value.replace("&", "§"))
-                                .replace("{rank}", rank.value.replace("&", "§"))
-                                .replace("{player}", player.getName().getString())
-                                .replace("{hours}", String.valueOf(rank.hours));
-                        player.sendSystemMessage(Component.literal(msg.replace("&", "§")));
+                        if (!meets) {
+                            meetsCustomConditions = false;
+                            break;
+                        }
                     }
+                }
+                
+                if (!meetsCustomConditions) continue;
+                
+                // Player meets all requirements
+                String rankId = rank.type + ":" + rank.hours;
+                
+                if (!RankStorage.getInstance().hasRank(player.getUUID(), rankId)) {
+                    LOGGER.info("Player {} reached {} hours and met all custom conditions, awarding {} '{}'", 
+                        player.getName().getString(), rank.hours, rank.type, rank.value);
+                    
+                    RankStorage.getInstance().addRank(player.getUUID(), rankId);
+                    
+                    String msg = config.getPromotionMessage()
+                            .replace("%rank%", rank.value.replace("&", "§"))
+                            .replace("{rank}", rank.value.replace("&", "§"))
+                            .replace("{player}", player.getName().getString())
+                            .replace("{hours}", String.valueOf(rank.hours));
+                    player.sendSystemMessage(Component.literal(msg.replace("&", "§")));
                 }
             }
         }

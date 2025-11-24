@@ -13,18 +13,36 @@ public class RanksConfig {
 
     private boolean enableAutoRanks = true;
     private int checkIntervalMinutes = 5;
-    private boolean countAfkTime = false; // If false, we need custom tracking (TODO)
+    @SuppressWarnings("unused")
+    private boolean countAfkTime = false; // Reserved for future AFK time tracking feature
+    
+    public static class CustomCondition {
+        public String type; // "KILL_MOBS", "VISIT_BIOMES", "BREAK_BLOCKS", "PLACE_BLOCKS"
+        public String target; // e.g. "minecraft:zombie" or "minecraft:plains"
+        public int count; // e.g. 100
+
+        public CustomCondition() {}
+        public CustomCondition(String type, String target, int count) {
+            this.type = type;
+            this.target = target;
+            this.count = count;
+        }
+    }
     
     public static class RankDefinition {
         public String type; // "PREFIX" or "SUFFIX"
         public String value; // e.g. "[Veteran] "
         public int hours; // e.g. 100
+        public List<CustomCondition> customConditions; // Optional custom conditions
 
-        public RankDefinition() {}
+        public RankDefinition() {
+            this.customConditions = new ArrayList<>();
+        }
         public RankDefinition(String type, String value, int hours) {
             this.type = type;
             this.value = value;
             this.hours = hours;
+            this.customConditions = new ArrayList<>();
         }
     }
 

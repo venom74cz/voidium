@@ -21,9 +21,12 @@ public class LinkManager {
     
     // Verification codes: Code (String) -> UUID (String)
     private Map<String, String> pendingCodes = new ConcurrentHashMap<>();
+    
+    // Code expiry tracking: Code (String) -> Expiry timestamp (Long)
+    private Map<String, Long> codeExpiry = new ConcurrentHashMap<>();
 
     private LinkManager() {
-        this.dataPath = FMLPaths.CONFIGDIR.get().resolve("voidium_links.json");
+        this.dataPath = FMLPaths.CONFIGDIR.get().resolve("voidium").resolve("links.json");
         load();
     }
 
@@ -56,14 +59,30 @@ public class LinkManager {
     }
 
     public String generateCode(UUID playerUuid) {
+        // Clean up expired codes first (older than 10 minutes)
+        cleanupExpiredCodes();
+        
         // Generate a simple 6-digit code
         String code = String.format("%06d", new Random().nextInt(999999));
         pendingCodes.put(code, playerUuid.toString());
+        codeExpiry.put(code, System.currentTimeMillis() + 600000); // 10 minutes expiry
         return code;
+    }
+    
+    private void cleanupExpiredCodes() {
+        long now = System.currentTimeMillis();
+        codeExpiry.entrySet().removeIf(entry -> {
+            if (entry.getValue() < now) {
+                pendingCodes.remove(entry.getKey());
+                return true;
+            }
+            return false;
+        });
     }
 
     public boolean verifyCode(String code, long discordId) {
         String uuidStr = pendingCodes.remove(code);
+        codeExpiry.remove(code); // Clean up expiry entry
         if (uuidStr != null) {
             // Check limit
             long count = linkedAccounts.values().stream().filter(id -> id == discordId).count();
@@ -79,6 +98,14 @@ public class LinkManager {
     }
     
     public UUID getPlayerFromCode(String code) {
+        // Check if code is expired
+        Long expiry = codeExpiry.get(code);
+        if (expiry != null && expiry < System.currentTimeMillis()) {
+            pendingCodes.remove(code);
+            codeExpiry.remove(code);
+            return null;
+        }
+        
         String uuidStr = pendingCodes.get(code);
         return uuidStr != null ? UUID.fromString(uuidStr) : null;
     }

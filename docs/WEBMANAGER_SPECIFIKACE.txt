@@ -1,0 +1,261 @@
+================================================================================
+                    VOIDIUM WEB MANAGER - SPECIFIKACE
+================================================================================
+
+PŘEHLED
+-------
+WebManager je webový ovládací panel pro Minecraft server s modem Voidium.
+Umožňuje vzdálenou správu serveru přes prohlížeč.
+
+================================================================================
+                         ZÁKLADNÍ FUNKCE
+================================================================================
+
+1. AUTENTIZACE
+   - Token-based autentizace (generován při startu)
+   - Cookie session pro přetrvání přihlášení
+   - Zobrazení URL s tokenem v konzoli serveru
+
+2. DASHBOARD (NÁSTĚNKA)
+   - Stav serveru (Online/Offline badge)
+   - Počet hráčů online / max
+   - Využití paměti (použitá/volná/max) s progress barem
+   - TPS (Ticks Per Second)
+   - Graf historie výkonu (players, TPS, memory)
+   - Uptime serveru
+
+3. RYCHLÉ AKCE
+   - Restart serveru (s potvrzením)
+   - Broadcast zprávy všem hráčům
+   - Obnovit stránku
+
+4. SEZNAM HRÁČŮ
+   - Tabulka online hráčů (jméno, UUID)
+   - Kick tlačítko u každého hráče
+   - Počet online hráčů
+
+================================================================================
+                         KONFIGURACE
+================================================================================
+
+Každá sekce konfigurace má:
+- Název sekce s ikonou
+- Možnost sbalit/rozbalit (collapsible)
+- Popisky u každého pole (tooltip/description)
+- Validace vstupů
+
+SEKCE KONFIGURACE:
+
+1. WEB
+   - Jazyk rozhraní (EN/CZ)
+   - Port (pouze zobrazení, ne editace za běhu)
+
+2. GENERAL (Obecné)
+   - enableMod - Zapnout/vypnout mod
+   - enableRestarts - Automatické restarty
+   - enableAnnouncements - Automatická oznámení
+   - enableSkinRestorer - Obnovování skinů
+   - enableDiscord - Discord integrace
+   - enableWeb - Web panel (toto)
+   - enableStats - Statistiky
+   - enableRanks - Systém ranků
+   - enableVote - Hlasovací systém
+   - enablePlayerList - Vlastní TAB list
+   - skinCacheHours - Doba cachování skinů
+
+3. RESTART
+   - restartType - Typ restartu (FIXED_TIME/INTERVAL/DELAY)
+   - fixedRestartTimes - Pevné časy restartů (seznam, formát HH:MM)
+   - intervalHours - Interval v hodinách
+   - delayMinutes - Zpoždění v minutách
+
+4. ANNOUNCEMENTS (Oznámení)
+   - prefix - Prefix před zprávami
+   - announcementIntervalMinutes - Interval mezi oznámeními
+   - announcements - Seznam zpráv (dynamický seznam)
+
+5. RANKS (Ranky)
+   - enableAutoRanks - Automatické povyšování
+   - checkIntervalMinutes - Interval kontroly
+   - promotionMessage - Zpráva při povýšení ({player}, {rank}, {hours})
+   - ranks - Seznam ranků (type: PREFIX/SUFFIX, value, hours)
+
+6. DISCORD
+   - enableDiscord - Zapnout Discord
+   - botToken - Token bota (maskované pole)
+   - guildId - ID serveru
+   - botActivityType - Typ aktivity (PLAYING/WATCHING/LISTENING/COMPETING)
+   - botActivityText - Text aktivity
+   - enableWhitelist - Discord whitelist
+   - kickMessage - Zpráva při kicku (%code%)
+   - linkSuccessMessage - Zpráva při úspěšném propojení (%player%)
+   - alreadyLinkedMessage - Zpráva při již propojeném účtu (%max%)
+   - maxAccountsPerDiscord - Max účtů na Discord
+   - chatChannelId - ID chat kanálu
+   - consoleChannelId - ID konzole kanálu
+   - statusChannelId - ID status kanálu
+   - linkChannelId - ID propojovacího kanálu
+   - linkedRoleId - ID role pro propojené
+   - rolePrefixes - Prefixy/suffixy pro Discord role (speciální editor)
+   - syncBansDiscordToMc - Sync banů Discord→MC
+   - syncBansMcToDiscord - Sync banů MC→Discord
+   - enableChatBridge - Chat most
+   - minecraftToDiscordFormat - Formát MC→Discord (%player%, %message%)
+   - discordToMinecraftFormat - Formát Discord→MC (%user%, %message%)
+   - translateEmojis - Překládat emoji
+   - chatWebhookUrl - Webhook URL
+   - enableConsoleLog - Logování konzole
+   - enableStatusMessages - Status zprávy
+   - statusMessageStarting/Started/Stopping/Stopped
+   - enableTopicUpdate - Aktualizace topic kanálu
+   - channelTopicFormat - Formát topicu
+   - uptimeFormat - Formát uptime
+
+7. STATS (Statistiky)
+   - enableStats - Zapnout statistiky
+   - reportChannelId - ID kanálu pro reporty
+   - reportTime - Čas reportu (HH:MM)
+
+8. VOTE (Hlasování)
+   - enabled - Zapnout hlasování
+   - host - Adresa hostitele
+   - port - Port
+   - rsaPrivateKeyPath - Cesta k privátnímu klíči
+   - rsaPublicKeyPath - Cesta k veřejnému klíči
+   - sharedSecret - Sdílené tajemství
+   - announceVotes - Oznamovat hlasy
+   - announcementMessage - Zpráva oznámení (%PLAYER%)
+   - announcementCooldown - Cooldown oznámení
+   - commands - Příkazy při hlasování (seznam)
+
+9. PLAYERLIST (TAB Seznam)
+   - enableCustomPlayerList - Zapnout vlastní TAB
+   - headerLine1/2/3 - Řádky hlavičky (%online%, %max%, %tps%)
+   - footerLine1/2/3 - Řádky patičky (%tps%, %ping%)
+   - enableCustomNames - Vlastní jména
+   - playerNameFormat - Formát jmen (%rank_prefix%, %player_name%, %rank_suffix%)
+   - defaultPrefix/Suffix - Výchozí prefix/suffix
+   - combineMultipleRanks - Kombinovat více ranků
+   - updateIntervalSeconds - Interval aktualizace
+
+10. TICKETS (Tickety)
+    - enableTickets - Zapnout tickety
+    - ticketCategoryId - ID kategorie
+    - supportRoleId - ID support role
+    - ticketChannelTopic - Topic kanálu
+    - maxTicketsPerUser - Max ticketů na uživatele
+    - ticketCreatedMessage - Zpráva vytvoření
+    - ticketWelcomeMessage - Uvítací zpráva
+    - ticketCloseMessage - Zpráva uzavření
+    - noPermissionMessage - Zpráva bez oprávnění
+    - ticketLimitReachedMessage - Zpráva při limitu
+    - ticketAlreadyClosedMessage - Zpráva již zavřeno
+    - enableTranscript - Zapnout přepis
+    - transcriptFormat - Formát přepisu (TXT/JSON)
+    - transcriptFilename - Šablona názvu souboru
+
+================================================================================
+                         SPECIÁLNÍ FUNKCE
+================================================================================
+
+1. DISCORD ROLE PREFIXY EDITOR
+   - Načtení rolí z Discord serveru
+   - Toggle pro každou roli
+   - Pole: prefix, suffix, color, priority
+   - Live preview s MC color codes
+   - Šablony: [Role], <Role>, {Role}, ⟨Role⟩, |Role|, ★Role★
+   - Color picker pro hex a MC kódy
+   - Copy/Paste konfigurace mezi rolemi
+
+2. RESET LOCALE
+   - Tlačítko pro reset všech zpráv do EN
+   - Tlačítko pro reset všech zpráv do CZ
+   - Potvrzovací dialog
+
+3. GRAF HISTORIE
+   - Canvas graf s historií
+   - Zobrazení: Players (zelená), TPS (fialová)
+   - Data z /api/stats/history
+
+================================================================================
+                         TECHNICKÉ POŽADAVKY
+================================================================================
+
+STRUKTURA KÓDU:
+- Přehledné sekce oddělené komentáři
+- Samostatné handlery pro každý endpoint
+- Utility metody (sendResponse, isAuthenticated, escapeJson, parseParams)
+- Separátní metody pro generování HTML částí
+- Všechny překlady v LANG mapě
+
+ENDPOINTY:
+- GET  /              - Dashboard HTML
+- GET  /css/style.css - Styly
+- POST /api/action    - Akce (restart, announce, kick)
+- POST /api/config    - Uložení konfigurace
+- POST /api/locale    - Reset locale
+- GET  /api/stats/history - Historie statistik
+- GET  /api/discord/roles - Seznam Discord rolí
+
+PŘEKLADY (LANG mapa):
+- Klíče pro všechny texty UI
+- Klíče pro názvy polí (section.fieldName)
+- Klíče pro popisy (desc.section.fieldName)
+- CZ a EN varianta
+
+BEZPEČNOST:
+- Token autentizace
+- Cookie session
+- Escape HTML/JSON výstupů
+- Potvrzení nebezpečných akcí
+
+STYLING:
+- Tmavý motiv (gradient pozadí)
+- Fialová/zelená barvy
+- Moderní card design
+- Responzivní layout
+- Animace a přechody
+- Sticky save bar
+
+================================================================================
+                         STRUKTURA SOUBORU
+================================================================================
+
+1. Package + Imports
+2. Třída WebManager
+   2.1. Konstanty (LOGGER, GSON)
+   2.2. Instance proměnné
+   2.3. LANG mapa s překlady (EN, CZ)
+   2.4. Konstruktor + getInstance + setServer
+   2.5. start() + stop() + getWebUrl()
+   2.6. Utility metody (getTranslation, escapeJson, isAuthenticated, sendResponse, redirect, parseParams)
+   2.7. HTTP Handlery (inner classes):
+        - DashboardHandler
+        - StyleHandler
+        - ActionHandler
+        - ConfigApiHandler
+        - LocaleResetHandler
+        - StatsHistoryHandler
+        - DiscordRolesHandler
+   2.8. HTML generátory:
+        - getFullHtml()
+        - generateHead()
+        - generateHeader()
+        - generateDashboard()
+        - generateConfigSection()
+        - generateScripts()
+   2.9. Config JSON builder
+
+================================================================================
+                         POZNÁMKY PRO IMPLEMENTACI
+================================================================================
+
+- Komentáře před každou sekcí kódu
+- Používat StringBuilder pro HTML
+- JavaScript inline (není možnost externího souboru)
+- CSS inline v StyleHandler
+- Gson pro JSON serializaci
+- LocalTime adapter pro časy
+- Reflexe pro dynamické ukládání configů
+
+================================================================================

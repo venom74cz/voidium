@@ -20,7 +20,7 @@ public class SkinFetcher {
         String json = httpGet(url);
         if (json == null || json.isEmpty()) return null;
         JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
-        if (!obj.has("id")) return null;
+        if (!obj.has("id") || obj.get("id") == null || !obj.get("id").isJsonPrimitive()) return null;
         String raw = obj.get("id").getAsString();
         return UUID.fromString(raw.replaceFirst(
                 "([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})",
@@ -35,9 +35,12 @@ public class SkinFetcher {
         if (!obj.has("properties")) return null;
         for (var elem : obj.getAsJsonArray("properties")) {
             JsonObject prop = elem.getAsJsonObject();
-            if ("textures".equals(prop.get("name").getAsString())) {
+            if (prop.has("name") && prop.get("name") != null && 
+                "textures".equals(prop.get("name").getAsString())) {
+                if (!prop.has("value") || prop.get("value") == null) continue;
                 String val = prop.get("value").getAsString();
-                String sig = prop.has("signature") ? prop.get("signature").getAsString() : "";
+                String sig = prop.has("signature") && prop.get("signature") != null ? 
+                    prop.get("signature").getAsString() : "";
                 return new SkinData(val, sig);
             }
         }

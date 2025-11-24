@@ -16,6 +16,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.neoforged.fml.loading.FMLPaths;
+import java.nio.file.Path;
 
 public class VoidiumCommand {
     private static RestartManager restartManager;
@@ -115,13 +116,33 @@ public class VoidiumCommand {
     
     private static int reload(CommandContext<CommandSourceStack> context) {
         try {
-            VoidiumConfig.init(FMLPaths.CONFIGDIR.get());
+            Path configDir = FMLPaths.CONFIGDIR.get();
+            Path voidiumDir = configDir.resolve("voidium");
+            
+            // Reload all configs with voidium directory
+            VoidiumConfig.init(voidiumDir);
+            cz.voidium.config.DiscordConfig.init(voidiumDir);
+            cz.voidium.config.WebConfig.init(voidiumDir);
+            cz.voidium.config.StatsConfig.init(voidiumDir);
+            cz.voidium.config.RanksConfig.init(voidiumDir);
+            cz.voidium.config.TicketConfig.init(voidiumDir);
+            cz.voidium.config.PlayerListConfig.init(voidiumDir);
+            cz.voidium.config.GeneralConfig.init(voidiumDir);
+            cz.voidium.config.RestartConfig.init(voidiumDir);
+            cz.voidium.config.AnnouncementConfig.init(voidiumDir);
+            
             if (voteManager != null) {
                 voteManager.reload();
             }
             
             DiscordManager.getInstance().setServer(context.getSource().getServer());
             DiscordManager.getInstance().reload();
+            
+            // Reload player list manager
+            if (cz.voidium.playerlist.PlayerListManager.getInstance() != null) {
+                cz.voidium.playerlist.PlayerListManager.getInstance().stop();
+                cz.voidium.playerlist.PlayerListManager.getInstance().start(context.getSource().getServer());
+            }
 
             context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aConfiguration reloaded successfully!"), false);
         } catch (Exception e) {

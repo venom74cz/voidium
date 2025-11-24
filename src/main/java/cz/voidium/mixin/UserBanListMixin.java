@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class UserBanListMixin {
 
     @Inject(method = "add", at = @At("HEAD"))
+    @SuppressWarnings("unchecked")
     private void onBanAdd(UserBanListEntry entry, CallbackInfo ci) {
         if (!DiscordConfig.getInstance().isSyncBansMcToDiscord()) return;
         

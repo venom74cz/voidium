@@ -27,6 +27,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.network.chat.Component;
@@ -34,7 +37,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserBanListEntry;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
+
+import cz.voidium.config.RanksConfig;
+import net.minecraft.stats.Stats;
 
 public class DiscordManager extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger("Voidium-Discord");
@@ -63,6 +70,8 @@ public class DiscordManager extends ListenerAdapter {
         return instance;
     }
 
+
+    
     public void start() {
         DiscordConfig config = DiscordConfig.getInstance();
         if (!config.isEnableDiscord()) {
@@ -79,9 +88,21 @@ public class DiscordManager extends ListenerAdapter {
         serverStartTime = System.currentTimeMillis();
 
         try {
+            Activity activity = Activity.playing("Minecraft");
+            String type = config.getBotActivityType();
+            String text = config.getBotActivityText();
+            if (type != null && text != null && !text.isEmpty()) {
+                switch (type.toUpperCase()) {
+                    case "WATCHING": activity = Activity.watching(text); break;
+                    case "LISTENING": activity = Activity.listening(text); break;
+                    case "COMPETING": activity = Activity.competing(text); break;
+                    default: activity = Activity.playing(text); break;
+                }
+            }
+
             jda = JDABuilder.createDefault(token)
                     .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
-                    .setActivity(Activity.playing("Minecraft"))
+                    .setActivity(activity)
                     .addEventListeners(this)
                     .build();
             
@@ -92,7 +113,13 @@ public class DiscordManager extends ListenerAdapter {
             jda.updateCommands().addCommands(
                 Commands.slash("link", "Propoji tvuj Discord ucet s Minecraft uctem")
                         .addOption(OptionType.STRING, "code", "Overovaci kod ze hry", true),
-                Commands.slash("unlink", "Odpoji tvuj Discord ucet od Minecraft uctu")
+                Commands.slash("unlink", "Odpoji tvuj Discord ucet od Minecraft uctu"),
+                Commands.slash("ticket", "Sprava ticketu")
+                        .addSubcommands(
+                            new net.dv8tion.jda.api.interactions.commands.build.SubcommandData("create", "Vytvori novy ticket")
+                                .addOption(OptionType.STRING, "reason", "Duvod ticketu", true),
+                            new net.dv8tion.jda.api.interactions.commands.build.SubcommandData("close", "Uzavre aktualni ticket")
+                        )
             ).queue();
             
             startConsoleLogger();
@@ -110,7 +137,8 @@ public class DiscordManager extends ListenerAdapter {
         stopConsoleLogger();
         stopTopicUpdater();
         if (jda != null) {
-            jda.shutdown();
+            // Use shutdownNow for immediate shutdown without blocking
+            jda.shutdownNow();
             jda = null;
             LOGGER.info("Discord bot stopped.");
         }
@@ -123,11 +151,12 @@ public class DiscordManager extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        DiscordConfig config = DiscordConfig.getInstance();
         if (event.getName().equals("link")) {
             // Check if command is from the correct guild
-            String configuredGuildId = DiscordConfig.getInstance().getGuildId();
+            String configuredGuildId = config.getGuildId();
             if (event.getGuild() == null || !event.getGuild().getId().equals(configuredGuildId)) {
-                event.reply("Tento prikaz lze pouzit pouze na oficialnim Discord serveru.").setEphemeral(true).queue();
+                event.reply(config.getWrongGuildMessage()).setEphemeral(true).queue();
                 return;
             }
 
@@ -138,21 +167,25 @@ public class DiscordManager extends ListenerAdapter {
             UUID playerUuid = linkManager.getPlayerFromCode(code);
             
             if (playerUuid == null) {
-                event.reply("Neplatny nebo expirovany kod.").setEphemeral(true).queue();
+                event.reply(config.getInvalidCodeMessage()).setEphemeral(true).queue();
                 return;
             }
             
             boolean success = linkManager.verifyCode(code, discordId);
             if (success) {
-                String playerName = "Hrac"; // TODO: Get player name if possible
+                // Try to get player name from server if online, otherwise use UUID
+                String playerName = playerUuid.toString();
+                if (server != null) {
+                    net.minecraft.server.level.ServerPlayer player = server.getPlayerList().getPlayer(playerUuid);
+                    if (player != null) {
+                        playerName = player.getName().getString();
+                    }
+                }
                 
                 String message = DiscordConfig.getInstance().getLinkSuccessMessage()
-                        .replace("%player%", playerUuid.toString());
+                        .replace("%player%", playerName);
                 
                 event.reply(message).setEphemeral(true).queue();
-                
-                // Rename user if configured (TODO)
-                // event.getGuild().modifyNickname(event.getMember(), playerName).queue();
                 
             } else {
                 event.reply(DiscordConfig.getInstance().getAlreadyLinkedMessage()
@@ -170,7 +203,33 @@ public class DiscordManager extends ListenerAdapter {
             // For now, let's just try to unlink.
             
             linkManager.unlinkDiscordId(discordId);
-            event.reply("Vsechny propojene ucty byly uspesne odpojeny.").setEphemeral(true).queue();
+            event.reply(config.getUnlinkSuccessMessage()).setEphemeral(true).queue();
+        } else if (event.getName().equals("ticket")) {
+            String subcommand = event.getSubcommandName();
+            if (subcommand == null) return;
+
+            if (subcommand.equals("create")) {
+                String reason = event.getOption("reason").getAsString();
+                TicketManager.getInstance().createTicket(event.getMember(), reason);
+                event.reply(config.getTicketCreatedMessage()).setEphemeral(true).queue();
+            } else if (subcommand.equals("close")) {
+                if (event.getChannel() instanceof net.dv8tion.jda.api.entities.channel.concrete.TextChannel) {
+                    TicketManager.getInstance().closeTicket((net.dv8tion.jda.api.entities.channel.concrete.TextChannel) event.getChannel(), event.getMember());
+                    event.reply(config.getTicketClosingMessage()).setEphemeral(true).queue();
+                } else {
+                    event.reply(config.getTextChannelOnlyMessage()).setEphemeral(true).queue();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onButtonInteraction(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event) {
+        if (event.getComponentId().equals("close_ticket")) {
+            if (event.getChannel() instanceof net.dv8tion.jda.api.entities.channel.concrete.TextChannel) {
+                TicketManager.getInstance().closeTicket((net.dv8tion.jda.api.entities.channel.concrete.TextChannel) event.getChannel(), event.getMember());
+                event.reply(DiscordConfig.getInstance().getTicketClosingMessage()).setEphemeral(true).queue();
+            }
         }
     }
 
@@ -190,11 +249,18 @@ public class DiscordManager extends ListenerAdapter {
         if (event.getAuthor().isBot()) return;
         
         String linkChannelId = DiscordConfig.getInstance().getLinkChannelId();
-        if (linkChannelId == null || linkChannelId.isEmpty()) return;
+        LOGGER.debug("Message received in channel {}, linkChannelId={}", event.getChannel().getId(), linkChannelId);
+        
+        if (linkChannelId == null || linkChannelId.isEmpty()) {
+            LOGGER.debug("Link channel ID is not configured, skipping message processing");
+            return;
+        }
         
         if (event.getChannel().getId().equals(linkChannelId)) {
-            String code = event.getMessage().getContentRaw().trim();
+            String message = event.getMessage().getContentRaw().trim();
             long discordId = event.getAuthor().getIdLong();
+            
+            LOGGER.info("Processing message '{}' from user {} (ID: {}) in link channel", message, event.getAuthor().getAsTag(), discordId);
             
             // Delete the message to keep channel clean (security/privacy)
             try {
@@ -202,21 +268,44 @@ public class DiscordManager extends ListenerAdapter {
             } catch (Exception ignored) {}
 
             LinkManager linkManager = LinkManager.getInstance();
-            UUID playerUuid = linkManager.getPlayerFromCode(code);
+            DiscordConfig config = DiscordConfig.getInstance();
             
-            if (playerUuid == null) {
-                // Invalid code
-                event.getChannel().sendMessage(event.getAuthor().getAsMention() + ", tento kod je neplatny nebo expirovany.")
-                        .queue(msg -> msg.delete().queueAfter(5, java.util.concurrent.TimeUnit.SECONDS));
+            // First check if user is already linked
+            List<UUID> linkedUuids = linkManager.getUuids(discordId);
+            if (!linkedUuids.isEmpty()) {
+                // User is already linked
+                LOGGER.info("User {} (ID: {}) is already linked to {} account(s)", event.getAuthor().getAsTag(), discordId, linkedUuids.size());
+                StringBuilder sb = new StringBuilder();
+                sb.append(event.getAuthor().getAsMention());
+                if (linkedUuids.size() == 1) {
+                    sb.append(config.getAlreadyLinkedSingleMessage().replace("%uuid%", linkedUuids.get(0).toString()));
+                } else {
+                    sb.append(config.getAlreadyLinkedMultipleMessage().replace("%count%", String.valueOf(linkedUuids.size())));
+                }
+                event.getChannel().sendMessage(sb.toString())
+                        .queue(msg -> msg.delete().queueAfter(8, java.util.concurrent.TimeUnit.SECONDS));
                 return;
             }
             
-            boolean success = linkManager.verifyCode(code, discordId);
+            // Try to verify the code
+            UUID playerUuid = linkManager.getPlayerFromCode(message);
+            
+            if (playerUuid == null) {
+                // Invalid code or not a code - check if it's just a status check
+                LOGGER.info("Invalid or expired code '{}' from user {} (ID: {}) - user not linked", message, event.getAuthor().getAsTag(), discordId);
+                event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + config.getNotLinkedMessage())
+                        .queue(msg -> msg.delete().queueAfter(8, java.util.concurrent.TimeUnit.SECONDS));
+                return;
+            }
+            
+            LOGGER.info("Valid code found for player UUID: {}", playerUuid);
+            boolean success = linkManager.verifyCode(message, discordId);
             if (success) {
-                String message = DiscordConfig.getInstance().getLinkSuccessMessage()
+                LOGGER.info("Successfully linked Discord ID {} to player UUID {}", discordId, playerUuid);
+                String successMsg = DiscordConfig.getInstance().getLinkSuccessMessage()
                         .replace("%player%", playerUuid.toString());
                 
-                event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + message)
+                event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + successMsg)
                         .queue(msg -> msg.delete().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS));
                 
                 // Assign Role
@@ -226,6 +315,7 @@ public class DiscordManager extends ListenerAdapter {
                         Role role = event.getGuild().getRoleById(roleId);
                         if (role != null) {
                             event.getGuild().addRoleToMember(event.getMember(), role).queue();
+                            LOGGER.info("Assigned role {} to user {}", roleId, event.getAuthor().getAsTag());
                         } else {
                             LOGGER.warn("Configured linkedRoleId {} not found in guild.", roleId);
                         }
@@ -233,22 +323,48 @@ public class DiscordManager extends ListenerAdapter {
                         LOGGER.error("Failed to assign role: {}", e.getMessage());
                     }
                 }
-                
-                // Rename user if configured (TODO)
-                // event.getGuild().modifyNickname(event.getMember(), "PlayerName").queue();
             } else {
+                LOGGER.warn("Link verification failed for Discord ID {} - max accounts limit reached", discordId);
                 String msg = DiscordConfig.getInstance().getAlreadyLinkedMessage()
                         .replace("%max%", String.valueOf(DiscordConfig.getInstance().getMaxAccountsPerDiscord()));
                 event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + msg)
                         .queue(m -> m.delete().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS));
             }
-        } else if (event.getChannel().getId().equals(DiscordConfig.getInstance().getChatChannelId())) {
+        }
+        
+        // Check if message is in chat channel
+        if (event.getChannel().getId().equals(DiscordConfig.getInstance().getChatChannelId())) {
             String message = event.getMessage().getContentDisplay(); // Gets readable content (resolves mentions)
             String user = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
             
             ChatBridge.getInstance().onDiscordMessage(user, message);
             return;
         }
+        
+        // Check if message is in a ticket channel
+        if (event.getChannel() instanceof net.dv8tion.jda.api.entities.channel.concrete.TextChannel) {
+            net.dv8tion.jda.api.entities.channel.concrete.TextChannel textChannel = (net.dv8tion.jda.api.entities.channel.concrete.TextChannel) event.getChannel();
+            if (textChannel.getName().startsWith("ticket-")) {
+                // This is a ticket channel, look up the player name from the channel ID
+                String playerName = TicketManager.getInstance().getPlayerNameForTicket(textChannel.getId());
+                
+                if (playerName == null) {
+                    LOGGER.warn("No player mapping found for ticket channel {} ({})", textChannel.getName(), textChannel.getId());
+                    return;
+                }
+                
+                String message = event.getMessage().getContentDisplay();
+                String user = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getName();
+                
+                LOGGER.info("Ticket message in channel '{}' (ID: {}) from '{}': found player '{}'", textChannel.getName(), textChannel.getId(), user, playerName);
+                
+                // Send to player in Minecraft
+                ChatBridge.getInstance().sendTicketMessageToPlayer(playerName, user, message);
+                return;
+            }
+        }
+        
+        LOGGER.debug("Message in channel {} ignored (not link, chat, or ticket channel)", event.getChannel().getId());
     }
     
     @Override
@@ -291,13 +407,24 @@ public class DiscordManager extends ListenerAdapter {
     }
     
     public void sendStatsReport(String date, int peak, double average) {
-        if (jda == null) return;
+        LOGGER.info("sendStatsReport called: date={}, peak={}, average={}", date, peak, average);
+        
+        if (jda == null) {
+            LOGGER.warn("Cannot send stats report - JDA is null");
+            return;
+        }
         
         String channelId = StatsConfig.getInstance().getReportChannelId();
-        if (channelId == null || channelId.isEmpty()) return;
+        LOGGER.info("Stats report channelId from config: '{}'", channelId);
+        
+        if (channelId == null || channelId.isEmpty()) {
+            LOGGER.warn("Cannot send stats report - reportChannelId is not configured");
+            return;
+        }
         
         net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
         if (channel != null) {
+            LOGGER.info("Sending stats report to channel: {}", channel.getName());
             EmbedBuilder eb = new EmbedBuilder();
             eb.setTitle("📊 Denní Statistiky - " + date);
             eb.setColor(Color.CYAN);
@@ -305,9 +432,12 @@ public class DiscordManager extends ListenerAdapter {
             eb.addField("Průměr Hráčů", String.format("%.2f", average), true);
             eb.setFooter("Voidium Stats");
             
-            channel.sendMessageEmbeds(eb.build()).queue();
+            channel.sendMessageEmbeds(eb.build()).queue(
+                success -> LOGGER.info("Stats report sent successfully"),
+                error -> LOGGER.error("Failed to send stats report: {}", error.getMessage())
+            );
         } else {
-            LOGGER.warn("Stats report channel {} not found.", channelId);
+            LOGGER.warn("Stats report channel {} not found. Check if channel ID is correct and bot has access.", channelId);
         }
     }
     
@@ -448,9 +578,9 @@ public class DiscordManager extends ListenerAdapter {
         config.getRootLogger().addAppender(consoleAppender, null, null);
         ctx.updateLoggers();
 
-        // Start Consumer Task
+        // Start Consumer Task (3 seconds interval for better performance)
         consoleExecutor = Executors.newSingleThreadScheduledExecutor();
-        consoleExecutor.scheduleAtFixedRate(this::processConsoleQueue, 1, 2, TimeUnit.SECONDS);
+        consoleExecutor.scheduleAtFixedRate(this::processConsoleQueue, 1, 3, TimeUnit.SECONDS);
     }
 
     private void stopConsoleLogger() {
@@ -499,11 +629,75 @@ public class DiscordManager extends ListenerAdapter {
         if (jda == null || !DiscordConfig.getInstance().isEnableStatusMessages()) return;
         
         String channelId = DiscordConfig.getInstance().getStatusChannelId();
-        if (channelId == null || channelId.isEmpty()) return;
+        if (channelId == null || channelId.isEmpty()) {
+            LOGGER.warn("Status messages are enabled but no channel ID is configured (statusChannelId or chatChannelId)");
+            return;
+        }
         
         net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
         if (channel != null) {
-            channel.sendMessage(message).queue();
+            channel.sendMessage(message).queue(
+                success -> LOGGER.debug("Status message sent: {}", message),
+                error -> LOGGER.error("Failed to send status message: {}", error.getMessage())
+            );
+        } else {
+            LOGGER.error("Status channel not found with ID: {}", channelId);
         }
+    }
+
+    public List<Role> getRoles() {
+        if (jda == null) return java.util.Collections.emptyList();
+        String guildId = DiscordConfig.getInstance().getGuildId();
+        if (guildId == null || guildId.isEmpty()) return java.util.Collections.emptyList();
+        net.dv8tion.jda.api.entities.Guild guild = jda.getGuildById(guildId);
+        if (guild == null) return java.util.Collections.emptyList();
+        return guild.getRoles();
+    }
+    
+    /**
+     * Get Discord role IDs for a player by their UUID
+     * @param playerUuid Player's UUID
+     * @return List of Discord role IDs (as strings), or empty list if not linked or unavailable
+     */
+    public List<String> getPlayerDiscordRoles(java.util.UUID playerUuid) {
+        if (jda == null) return java.util.Collections.emptyList();
+        
+        // Get Discord ID from linked accounts
+        Long discordId = LinkManager.getInstance().getDiscordId(playerUuid);
+        if (discordId == null) return java.util.Collections.emptyList();
+        
+        // Get guild
+        String guildId = DiscordConfig.getInstance().getGuildId();
+        if (guildId == null || guildId.isEmpty()) return java.util.Collections.emptyList();
+        net.dv8tion.jda.api.entities.Guild guild = jda.getGuildById(guildId);
+        if (guild == null) return java.util.Collections.emptyList();
+        
+        try {
+            // Retrieve member (synchronously for simplicity)
+            net.dv8tion.jda.api.entities.Member member = guild.retrieveMemberById(discordId).complete();
+            if (member == null) return java.util.Collections.emptyList();
+            
+            // Extract role IDs
+            List<String> roleIds = new java.util.ArrayList<>();
+            for (Role role : member.getRoles()) {
+                roleIds.add(role.getId());
+            }
+            return roleIds;
+        } catch (Exception e) {
+            LOGGER.error("Error fetching Discord roles for UUID {}: {}", playerUuid, e.getMessage());
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    public Role getRole(String roleId) {
+        if (jda == null) return null;
+        DiscordConfig config = DiscordConfig.getInstance();
+        String guildId = config.getGuildId();
+        if (guildId == null || guildId.isEmpty()) return null;
+        
+        Guild guild = jda.getGuildById(guildId);
+        if (guild == null) return null;
+        
+        return guild.getRoleById(roleId);
     }
 }

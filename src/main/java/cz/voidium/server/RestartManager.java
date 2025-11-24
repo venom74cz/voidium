@@ -31,6 +31,11 @@ public class RestartManager {
     public void reload() {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdownNow();
+            try {
+                scheduler.awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduleNextRestart();
@@ -154,7 +159,14 @@ public class RestartManager {
     
     public void cancelManualRestart() {
         // Zruš všechny naplánované úlohy
-        scheduler.shutdownNow();
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+            try {
+                scheduler.awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         
         // Vytvoř nový scheduler
         scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -197,6 +209,8 @@ public class RestartManager {
     }
 
     public void shutdown() {
-        scheduler.shutdown();
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
     }
 }

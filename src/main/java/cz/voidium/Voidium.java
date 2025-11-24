@@ -35,7 +35,7 @@ public class Voidium {
     public Voidium() {
         instance = this;
         if (FMLEnvironment.dist.isDedicatedServer()) {
-            LOGGER.info("VOIDIUM - SERVER MANAGER is loading...");
+            LOGGER.info("VOIDIUM - INTELLIGENT SERVER CONTROL is loading...");
             
             Path configDir = FMLPaths.CONFIGDIR.get();
             Path voidiumDir = configDir.resolve("voidium");
@@ -51,6 +51,8 @@ public class Voidium {
             cz.voidium.config.WebConfig.init(voidiumDir);
             cz.voidium.config.StatsConfig.init(voidiumDir);
             cz.voidium.config.RanksConfig.init(voidiumDir);
+            cz.voidium.config.TicketConfig.init(voidiumDir);
+            cz.voidium.config.PlayerListConfig.init(voidiumDir);
             
             // Registrace event listenerů
             NeoForge.EVENT_BUS.addListener(this::onServerStarting);
@@ -59,6 +61,7 @@ public class Voidium {
             NeoForge.EVENT_BUS.addListener(this::onServerStopped);
             NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
             NeoForge.EVENT_BUS.register(new cz.voidium.discord.DiscordWhitelist());
+            NeoForge.EVENT_BUS.register(new cz.voidium.ranks.ProgressEventListener());
             
             LOGGER.info("Voidium configuration loaded successfully!");
             // Init persistent skin cache directory + apply TTL from general config once it exists
@@ -137,6 +140,21 @@ public class Voidium {
             if (gc.isEnableRanks()) {
                 cz.voidium.ranks.RankManager.getInstance().start(event.getServer());
             }
+            
+            // Start Player List Manager
+            if (gc.isEnablePlayerList()) {
+                cz.voidium.playerlist.PlayerListManager.getInstance().start(event.getServer());
+                NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent e) -> {
+                    if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+                        cz.voidium.playerlist.PlayerListManager.getInstance().onPlayerJoin(player);
+                    }
+                });
+                NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent e) -> {
+                    if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+                        cz.voidium.playerlist.PlayerListManager.getInstance().onPlayerLeave(player);
+                    }
+                });
+            }
 
             // Start SkinRestorer only if server offline mode and enabled in config
             try {
@@ -169,7 +187,7 @@ public class Voidium {
             
             // Oznámení pro OPs
             if (announcementManager != null) {
-                announcementManager.broadcastToOps("&aVOIDIUM - SERVER MANAGER loaded and running!");
+                announcementManager.broadcastToOps("&aVOIDIUM - INTELLIGENT SERVER CONTROL loaded and running!");
                 announcementManager.broadcastToOps("&eVersion: 1.3.1");
                 announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
             }
@@ -180,6 +198,7 @@ public class Voidium {
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
         VoidiumCommand.register(event.getDispatcher());
+        cz.voidium.commands.TicketCommand.register(event.getDispatcher());
     }
 
     private void onServerStopping(ServerStoppingEvent event) {
@@ -195,6 +214,16 @@ public class Voidium {
         if (voteManager != null) {
             voteManager.shutdown();
         }
+        
+        // Stop PlayerListManager
+        cz.voidium.playerlist.PlayerListManager.getInstance().stop();
+        
+        // Stop Stats and Ranks Managers
+        cz.voidium.stats.StatsManager.getInstance().stop();
+        cz.voidium.ranks.RankManager.getInstance().stop();
+        
+        // Save progress tracker
+        cz.voidium.ranks.ProgressTracker.getInstance().save();
         
         cz.voidium.discord.DiscordManager.getInstance().sendStatusMessage(cz.voidium.config.DiscordConfig.getInstance().getStatusMessageStopping());
         

@@ -39,6 +39,9 @@ public class GeneralConfig {
 
     // Enable/disable Vote Manager (Votifier)
     private boolean enableVote = true;
+    
+    // Enable/disable Custom Player List (TAB menu)
+    private boolean enablePlayerList = true;
 
     // Number of hours to keep a cached skin entry (value+signature) before refetch.
     // Minimum enforced internally is 1. Set higher (e.g. 48) to reduce Mojang API calls,
@@ -112,6 +115,7 @@ public class GeneralConfig {
     public boolean isEnableStats() { return enableStats; }
     public boolean isEnableRanks() { return enableRanks; }
     public boolean isEnableVote() { return enableVote; }
+    public boolean isEnablePlayerList() { return enablePlayerList; }
     public int getSkinCacheHours() { return skinCacheHours; }
     public String getModPrefix() { return modPrefix; }
     

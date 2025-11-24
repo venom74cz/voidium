@@ -32,6 +32,22 @@ public class StatsManager {
     // Date -> List of player counts (recorded every minute)
     private Map<String, List<Integer>> dailySamples = new HashMap<>();
     
+    // Live History data for Web Panel
+    private final List<DataPoint> history = Collections.synchronizedList(new ArrayList<>());
+    private static final int MAX_HISTORY_POINTS = 1440; // 24 hours at 1 min interval
+
+    public static class DataPoint {
+        public long timestamp;
+        public int players;
+        public double tps;
+        
+        public DataPoint(long timestamp, int players, double tps) {
+            this.timestamp = timestamp;
+            this.players = players;
+            this.tps = tps;
+        }
+    }
+    
     private StatsManager() {
         this.dataPath = FMLPaths.CONFIGDIR.get().resolve("voidium").resolve("voidium_stats_data.json");
         loadData();
@@ -61,7 +77,8 @@ public class StatsManager {
 
     public void stop() {
         if (scheduler != null) {
-            scheduler.shutdown();
+            scheduler.shutdownNow();
+            scheduler = null;
         }
         saveData();
     }
@@ -78,18 +95,61 @@ public class StatsManager {
         
         dailySamples.computeIfAbsent(today, k -> new ArrayList<>()).add(playerCount);
         
+        // Update live history
+        double tps = getTps();
+        history.add(new DataPoint(System.currentTimeMillis(), playerCount, tps));
+        while (history.size() > MAX_HISTORY_POINTS) {
+            history.remove(0);
+        }
+        
         // Save occasionally? Or just on stop? Let's save on stop or maybe every hour.
         // For safety, let's save every time for now or maybe every 10 mins. 
         // Actually, let's just keep it in memory and save on stop, but if crash happens we lose data.
         // Better to save periodically.
         saveData(); 
     }
+    
+    private double getTps() {
+        if (server == null) return 20.0;
+        
+        try {
+            // Get average tick time from server using reflection
+            java.lang.reflect.Field tickTimesField = server.getClass().getDeclaredField("tickTimes");
+            tickTimesField.setAccessible(true);
+            long[] tickTimes = (long[]) tickTimesField.get(server);
+            
+            if (tickTimes == null || tickTimes.length == 0) return 20.0;
+            
+            long sum = 0;
+            for (long time : tickTimes) {
+                sum += time;
+            }
+            double avgTickNanos = (double) sum / tickTimes.length;
+            double avgTickMillis = avgTickNanos * 1.0E-6D;
+            
+            // TPS = 1000ms / avg tick time (capped at 20)
+            double tps = Math.min(1000.0 / avgTickMillis, 20.0);
+            return Math.max(0.0, tps); // Ensure non-negative
+        } catch (Exception e) {
+            // Field might not exist in this version or access failed
+            return 20.0;
+        }
+    }
+
+    public List<DataPoint> getHistory() {
+        synchronized (history) {
+            return new ArrayList<>(history);
+        }
+    }
 
     private void checkReportTime() {
         LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
         LocalTime reportTime = StatsConfig.getInstance().getReportTime();
         
+        LOGGER.debug("Checking report time: now={}, reportTime={}", now, reportTime);
+        
         if (now.equals(reportTime)) {
+            LOGGER.info("Report time matched! Sending daily report...");
             sendDailyReport();
         }
     }
@@ -98,6 +158,8 @@ public class StatsManager {
         String yesterday = LocalDate.now().minusDays(1).toString();
         List<Integer> samples = dailySamples.get(yesterday);
         
+        LOGGER.info("Sending daily report for {}, samples size: {}", yesterday, samples != null ? samples.size() : 0);
+        
         if (samples == null || samples.isEmpty()) {
             LOGGER.info("No stats data for yesterday ({}), skipping report.", yesterday);
             return;
@@ -105,6 +167,8 @@ public class StatsManager {
         
         int peak = Collections.max(samples);
         double average = samples.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+        
+        LOGGER.info("Stats for {}: peak={}, average={:.2f}", yesterday, peak, average);
         
         // Send to Discord
         DiscordManager.getInstance().sendStatsReport(yesterday, peak, average);

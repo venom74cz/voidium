@@ -71,6 +71,8 @@ public class AnnouncementManager {
     }
 
     public void shutdown() {
-        scheduler.shutdown();
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
     }
 }

@@ -7,7 +7,7 @@ issueTrackerURL="https://github.com/yourusername/voidium/issues"
 [[mods]]
 modId="voidium"
 version="1.3.5"
-displayName="VOIDIUM - SERVER MANAGER"
+displayName="VOIDIUM - INTELLIGENT SERVER CONTROL"
 # updateJSONURL="https://change.me.example.invalid/updates.json"
 displayURL="https://github.com/yourusername/voidium"
 logoFile="voidium.png"
@@ -21,7 +21,7 @@ Comprehensive dedicated server management suite for NeoForge 1.21.1:
 - Immediate offline‑mode Skin Restorer (persistent cache)
 - Performance / status utilities (players, memory, TPS)
 
-Brand: VOIDIUM - SERVER MANAGER
+Brand: VOIDIUM - INTELLIGENT SERVER CONTROL
 '''
 
 # Mixin configuration (list form to ensure detection)
