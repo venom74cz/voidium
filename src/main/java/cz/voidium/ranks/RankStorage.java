@@ -60,4 +60,11 @@ public class RankStorage {
         playerRanks.computeIfAbsent(uuid.toString(), k -> new HashSet<>()).add(rank);
         save();
     }
+    
+    public void setHighestRank(UUID uuid, String rank) {
+        Set<String> ranks = new HashSet<>();
+        ranks.add(rank);
+        playerRanks.put(uuid.toString(), ranks);
+        save();
+    }
 }

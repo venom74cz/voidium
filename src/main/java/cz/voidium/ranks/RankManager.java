@@ -128,11 +128,11 @@ public class RankManager {
             double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
             String uuid = player.getUUID().toString();
             
+            RanksConfig.RankDefinition highestRank = null;
+            
             for (RanksConfig.RankDefinition rank : ranks) {
-                // Check playtime requirement
                 if (hoursPlayed < rank.hours) continue;
                 
-                // Check custom conditions (if any)
                 boolean meetsCustomConditions = true;
                 if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
                     for (RanksConfig.CustomCondition condition : rank.customConditions) {
@@ -145,20 +145,25 @@ public class RankManager {
                 
                 if (!meetsCustomConditions) continue;
                 
-                // Player meets all requirements
-                String rankId = rank.type + ":" + rank.hours;
+                if (highestRank == null || rank.hours > highestRank.hours) {
+                    highestRank = rank;
+                }
+            }
+            
+            if (highestRank != null) {
+                String rankId = highestRank.type + ":" + highestRank.hours;
                 
                 if (!RankStorage.getInstance().hasRank(player.getUUID(), rankId)) {
                     LOGGER.info("Player {} reached {} hours and met all custom conditions, awarding {} '{}'", 
-                        player.getName().getString(), rank.hours, rank.type, rank.value);
+                        player.getName().getString(), highestRank.hours, highestRank.type, highestRank.value);
                     
-                    RankStorage.getInstance().addRank(player.getUUID(), rankId);
+                    RankStorage.getInstance().setHighestRank(player.getUUID(), rankId);
                     
                     String msg = config.getPromotionMessage()
-                            .replace("%rank%", rank.value.replace("&", "§"))
-                            .replace("{rank}", rank.value.replace("&", "§"))
+                            .replace("%rank%", highestRank.value.replace("&", "§"))
+                            .replace("{rank}", highestRank.value.replace("&", "§"))
                             .replace("{player}", player.getName().getString())
-                            .replace("{hours}", String.valueOf(rank.hours));
+                            .replace("{hours}", String.valueOf(highestRank.hours));
                     player.sendSystemMessage(Component.literal(msg.replace("&", "§")));
                 }
             }
