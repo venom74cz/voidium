@@ -68,11 +68,11 @@ _Next-generation server management made with AI_
 
 *   **Playtime Tracking**: Automatically tracks player activity (with AFK detection)
 *   **Automatic Promotions**: Promotes players based on configurable playtime milestones
-*   **🎯 Custom Conditions**: NEW! Set additional requirements beyond playtime:
-    *   Kill specific mobs (e.g., 100 zombies for "Monster Hunter")
+*   **🎯 Custom Conditions**: Set additional requirements beyond playtime:
+    *   Kill any mobs (e.g., 100 kills for "Monster Hunter")
     *   Visit unique biomes (e.g., explore 10 biomes for "Explorer")
-    *   Break specific blocks (e.g., mine 1000 stone for "Miner")
-    *   Place specific blocks (e.g., place 500 planks for "Builder")
+    *   Break any blocks (e.g., mine 1000 blocks for "Miner")
+    *   Place any blocks (e.g., place 500 blocks for "Builder")
 *   **Progress Tracking**: All player achievements automatically saved and persistent
 *   **Custom Rewards**: Executes commands (e.g., permission group changes) upon promotion
 *   **Flexible Configuration**: Support for prefix/suffix ranks with custom values

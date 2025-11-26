@@ -17,14 +17,12 @@ public class RanksConfig {
     private boolean countAfkTime = false; // Reserved for future AFK time tracking feature
     
     public static class CustomCondition {
-        public String type; // "KILL_MOBS", "VISIT_BIOMES", "BREAK_BLOCKS", "PLACE_BLOCKS"
-        public String target; // e.g. "minecraft:zombie" or "minecraft:plains"
-        public int count; // e.g. 100
+        public String type; // "KILL", "VISIT", "BREAK", "PLACE"
+        public int count;
 
         public CustomCondition() {}
-        public CustomCondition(String type, String target, int count) {
+        public CustomCondition(String type, int count) {
             this.type = type;
-            this.target = target;
             this.count = count;
         }
     }

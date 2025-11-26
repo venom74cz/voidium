@@ -84,7 +84,7 @@ public class RankManager {
             boolean meetsCustomConditions = true;
             if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
                 for (RanksConfig.CustomCondition condition : rank.customConditions) {
-                    if (!ProgressTracker.getInstance().meetsCondition(uuid, condition.type, condition.target, condition.count)) {
+                    if (!ProgressTracker.getInstance().meetsCondition(uuid, condition.type, condition.count)) {
                         meetsCustomConditions = false;
                         break;
                     }
@@ -136,14 +136,7 @@ public class RankManager {
                 boolean meetsCustomConditions = true;
                 if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
                     for (RanksConfig.CustomCondition condition : rank.customConditions) {
-                        boolean meets = ProgressTracker.getInstance().meetsCondition(
-                            uuid,
-                            condition.type,
-                            condition.target,
-                            condition.count
-                        );
-                        
-                        if (!meets) {
+                        if (!ProgressTracker.getInstance().meetsCondition(uuid, condition.type, condition.count)) {
                             meetsCustomConditions = false;
                             break;
                         }

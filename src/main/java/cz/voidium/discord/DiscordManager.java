@@ -444,11 +444,12 @@ public class DiscordManager extends ListenerAdapter {
     public void sendChatMessage(String player, UUID uuid, String message) {
         if (jda == null) return;
         
-        String displayPlayer = player != null ? player : "Server";
+        String displayPlayer = player != null ? stripMinecraftColors(player) : "Server";
+        String cleanMessage = stripMinecraftColors(message);
         
         String webhookUrl = DiscordConfig.getInstance().getChatWebhookUrl();
         if (webhookUrl != null && !webhookUrl.isEmpty()) {
-            sendWebhookMessage(webhookUrl, displayPlayer, uuid, message);
+            sendWebhookMessage(webhookUrl, displayPlayer, uuid, cleanMessage);
             return;
         }
         
@@ -458,8 +459,7 @@ public class DiscordManager extends ListenerAdapter {
         net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
         if (channel != null) {
             String format = DiscordConfig.getInstance().getMinecraftToDiscordFormat();
-            // Escape markdown in message to prevent injection
-            String safeMessage = message.replace("*", "\\*").replace("_", "\\_").replace("~", "\\~").replace("`", "\\`");
+            String safeMessage = cleanMessage.replace("*", "\\*").replace("_", "\\_").replace("~", "\\~").replace("`", "\\`");
             
             String finalMessage = format
                     .replace("%player%", displayPlayer)
@@ -467,6 +467,11 @@ public class DiscordManager extends ListenerAdapter {
             
             channel.sendMessage(finalMessage).queue();
         }
+    }
+    
+    private String stripMinecraftColors(String text) {
+        if (text == null) return "";
+        return text.replaceAll("§x§[0-9a-fA-F]§[0-9a-fA-F]§[0-9a-fA-F]§[0-9a-fA-F]§[0-9a-fA-F]§[0-9a-fA-F]", "").replaceAll("§[0-9a-fk-orA-FK-OR]", "");
     }
     
     private void sendWebhookMessage(String url, String username, UUID uuid, String message) {

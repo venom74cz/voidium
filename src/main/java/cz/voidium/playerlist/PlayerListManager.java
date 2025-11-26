@@ -15,6 +15,10 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import net.minecraft.stats.Stats;
 
 public class PlayerListManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("voidium-playerlist");
@@ -58,37 +62,20 @@ public class PlayerListManager {
 
     private void updatePlayerList() {
         if (server == null) return;
-        
         PlayerListConfig config = PlayerListConfig.getInstance();
         if (!config.isEnableCustomPlayerList()) return;
 
         try {
-            // Build header
-            String header = buildText(
-                config.getHeaderLine1(),
-                config.getHeaderLine2(),
-                config.getHeaderLine3()
-            );
-
-            // Build footer
-            String footer = buildText(
-                config.getFooterLine1(),
-                config.getFooterLine2(),
-                config.getFooterLine3()
-            );
-
-            // Apply to all players
-            Component headerComponent = Component.literal(header);
-            
+            // Build header/footer for each player (for playtime)
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                // Get player-specific ping for footer
                 int ping = player.connection.latency();
-                String personalFooter = footer.replace("%ping%", String.valueOf(ping));
-                
+                String header = buildTextWithPlayer(config.getHeaderLine1(), config.getHeaderLine2(), config.getHeaderLine3(), player, ping);
+                String footer = buildTextWithPlayer(config.getFooterLine1(), config.getFooterLine2(), config.getFooterLine3(), player, ping);
+
                 player.connection.send(new net.minecraft.network.protocol.game.ClientboundTabListPacket(
-                    headerComponent, Component.literal(personalFooter)
+                    Component.literal(header), Component.literal(footer)
                 ));
-                
+
                 // Update player team (for colored names and prefix/suffix)
                 if (config.isEnableCustomNames()) {
                     updatePlayerTeam(player);
@@ -97,6 +84,52 @@ public class PlayerListManager {
         } catch (Exception e) {
             LOGGER.error("Error updating player list", e);
         }
+    }
+
+    // New: Build text with player-specific placeholders
+    private String buildTextWithPlayer(String line1, String line2, String line3, ServerPlayer player, int ping) {
+        if (server == null) return "";
+        int online = server.getPlayerList().getPlayerCount();
+        int max = server.getPlayerList().getMaxPlayers();
+        double tps = getCurrentTPS();
+        StringBuilder sb = new StringBuilder();
+        if (!line1.isEmpty()) {
+            sb.append(replacePlaceholdersFull(line1, online, max, tps, ping, player));
+        }
+        if (!line2.isEmpty()) {
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(replacePlaceholdersFull(line2, online, max, tps, ping, player));
+        }
+        if (!line3.isEmpty()) {
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(replacePlaceholdersFull(line3, online, max, tps, ping, player));
+        }
+        return sb.toString();
+    }
+
+    // New: Replace all placeholders including %playtime% and %time%
+    private String replacePlaceholdersFull(String text, int online, int max, double tps, int ping, ServerPlayer player) {
+        // Playtime in hours (rounded to 1 decimal)
+        double playtimeHours = 0.0;
+        if (player != null) {
+            int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+            playtimeHours = ticksPlayed / 20.0 / 3600.0;
+        }
+        // Prague time
+        ZonedDateTime pragueTime = ZonedDateTime.now(ZoneId.of("Europe/Prague"));
+        String formattedTime = pragueTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+        // Memory usage (used/total MB)
+        long usedMem = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
+        long maxMem = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+        String memoryString = usedMem + " / " + maxMem + " MB";
+        return text
+            .replace("%online%", String.valueOf(online))
+            .replace("%max%", String.valueOf(max))
+            .replace("%tps%", String.format("%.1f", tps))
+            .replace("%ping%", String.valueOf(ping))
+            .replace("%playtime%", String.format("%.1f", playtimeHours))
+            .replace("%time%", formattedTime)
+            .replace("%memory%", memoryString);
     }
 
     private void updatePlayerTeam(ServerPlayer player) {

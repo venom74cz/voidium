@@ -22,8 +22,8 @@ public class ProgressTracker {
     
     private final Path dataPath;
     
-    // UUID -> condition type -> target -> count
-    private Map<String, Map<String, Map<String, Integer>>> playerProgress = new ConcurrentHashMap<>();
+    // UUID -> condition type -> count
+    private Map<String, Map<String, Integer>> playerProgress = new ConcurrentHashMap<>();
     
     public static class ProgressData {
         public Map<String, Map<String, Integer>> progress = new HashMap<>();
@@ -46,42 +46,38 @@ public class ProgressTracker {
     /**
      * Increment progress for a player
      * @param uuid Player UUID
-     * @param type Condition type (KILL_MOBS, VISIT_BIOMES, etc.)
-     * @param target Target identifier (e.g., "minecraft:zombie", "minecraft:plains")
+     * @param type Condition type (KILL, VISIT, BREAK, PLACE)
      * @param amount Amount to increment (default 1)
      */
-    public void incrementProgress(String uuid, String type, String target, int amount) {
+    public void incrementProgress(String uuid, String type, int amount) {
         playerProgress
             .computeIfAbsent(uuid, k -> new ConcurrentHashMap<>())
-            .computeIfAbsent(type, k -> new ConcurrentHashMap<>())
-            .merge(target, amount, Integer::sum);
+            .merge(type, amount, Integer::sum);
     }
     
     /**
      * Get progress for a player
      * @param uuid Player UUID
      * @param type Condition type
-     * @param target Target identifier
      * @return Current progress count
      */
-    public int getProgress(String uuid, String type, String target) {
+    public int getProgress(String uuid, String type) {
         return playerProgress
             .getOrDefault(uuid, Collections.emptyMap())
-            .getOrDefault(type, Collections.emptyMap())
-            .getOrDefault(target, 0);
+            .getOrDefault(type, 0);
     }
     
     /**
      * Check if player meets a specific condition
      */
-    public boolean meetsCondition(String uuid, String type, String target, int required) {
-        return getProgress(uuid, type, target) >= required;
+    public boolean meetsCondition(String uuid, String type, int required) {
+        return getProgress(uuid, type) >= required;
     }
     
     /**
      * Get all progress for a player
      */
-    public Map<String, Map<String, Integer>> getPlayerProgress(String uuid) {
+    public Map<String, Integer> getPlayerProgress(String uuid) {
         return playerProgress.getOrDefault(uuid, Collections.emptyMap());
     }
     
@@ -110,9 +106,9 @@ public class ProgressTracker {
         }
         
         try (Reader reader = Files.newBufferedReader(dataPath)) {
-            Map<String, Map<String, Map<String, Integer>>> loaded = GSON.fromJson(
+            Map<String, Map<String, Integer>> loaded = GSON.fromJson(
                 reader, 
-                new TypeToken<Map<String, Map<String, Map<String, Integer>>>>(){}.getType()
+                new TypeToken<Map<String, Map<String, Integer>>>(){}.getType()
             );
             if (loaded != null) {
                 playerProgress = new ConcurrentHashMap<>(loaded);

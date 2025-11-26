@@ -31,35 +31,20 @@ public class ProgressEventListener {
         if (!RanksConfig.getInstance().isEnableAutoRanks()) return;
         if (event.getEntity().level().isClientSide()) return;
         
-        // Check biome every 20 ticks (1 second) to avoid spam
         if (event.getEntity().tickCount % 20 != 0) return;
         
         var player = event.getEntity();
-        var biome = player.level().getBiome(player.blockPosition());
-        
-        // Get biome resource location
-        var biomeKey = player.level().registryAccess()
-            .registryOrThrow(Registries.BIOME)
-            .getKey(biome.value());
+        var biomeKey = player.level().getBiome(player.blockPosition()).unwrapKey().orElse(null);
         
         if (biomeKey != null) {
             String biomeName = biomeKey.toString();
             UUID uuid = player.getUUID();
             
-            // Check if this is a new biome for this session
             Set<String> visited = visitedBiomes.computeIfAbsent(uuid, k -> new HashSet<>());
             if (!visited.contains(biomeName)) {
                 visited.add(biomeName);
+                ProgressTracker.getInstance().incrementProgress(uuid.toString(), "VISIT", 1);
                 
-                // Increment progress
-                ProgressTracker.getInstance().incrementProgress(
-                    uuid.toString(), 
-                    "VISIT_BIOMES", 
-                    biomeName, 
-                    1
-                );
-                
-                // Auto-save periodically
                 if (visited.size() % 5 == 0) {
                     ProgressTracker.getInstance().save();
                 }
@@ -72,24 +57,9 @@ public class ProgressEventListener {
         if (!RanksConfig.getInstance().isEnableAutoRanks()) return;
         if (event.getEntity().level().isClientSide()) return;
         
-        // Check if killed by a player
         if (event.getSource().getEntity() instanceof net.minecraft.world.entity.player.Player player) {
-            LivingEntity killed = event.getEntity();
+            ProgressTracker.getInstance().incrementProgress(player.getUUID().toString(), "KILL", 1);
             
-            // Get entity type
-            String entityType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
-                .getKey(killed.getType())
-                .toString();
-            
-            // Increment progress
-            ProgressTracker.getInstance().incrementProgress(
-                player.getUUID().toString(),
-                "KILL_MOBS",
-                entityType,
-                1
-            );
-            
-            // Auto-save every 10 kills
             if (player.tickCount % 200 == 0) {
                 ProgressTracker.getInstance().save();
             }
@@ -101,21 +71,7 @@ public class ProgressEventListener {
         if (!RanksConfig.getInstance().isEnableAutoRanks()) return;
         if (event.getPlayer().level().isClientSide()) return;
         
-        var player = event.getPlayer();
-        var block = event.getState().getBlock();
-        
-        // Get block resource location
-        String blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK
-            .getKey(block)
-            .toString();
-        
-        // Increment progress
-        ProgressTracker.getInstance().incrementProgress(
-            player.getUUID().toString(),
-            "BREAK_BLOCKS",
-            blockName,
-            1
-        );
+        ProgressTracker.getInstance().incrementProgress(event.getPlayer().getUUID().toString(), "BREAK", 1);
     }
     
     @SubscribeEvent
@@ -124,20 +80,7 @@ public class ProgressEventListener {
         if (event.getEntity().level().isClientSide()) return;
         
         if (event.getEntity() instanceof net.minecraft.world.entity.player.Player player) {
-            var block = event.getPlacedBlock().getBlock();
-            
-            // Get block resource location
-            String blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK
-                .getKey(block)
-                .toString();
-            
-            // Increment progress
-            ProgressTracker.getInstance().incrementProgress(
-                player.getUUID().toString(),
-                "PLACE_BLOCKS",
-                blockName,
-                1
-            );
+            ProgressTracker.getInstance().incrementProgress(player.getUUID().toString(), "PLACE", 1);
         }
     }
     

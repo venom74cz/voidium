@@ -376,6 +376,11 @@ public class WebManager {
         // --- Ranks placeholders ---
         en.put("ranks.value.placeholder", "Prefix/Suffix text (e.g. &a[VIP])");
         en.put("ranks.hours.placeholder", "Required hours");
+        en.put("ranks.conditions.label", "Custom Conditions (Optional)");
+        en.put("ranks.conditions.desc", "Add extra requirements beyond playtime. Type: what to track | Target: specific item/mob/biome | Count: how many needed");
+        en.put("ranks.condition.type", "Condition Type");
+        en.put("ranks.condition.target", "Target (e.g. minecraft:zombie)");
+        en.put("ranks.condition.count", "Required Count");
         
         // --- Language and locale ---
         en.put("language.changed", "Language changed! Reloading...");
@@ -803,6 +808,11 @@ public class WebManager {
         // --- Ranks placeholders ---
         cz.put("ranks.value.placeholder", "Prefix/Suffix text (např. &a[VIP])");
         cz.put("ranks.hours.placeholder", "Požadované hodiny");
+        cz.put("ranks.conditions.label", "Vlastní podmínky (volitelné)");
+        cz.put("ranks.conditions.desc", "Přidejte extra požadavky kromě času. Typ: co sledovat | Cíl: konkrétní item/mob/biom | Počet: kolik je potřeba");
+        cz.put("ranks.condition.type", "Typ podmínky");
+        cz.put("ranks.condition.target", "Cíl (např. minecraft:zombie)");
+        cz.put("ranks.condition.count", "Požadovaný počet");
         
         // --- Language and locale ---
         cz.put("language.changed", "Jazyk změněn! Obnovování...");
@@ -1223,6 +1233,30 @@ public class WebManager {
                     ServerPlayer sp = mcServer.getPlayerList().getPlayerByName(player);
                     if (sp != null) {
                         mcServer.execute(() -> sp.connection.disconnect(Component.literal(t("kicked_by_admin"))));
+                    }
+                } else if ("ban".equals(action)) {
+                    String uuid = params.get("uuid");
+                    String name = params.get("name");
+                    if (uuid != null && name != null) {
+                        mcServer.execute(() -> {
+                            var profile = new com.mojang.authlib.GameProfile(UUID.fromString(uuid), name);
+                            mcServer.getPlayerList().getBans().add(new net.minecraft.server.players.UserBanListEntry(profile, null, "WebPanel", null, null));
+                            ServerPlayer sp = mcServer.getPlayerList().getPlayer(UUID.fromString(uuid));
+                            if (sp != null) sp.connection.disconnect(Component.literal("Banned"));
+                        });
+                    }
+                } else if ("unlink".equals(action)) {
+                    String uuid = params.get("uuid");
+                    if (uuid != null && cz.voidium.discord.LinkManager.getInstance() != null) {
+                        mcServer.execute(() -> cz.voidium.discord.LinkManager.getInstance().unlink(UUID.fromString(uuid)));
+                    }
+                } else if ("unban".equals(action)) {
+                    String uuid = params.get("uuid");
+                    if (uuid != null) {
+                        mcServer.execute(() -> {
+                            var profile = mcServer.getProfileCache().get(UUID.fromString(uuid)).orElse(null);
+                            if (profile != null) mcServer.getPlayerList().getBans().remove(profile);
+                        });
                     }
                 }
                 
@@ -2290,10 +2324,10 @@ public class WebManager {
         css.append("}");
         css.append(".playtime-rank-item {");
         css.append("  display: grid;");
-        css.append("  grid-template-columns: 120px 1fr 100px auto;");
+        css.append("  grid-template-columns: 120px 1fr 100px 1fr auto;");
         css.append("  gap: 10px;");
         css.append("  margin-bottom: 10px;");
-        css.append("  align-items: center;");
+        css.append("  align-items: start;");
         css.append("  padding: 10px;");
         css.append("  background: rgba(0, 0, 0, 0.2);");
         css.append("  border-radius: 8px;");
@@ -2306,8 +2340,36 @@ public class WebManager {
         css.append("  color: #bb86fc;");
         css.append("  font-weight: 600;");
         css.append("}");
+        css.append(".custom-conditions {");
+        css.append("  display: flex;");
+        css.append("  flex-direction: column;");
+        css.append("  gap: 8px;");
+        css.append("  padding: 10px;");
+        css.append("  background: rgba(187, 134, 252, 0.05);");
+        css.append("  border-radius: 8px;");
+        css.append("  border: 1px solid rgba(187, 134, 252, 0.2);");
+        css.append("}");
+        css.append(".custom-conditions label {");
+        css.append("  margin: 0 0 5px 0 !important;");
+        css.append("}");
+        css.append(".custom-condition-item {");
+        css.append("  display: grid;");
+        css.append("  grid-template-columns: 150px 150px auto;");
+        css.append("  gap: 8px;");
+        css.append("  align-items: center;");
+        css.append("  padding: 8px;");
+        css.append("  background: rgba(0, 0, 0, 0.3);");
+        css.append("  border-radius: 6px;");
+        css.append("}");
+        css.append(".custom-condition-item select,");
+        css.append(".custom-condition-item input {");
+        css.append("  margin: 0 !important;");
+        css.append("  padding: 8px !important;");
+        css.append("  font-size: 0.9em;");
+        css.append("}");
         css.append("@media (max-width: 768px) {");
         css.append("  .playtime-rank-item { grid-template-columns: 1fr; }");
+        css.append("  .custom-condition-item { grid-template-columns: 1fr; }");
         css.append("}");
         
         // =====================================================================
@@ -2482,34 +2544,71 @@ public class WebManager {
         // SEZNAM HRÁČŮ
         // =====================================================================
         sb.append("<div class='card'>");
-        sb.append("<h2>").append(t("player_list")).append(" <span style='font-size:0.7em;color:#aaa;'>(").append(mcServer.getPlayerCount()).append(")</span></h2>");
-        sb.append("<p style='color:#aaa;font-size:0.9em;margin:-10px 0 20px;'>").append(t("desc.player_list")).append("</p>");
+        sb.append("<h2>👥 All Players</h2>");
+        sb.append("<table><thead><tr>");
+        sb.append("<th>Name</th>");
+        sb.append("<th>UUID</th>");
+        sb.append("<th>Status</th>");
+        sb.append("<th>Discord</th>");
+        sb.append("<th>Actions</th>");
+        sb.append("</tr></thead><tbody>");
         
-        if (mcServer.getPlayerCount() == 0) {
-            sb.append("<div class='no-players'>").append(t("no_players")).append("</div>");
-        } else {
-            sb.append("<table><thead><tr>");
-            sb.append("<th>👤 Name</th>");
-            sb.append("<th>🆔 UUID</th>");
-            sb.append("<th>⚡ Action</th>");
-            sb.append("</tr></thead><tbody>");
+        java.util.Set<UUID> allPlayers = new java.util.HashSet<>();
+        for (ServerPlayer p : mcServer.getPlayerList().getPlayers()) allPlayers.add(p.getUUID());
+        for (com.mojang.authlib.GameProfile p : mcServer.getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).toList()) allPlayers.add(p.getId());
+        try { java.nio.file.Path playerDir = mcServer.getWorldPath(net.minecraft.world.level.storage.LevelResource.PLAYER_DATA_DIR); if (java.nio.file.Files.exists(playerDir)) { for (java.nio.file.Path f : java.nio.file.Files.list(playerDir).toList()) { String name = f.getFileName().toString(); if (name.endsWith(".dat")) allPlayers.add(UUID.fromString(name.replace(".dat", ""))); } } } catch (Exception e) {}
+        
+        for (UUID uuid : allPlayers) {
+            com.mojang.authlib.GameProfile profile = mcServer.getProfileCache().get(uuid).orElse(null);
+            String name = profile != null ? profile.getName() : uuid.toString().substring(0, 8);
+            boolean online = mcServer.getPlayerList().getPlayer(uuid) != null;
+            Long discordIdLong = cz.voidium.discord.LinkManager.getInstance().getDiscordId(uuid);
+            String discordId = discordIdLong != null ? discordIdLong.toString() : null;
+            boolean linked = discordId != null;
             
-            for (ServerPlayer player : mcServer.getPlayerList().getPlayers()) {
-                sb.append("<tr>");
-                sb.append("<td><strong>").append(escapeHtml(player.getGameProfile().getName())).append("</strong></td>");
-                sb.append("<td style='font-family:monospace;font-size:0.85em;color:#aaa;'>").append(player.getUUID()).append("</td>");
-                sb.append("<td>");
+            sb.append("<tr>");
+            sb.append("<td><strong>").append(escapeHtml(name)).append("</strong></td>");
+            sb.append("<td style='font-family:monospace;font-size:0.85em;color:#aaa;'>").append(uuid).append("</td>");
+            sb.append("<td>").append(online ? "<span style='color:#0f0'>●</span> Online" : "<span style='color:#666'>●</span> Offline").append("</td>");
+            sb.append("<td>").append(linked ? "<span style='color:#5865F2'>✓</span> Linked" : "<span style='color:#666'>✗</span> Not linked").append("</td>");
+            sb.append("<td style='display:flex;gap:5px;'>");
+            
+            if (online) {
                 sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
                 sb.append("<input type='hidden' name='action' value='kick'>");
-                sb.append("<input type='hidden' name='player' value='").append(escapeHtml(player.getGameProfile().getName())).append("'>");
-                sb.append("<button type='submit' class='danger' style='padding:8px 16px;font-size:0.85em;' onclick='return confirm(\"");
-                sb.append(t("kick")).append(" ").append(escapeHtml(player.getGameProfile().getName())).append("?\")'>❌ ").append(t("kick")).append("</button>");
+                sb.append("<input type='hidden' name='player' value='").append(escapeHtml(name)).append("'>");
+                sb.append("<button type='submit' class='danger' style='padding:6px 12px;font-size:0.8em;'>Kick</button>");
                 sb.append("</form>");
-                sb.append("</td></tr>");
             }
-            sb.append("</tbody></table>");
+            
+            boolean isBanned = mcServer.getPlayerList().getBans().get(profile) != null;
+            
+            if (!isBanned) {
+                sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
+                sb.append("<input type='hidden' name='action' value='ban'>");
+                sb.append("<input type='hidden' name='uuid' value='").append(uuid).append("'>");
+                sb.append("<input type='hidden' name='name' value='").append(escapeHtml(name)).append("'>");
+                sb.append("<button type='submit' class='danger' style='padding:6px 12px;font-size:0.8em;'>Ban</button>");
+                sb.append("</form>");
+            } else {
+                sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
+                sb.append("<input type='hidden' name='action' value='unban'>");
+                sb.append("<input type='hidden' name='uuid' value='").append(uuid).append("'>");
+                sb.append("<button type='submit' class='success' style='padding:6px 12px;font-size:0.8em;'>Unban</button>");
+                sb.append("</form>");
+            }
+            
+            if (linked) {
+                sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
+                sb.append("<input type='hidden' name='action' value='unlink'>");
+                sb.append("<input type='hidden' name='uuid' value='").append(uuid).append("'>");
+                sb.append("<button type='submit' style='padding:6px 12px;font-size:0.8em;background:#5865F2;'>Unlink</button>");
+                sb.append("</form>");
+            }
+            
+            sb.append("</td></tr>");
         }
-        sb.append("</div>");
+        sb.append("</tbody></table></div>");
         
         return sb.toString();
     }
@@ -2585,7 +2684,10 @@ public class WebManager {
         if (RestartConfig.getInstance() != null) {
             RestartConfig rc = RestartConfig.getInstance();
             json.append("\"restart\":{");
-            json.append("\"restartType\":\"").append(rc.getRestartType().name()).append("\",");
+            // Map FIXED_TIME to FIXED_TIMES for frontend compatibility
+            String restartTypeOut = rc.getRestartType().name();
+            if ("FIXED_TIME".equals(restartTypeOut)) restartTypeOut = "FIXED_TIMES";
+            json.append("\"restartType\":\"").append(restartTypeOut).append("\",");
             json.append("\"intervalHours\":").append(rc.getIntervalHours()).append(",");
             json.append("\"delayMinutes\":").append(rc.getDelayMinutes()).append(",");
             json.append("\"fixedRestartTimes\":[");
@@ -2884,7 +2986,6 @@ public class WebManager {
         js.append("    \n");
         js.append("    let html = '';\n");
         js.append("    \n");
-        
         // Render každé sekce
         js.append("    // Sekce: Web\n");
         js.append("    if (configData.web) {\n");
@@ -2894,35 +2995,29 @@ public class WebManager {
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
-        js.append("    // Sekce: General\n");
-        js.append("    if (configData.general) {\n");
-        js.append("        html += renderSection('general', t('config.section.general'), [\n");
-        js.append("            {key: 'enableMod', type: 'checkbox', value: configData.general.enableMod},\n");
-        js.append("            {key: 'enableRestarts', type: 'checkbox', value: configData.general.enableRestarts},\n");
-        js.append("            {key: 'enableAnnouncements', type: 'checkbox', value: configData.general.enableAnnouncements},\n");
-        js.append("            {key: 'enableSkinRestorer', type: 'checkbox', value: configData.general.enableSkinRestorer},\n");
-        js.append("            {key: 'enableDiscord', type: 'checkbox', value: configData.general.enableDiscord},\n");
-        js.append("            {key: 'enableWeb', type: 'checkbox', value: configData.general.enableWeb},\n");
-        js.append("            {key: 'enableStats', type: 'checkbox', value: configData.general.enableStats},\n");
-        js.append("            {key: 'enableRanks', type: 'checkbox', value: configData.general.enableRanks},\n");
-        js.append("            {key: 'enableVote', type: 'checkbox', value: configData.general.enableVote},\n");
-        js.append("            {key: 'enablePlayerList', type: 'checkbox', value: configData.general.enablePlayerList},\n");
-        js.append("            {key: 'skinCacheHours', type: 'number', min: 1, max: 720, value: configData.general.skinCacheHours}\n");
-        js.append("        ]);\n");
-        js.append("    }\n");
-        js.append("    \n");
-        
+        // Sekce: General odebrána dle požadavku
+        // (vypínání modulů je přímo u každého modulu)
         js.append("    // Sekce: Restart\n");
         js.append("    if (configData.restart) {\n");
-        js.append("        html += renderSection('restart', t('config.section.restart'), [\n");
-        js.append("            {key: 'restartType', type: 'select', options: ['FIXED_TIMES', 'INTERVAL'], value: configData.restart.restartType},\n");
-        js.append("            {key: 'intervalHours', type: 'number', min: 1, max: 168, value: configData.restart.intervalHours},\n");
-        js.append("            {key: 'delayMinutes', type: 'number', min: 1, max: 60, value: configData.restart.delayMinutes},\n");
-        js.append("            {key: 'fixedRestartTimes', type: 'timelist', value: configData.restart.fixedRestartTimes}\n");
-        js.append("        ]);\n");
+        js.append("        let type = configData.restart.restartType || 'FIXED_TIMES';\n");
+        js.append("        // Mapování backend hodnot na frontend\n");
+        js.append("        if (type === 'FIXED_TIME') type = 'FIXED_TIMES';\n");
+        js.append("        if (type === 'DELAY') type = 'DELAYED';\n");
+        js.append("        \n");
+        js.append("        html += '<div class=\\\"config-section\\\" id=\\\"section-restart\\\">';\n");
+        js.append("        html += '<h3 class=\\\"section-title\\\">' + t('config.section.restart') + '</h3>';\n");
+        js.append("        html += '<div class=\\\"section-content\\\">';\n");
+        js.append("        html += renderField('restart', {key: 'restartType', type: 'select', options: ['FIXED_TIMES', 'INTERVAL', 'DELAYED'], value: type});\n");
+        js.append("        if (type === 'FIXED_TIMES') {\n");
+        js.append("            html += renderField('restart', {key: 'fixedRestartTimes', type: 'timelist', value: configData.restart.fixedRestartTimes});\n");
+        js.append("        } else if (type === 'INTERVAL') {\n");
+        js.append("            html += renderField('restart', {key: 'intervalHours', type: 'number', min: 1, max: 168, value: configData.restart.intervalHours});\n");
+        js.append("        } else if (type === 'DELAYED') {\n");
+        js.append("            html += renderField('restart', {key: 'delayMinutes', type: 'number', min: 1, max: 1440, value: configData.restart.delayMinutes});\n");
+        js.append("        }\n");
+        js.append("        html += '<button class=\\\"btn btn-save\\\" onclick=\\\"saveSection(\\'restart\\')\\\">' + t('btn.save') + '</button>';\n");
+        js.append("        html += '</div></div>';\n");
         js.append("    }\n");
-        js.append("    \n");
         
         js.append("    // Sekce: Announcement\n");
         js.append("    if (configData.announcement) {\n");
@@ -3065,7 +3160,9 @@ public class WebManager {
         js.append("            html += '>';\n");
         js.append("            break;\n");
         js.append("        case 'select':\n");
-        js.append("            html += '<select id=\"' + id + '\">';\n");
+        js.append("            // Speciální handling pro restartType - při změně znovu vyrenderovat sekci\n");
+        js.append("            const onChange = (section === 'restart' && field.key === 'restartType') ? ' onchange=\\\"onRestartTypeChange()\\\"' : '';\n");
+        js.append("            html += '<select id=\"' + id + '\"' + onChange + '>';\n");
         js.append("            field.options.forEach(opt => {\n");
         js.append("                html += '<option value=\"' + opt + '\"' + (field.value === opt ? ' selected' : '') + '>' + opt + '</option>';\n");
         js.append("            });\n");
@@ -3174,6 +3271,24 @@ public class WebManager {
         js.append("        html += '</select>';\n");
         js.append("        html += '<input type=\"text\" placeholder=\"' + t('ranks.value.placeholder') + '\" value=\"' + escapeHtml(rank.value || '') + '\" data-field=\"value\">';\n");
         js.append("        html += '<input type=\"number\" placeholder=\"' + t('ranks.hours.placeholder') + '\" value=\"' + (rank.hours || 0) + '\" min=\"0\" data-field=\"hours\">';\n");
+        // --- Custom Conditions ---
+        js.append("        html += '<div class=\"custom-conditions\">';\n");
+        js.append("        html += '<label style=\"color:#bb86fc;font-size:0.95em;\" title=\"' + t('ranks.conditions.desc') + '\">' + t('ranks.conditions.label') + '</label>';\n");
+        js.append("        (rank.customConditions || []).forEach((cond, cidx) => {\n");
+        js.append("            html += '<div class=\"custom-condition-item\" data-cidx=\"' + cidx + '\">';\n");
+        js.append("            html += '<select data-ccfield=\"type\" title=\"' + t('ranks.condition.type') + '\">';\n");
+        js.append("            ['KILL','VISIT','BREAK','PLACE'].forEach(opt => {\n");
+        js.append("                html += '<option value=\"' + opt + '\"' + (cond.type === opt ? ' selected' : '') + '>' + opt + '</option>';\n");
+        js.append("            });\n");
+        js.append("            html += '</select>';\n");
+
+        js.append("            html += '<input type=\"number\" placeholder=\"' + t('ranks.condition.count') + '\" value=\"' + (cond.count || 0) + '\" min=\"1\" data-ccfield=\"count\">';\n");
+        js.append("            html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeCustomCondition(' + idx + ',' + cidx + ')\">×</button>';\n");
+        js.append("            html += '</div>';\n");
+        js.append("        });\n");
+        js.append("        html += '<button class=\"btn btn-small btn-add\" onclick=\"addCustomCondition(' + idx + ')\">+ ' + t('ranks.conditions.label') + '</button>';\n");
+        js.append("        html += '</div>';\n");
+        // --- End Custom Conditions ---
         js.append("        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removePlaytimeRank(' + idx + ')\">×</button>';\n");
         js.append("        html += '</div>';\n");
         js.append("    });\n");
@@ -3446,6 +3561,33 @@ public class WebManager {
         js.append("    const section = document.getElementById('section-' + sectionId);\n");
         js.append("    if (!section) return {};\n");
         js.append("    \n");
+        js.append("    // Pro restart sekci použij data z configData (zachová všechny hodnoty)\n");
+        js.append("    if (sectionId === 'restart') {\n");
+        js.append("        const data = {...configData.restart};\n");
+        js.append("        // Aktualizuj pouze viditelná pole\n");
+        js.append("        const typeSelect = document.getElementById('restart_restartType');\n");
+        js.append("        if (typeSelect) {\n");
+        js.append("            let type = typeSelect.value;\n");
+        js.append("            // Mapování frontend hodnot zpět na backend\n");
+        js.append("            if (type === 'FIXED_TIMES') type = 'FIXED_TIME';\n");
+        js.append("            if (type === 'DELAYED') type = 'DELAY';\n");
+        js.append("            data.restartType = type;\n");
+        js.append("        }\n");
+        js.append("        const intervalInput = document.getElementById('restart_intervalHours');\n");
+        js.append("        if (intervalInput) data.intervalHours = parseInt(intervalInput.value) || 0;\n");
+        js.append("        const delayInput = document.getElementById('restart_delayMinutes');\n");
+        js.append("        if (delayInput) data.delayMinutes = parseInt(delayInput.value) || 0;\n");
+        js.append("        const timesContainer = document.getElementById('restart_fixedRestartTimes-container');\n");
+        js.append("        if (timesContainer) {\n");
+        js.append("            const times = [];\n");
+        js.append("            timesContainer.querySelectorAll('input[data-list]').forEach(input => {\n");
+        js.append("                if (input.value) times.push(input.value);\n");
+        js.append("            });\n");
+        js.append("            data.fixedRestartTimes = times;\n");
+        js.append("        }\n");
+        js.append("        return data;\n");
+        js.append("    }\n");
+        js.append("    \n");
         js.append("    const data = {};\n");
         js.append("    \n");
         js.append("    // Collect all inputs\n");
@@ -3498,7 +3640,18 @@ public class WebManager {
         js.append("            const type = item.querySelector('select[data-field=\"type\"]').value;\n");
         js.append("            const value = item.querySelector('input[data-field=\"value\"]').value;\n");
         js.append("            const hours = parseInt(item.querySelector('input[data-field=\"hours\"]').value) || 0;\n");
-        js.append("            ranks.push({type, value, hours});\n");
+        js.append("            \n");
+        js.append("            // Collect custom conditions\n");
+        js.append("            const customConditions = [];\n");
+        js.append("            item.querySelectorAll('.custom-condition-item').forEach(condItem => {\n");
+        js.append("                const condType = condItem.querySelector('select[data-ccfield=\"type\"]').value;\n");
+        js.append("                const count = parseInt(condItem.querySelector('input[data-ccfield=\"count\"]').value) || 1;\n");
+        js.append("                customConditions.push({type: condType, count: count});\n");
+        js.append("            });\n");
+        js.append("            \n");
+        js.append("            const rank = {type, value, hours};\n");
+        js.append("            if (customConditions.length > 0) rank.customConditions = customConditions;\n");
+        js.append("            ranks.push(rank);\n");
         js.append("        });\n");
         js.append("        data.ranks = ranks;\n");
         js.append("    }\n");
@@ -3512,6 +3665,14 @@ public class WebManager {
         js.append("// ============================================================\n");
         js.append("// MANIPULACE SE SEZNAMY\n");
         js.append("// ============================================================\n\n");
+        
+        js.append("function onRestartTypeChange() {\n");
+        js.append("    const select = document.getElementById('restart_restartType');\n");
+        js.append("    if (!select) return;\n");
+        js.append("    const newType = select.value;\n");
+        js.append("    configData.restart.restartType = newType;\n");
+        js.append("    renderConfig();\n");
+        js.append("}\n\n");
         
         js.append("function addTimeItem(listId) {\n");
         js.append("    const container = document.getElementById(listId + '-container');\n");
@@ -3581,6 +3742,10 @@ public class WebManager {
         js.append("    div.innerHTML = '<select data-field=\"type\"><option value=\"PREFIX\" selected>PREFIX</option><option value=\"SUFFIX\">SUFFIX</option></select>' +\n");
         js.append("                    '<input type=\"text\" placeholder=\"' + t('ranks.value.placeholder') + '\" value=\"\" data-field=\"value\">' +\n");
         js.append("                    '<input type=\"number\" placeholder=\"' + t('ranks.hours.placeholder') + '\" value=\"0\" min=\"0\" data-field=\"hours\">' +\n");
+        js.append("                    '<div class=\"custom-conditions\">' +\n");
+        js.append("                    '<label style=\"color:#bb86fc;font-size:0.95em;\">Podmínky pro rank (volitelné):</label>' +\n");
+        js.append("                    '<button class=\"btn btn-small btn-add\" onclick=\"addCustomCondition(' + newIdx + ')\">+ Podmínka</button>' +\n");
+        js.append("                    '</div>' +\n");
         js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removePlaytimeRank(' + newIdx + ')\">×</button>';\n");
         js.append("    container.insertBefore(div, container.lastElementChild);\n");
         js.append("}\n\n");
@@ -3589,6 +3754,35 @@ public class WebManager {
         js.append("    const container = document.getElementById('ranks_ranks-container');\n");
         js.append("    const item = container.querySelector('.playtime-rank-item[data-idx=\"' + idx + '\"]');\n");
         js.append("    if (item) item.remove();\n");
+        js.append("}\n\n");
+        
+        js.append("function addCustomCondition(rankIdx) {\n");
+        js.append("    const rankItem = document.querySelector('.playtime-rank-item[data-idx=\"' + rankIdx + '\"]');\n");
+        js.append("    if (!rankItem) return;\n");
+        js.append("    const condContainer = rankItem.querySelector('.custom-conditions');\n");
+        js.append("    if (!condContainer) return;\n");
+        js.append("    const existingConds = condContainer.querySelectorAll('.custom-condition-item');\n");
+        js.append("    const newCidx = existingConds.length;\n");
+        js.append("    const div = document.createElement('div');\n");
+        js.append("    div.className = 'custom-condition-item';\n");
+        js.append("    div.setAttribute('data-cidx', newCidx);\n");
+        js.append("    div.innerHTML = '<select data-ccfield=\"type\">' +\n");
+        js.append("                    '<option value=\"KILL\">KILL</option>' +\n");
+        js.append("                    '<option value=\"VISIT\">VISIT</option>' +\n");
+        js.append("                    '<option value=\"BREAK\">BREAK</option>' +\n");
+        js.append("                    '<option value=\"PLACE\">PLACE</option>' +\n");
+        js.append("                    '</select>' +\n");
+        js.append("                    '<input type=\"number\" placeholder=\"Počet\" value=\"1\" min=\"1\" data-ccfield=\"count\">' +\n");
+        js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeCustomCondition(' + rankIdx + ',' + newCidx + ')\">×</button>';\n");
+        js.append("    const addBtn = condContainer.querySelector('.btn-add');\n");
+        js.append("    condContainer.insertBefore(div, addBtn);\n");
+        js.append("}\n\n");
+        
+        js.append("function removeCustomCondition(rankIdx, condIdx) {\n");
+        js.append("    const rankItem = document.querySelector('.playtime-rank-item[data-idx=\"' + rankIdx + '\"]');\n");
+        js.append("    if (!rankItem) return;\n");
+        js.append("    const condItem = rankItem.querySelector('.custom-condition-item[data-cidx=\"' + condIdx + '\"]');\n");
+        js.append("    if (condItem) condItem.remove();\n");
         js.append("}\n\n");
         
         // Language and locale functions

@@ -29,7 +29,7 @@ public class DiscordWhitelist {
             
             String message = config.getKickMessage()
                     .replace("%code%", code)
-                    .replace("&", "§"); // Simple color code replacement
+                    .replace("&", "§");
             
             player.connection.disconnect(Component.literal(message));
         } else {

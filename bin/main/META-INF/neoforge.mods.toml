@@ -24,7 +24,7 @@ license="MIT"
 modId="voidium" #mandatory
 
 # The version number of the mod
-version="2.0.0" #mandatory
+version="2.0.2" #mandatory
 
 # A display name for the mod
 displayName="VOIDIUM" #mandatory
@@ -83,7 +83,7 @@ config="voidium.mixins.json"
     modId="minecraft"
     type="required"
     # This version range declares a minimum of the current minecraft version up to but not including the next major version
-    versionRange="[1.21.1,)"
+    versionRange="[1.21.1,1.21.11)"
     ordering="NONE"
     side="BOTH"
 
