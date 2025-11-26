@@ -93,6 +93,15 @@ _Next-generation server management made with AI_
 *   Persistent JSON cache, configurable TTL
 *   Manual refresh, auto-disabled in online mode
 
+## 🎁 Player List (TAB) Customization
+
+*   **Custom Header & Footer**: Configure 3 lines each with live placeholders (%online%, %max%, %tps%, %ping%)
+*   **Player Name Formatting**: Add rank prefixes/suffixes with full color code support
+*   **Default Prefix/Suffix**: Fallback formatting for players without Discord roles
+*   **Multiple Rank Modes**: Combine all applicable ranks or show only highest priority
+*   **Web Panel Integration**: Full configuration through browser interface
+*   **Live Updates**: Configurable refresh interval (minimum 3 seconds)
+
 ## ✅ Commands
 
 ### Operators
@@ -103,8 +112,8 @@ _Next-generation server management made with AI_
 
 ## 🔧 Technical
 
-*   Minecraft: 1.21.1
-*   Loader: NeoForge
+*   Minecraft: 1.21.1-1.21.10
+*   Loader: NeoForge (java21)
 *   Server-only (clients not required)
 *   License: MIT
 *   Lightweight & modular
@@ -122,13 +131,5 @@ _Next-generation server management made with AI_
 *   Statistics data is saved in `voidium_stats_data.json`
 *   Web panel accessible via token link printed to console on server start
 
-## 🎁 Player List (TAB) Customization
-
-*   **Custom Header & Footer**: Configure 3 lines each with live placeholders (%online%, %max%, %tps%, %ping%)
-*   **Player Name Formatting**: Add rank prefixes/suffixes with full color code support
-*   **Default Prefix/Suffix**: Fallback formatting for players without Discord roles
-*   **Multiple Rank Modes**: Combine all applicable ranks or show only highest priority
-*   **Web Panel Integration**: Full configuration through browser interface
-*   **Live Updates**: Configurable refresh interval (minimum 3 seconds)
 
 **One mod. Complete control. Zero complexity.**
