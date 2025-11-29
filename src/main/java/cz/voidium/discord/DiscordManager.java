@@ -522,6 +522,8 @@ public class DiscordManager extends ListenerAdapter {
 
     private void updateChannelTopic() {
         if (jda == null || server == null) return;
+        if (!DiscordConfig.getInstance().isEnableTopicUpdate()) return;
+        
         String channelId = DiscordConfig.getInstance().getChatChannelId();
         if (channelId == null || channelId.isEmpty()) return;
 
@@ -532,17 +534,22 @@ public class DiscordManager extends ListenerAdapter {
         int max = server.getMaxPlayers();
         long uptimeMillis = System.currentTimeMillis() - serverStartTime;
         String uptime = formatDuration(uptimeMillis);
+        double tps = 20.0;
 
         String format = DiscordConfig.getInstance().getChannelTopicFormat();
         String topic = format
                 .replace("%online%", String.valueOf(online))
                 .replace("%max%", String.valueOf(max))
+                .replace("%tps%", String.format("%.1f", tps))
                 .replace("%uptime%", uptime);
         
         // Check if topic is different to avoid API calls
         if (topic.equals(channel.getTopic())) return;
 
-        channel.getManager().setTopic(topic).queue();
+        channel.getManager().setTopic(topic).queue(
+            success -> LOGGER.debug("Channel topic updated: {}", topic),
+            error -> LOGGER.error("Failed to update channel topic: {}", error.getMessage())
+        );
     }
 
     private String formatDuration(long millis) {

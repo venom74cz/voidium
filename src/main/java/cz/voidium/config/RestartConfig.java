@@ -111,4 +111,10 @@ public class RestartConfig {
     public List<LocalTime> getFixedRestartTimes() { return fixedRestartTimes; }
     public int getIntervalHours() { return intervalHours; }
     public int getDelayMinutes() { return delayMinutes; }
+    
+    // Settery (potřebné pro WebManager)
+    public void setRestartType(RestartType restartType) { this.restartType = restartType; }
+    public void setFixedRestartTimes(List<LocalTime> fixedRestartTimes) { this.fixedRestartTimes = fixedRestartTimes; }
+    public void setIntervalHours(int intervalHours) { this.intervalHours = intervalHours; }
+    public void setDelayMinutes(int delayMinutes) { this.delayMinutes = delayMinutes; }
 }

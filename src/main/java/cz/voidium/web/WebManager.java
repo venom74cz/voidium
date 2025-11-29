@@ -2753,6 +2753,15 @@ public class WebManager {
             json.append("\"enableTopicUpdate\":").append(dc.isEnableTopicUpdate()).append(",");
             json.append("\"channelTopicFormat\":\"").append(escapeJson(dc.getChannelTopicFormat())).append("\",");
             json.append("\"uptimeFormat\":\"").append(escapeJson(dc.getUptimeFormat())).append("\",");
+            json.append("\"invalidCodeMessage\":\"").append(escapeJson(dc.getInvalidCodeMessage())).append("\",");
+            json.append("\"notLinkedMessage\":\"").append(escapeJson(dc.getNotLinkedMessage())).append("\",");
+            json.append("\"alreadyLinkedSingleMessage\":\"").append(escapeJson(dc.getAlreadyLinkedSingleMessage())).append("\",");
+            json.append("\"alreadyLinkedMultipleMessage\":\"").append(escapeJson(dc.getAlreadyLinkedMultipleMessage())).append("\",");
+            json.append("\"unlinkSuccessMessage\":\"").append(escapeJson(dc.getUnlinkSuccessMessage())).append("\",");
+            json.append("\"wrongGuildMessage\":\"").append(escapeJson(dc.getWrongGuildMessage())).append("\",");
+            json.append("\"ticketCreatedMessage\":\"").append(escapeJson(dc.getTicketCreatedMessage())).append("\",");
+            json.append("\"ticketClosingMessage\":\"").append(escapeJson(dc.getTicketClosingMessage())).append("\",");
+            json.append("\"textChannelOnlyMessage\":\"").append(escapeJson(dc.getTextChannelOnlyMessage())).append("\",");
             json.append("\"rolePrefixes\":").append(GSON.toJson(dc.getRolePrefixes()));
             json.append("},");
         }
@@ -3340,6 +3349,12 @@ public class WebManager {
         js.append("    html += renderField('discord', {key: 'statusMessageStarted', type: 'text', value: dc.statusMessageStarted});\n");
         js.append("    html += renderField('discord', {key: 'statusMessageStopping', type: 'text', value: dc.statusMessageStopping});\n");
         js.append("    html += renderField('discord', {key: 'statusMessageStopped', type: 'text', value: dc.statusMessageStopped});\n");
+        js.append("    \n");
+        js.append("    // Channel Topic Update\n");
+        js.append("    html += '<h4>Channel Topic Update</h4>';\n");
+        js.append("    html += renderField('discord', {key: 'enableTopicUpdate', type: 'checkbox', value: dc.enableTopicUpdate});\n");
+        js.append("    html += renderField('discord', {key: 'channelTopicFormat', type: 'text', value: dc.channelTopicFormat});\n");
+        js.append("    html += renderField('discord', {key: 'uptimeFormat', type: 'text', value: dc.uptimeFormat});\n");
         js.append("    \n");
         js.append("    // Role prefixes (special editor)\n");
         js.append("    html += '<h4>' + t('role.prefix.editor') + '</h4>';\n");

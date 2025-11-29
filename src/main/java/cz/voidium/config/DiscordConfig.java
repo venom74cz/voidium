@@ -167,6 +167,11 @@ public class DiscordConfig {
     public String getStatusMessageStopping() { return statusMessageStopping; }
     public String getStatusMessageStopped() { return statusMessageStopped; }
     
+    // Setters (pro WebManager)
+    public void setEnableTopicUpdate(boolean enableTopicUpdate) { this.enableTopicUpdate = enableTopicUpdate; }
+    public void setChannelTopicFormat(String channelTopicFormat) { this.channelTopicFormat = channelTopicFormat; }
+    public void setUptimeFormat(String uptimeFormat) { this.uptimeFormat = uptimeFormat; }
+    
     // Apply locale preset
     public void applyLocale(String locale) {
         java.util.Map<String, String> messages = LocalePresets.getDiscordMessages(locale);
