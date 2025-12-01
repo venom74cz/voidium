@@ -65,10 +65,17 @@ public class RestartManager {
         }
         
         LocalTime now = LocalTime.now();
+        
+        // Najdi nejbližší čas restartu - seřazený podle vzdálenosti od aktuálního času
         LocalTime nextRestart = config.getFixedRestartTimes().stream()
                 .filter(time -> time.isAfter(now))
-                .findFirst()
-                .orElse(config.getFixedRestartTimes().get(0));
+                .min((t1, t2) -> Long.compare(now.until(t1, ChronoUnit.MINUTES), now.until(t2, ChronoUnit.MINUTES)))
+                .orElse(
+                    // Pokud žádný čas není po aktuálním čase, vezmi nejbližší čas zítra
+                    config.getFixedRestartTimes().stream()
+                        .min((t1, t2) -> t1.compareTo(t2))
+                        .orElse(config.getFixedRestartTimes().get(0))
+                );
 
         long delayMinutes = now.until(nextRestart, ChronoUnit.MINUTES);
         if (delayMinutes <= 0) {
@@ -182,10 +189,17 @@ public class RestartManager {
         RestartConfig config = RestartConfig.getInstance();
         if (config.getRestartType() == RestartConfig.RestartType.FIXED_TIME) {
             java.time.LocalTime now = java.time.LocalTime.now();
+            
+            // Najdi nejbližší čas restartu - seřazený podle vzdálenosti od aktuálního času
             java.time.LocalTime next = config.getFixedRestartTimes().stream()
                 .filter(time -> time.isAfter(now))
-                .findFirst()
-                .orElse(config.getFixedRestartTimes().get(0));
+                .min((t1, t2) -> Long.compare(now.until(t1, java.time.temporal.ChronoUnit.MINUTES), now.until(t2, java.time.temporal.ChronoUnit.MINUTES)))
+                .orElse(
+                    // Pokud žádný čas není po aktuálním čase, vezmi nejbližší čas zítra
+                    config.getFixedRestartTimes().stream()
+                        .min((t1, t2) -> t1.compareTo(t2))
+                        .orElse(config.getFixedRestartTimes().get(0))
+                );
             
             long minutesUntil = now.until(next, java.time.temporal.ChronoUnit.MINUTES);
             if (minutesUntil <= 0) minutesUntil += 24 * 60;
