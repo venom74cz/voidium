@@ -41,6 +41,18 @@ public class TicketConfig {
     private boolean enableTranscript = true;
     private String transcriptFormat = "TXT"; // "TXT" or "JSON"
     private String transcriptFilename = "ticket-%user%-%date%.txt";
+    
+    // === IN-GAME MESSAGES (sent to Minecraft player) ===
+    // Message when Discord bot is not connected
+    private String mcBotNotConnectedMessage = "&cDiscord bot is not connected.";
+    // Message when configured Discord server is not found
+    private String mcGuildNotFoundMessage = "&cConfigured Discord server was not found.";
+    // Message when ticket category is not configured
+    private String mcCategoryNotFoundMessage = "&cTicket category is not configured!";
+    // Message when ticket is successfully created
+    private String mcTicketCreatedMessage = "&aTicket created on Discord!";
+    // Message when player's Discord account is not found on server
+    private String mcDiscordNotFoundMessage = "&cYour Discord account was not found on the server.";
 
     public TicketConfig(Path configPath) {
         this.configPath = configPath;
@@ -89,6 +101,13 @@ public class TicketConfig {
     public boolean isEnableTranscript() { return enableTranscript; }
     public String getTranscriptFormat() { return transcriptFormat; }
     public String getTranscriptFilename() { return transcriptFilename; }
+    
+    // MC message getters
+    public String getMcBotNotConnectedMessage() { return mcBotNotConnectedMessage; }
+    public String getMcGuildNotFoundMessage() { return mcGuildNotFoundMessage; }
+    public String getMcCategoryNotFoundMessage() { return mcCategoryNotFoundMessage; }
+    public String getMcTicketCreatedMessage() { return mcTicketCreatedMessage; }
+    public String getMcDiscordNotFoundMessage() { return mcDiscordNotFoundMessage; }
 
     public void applyLocale(String locale) {
         Map<String, String> messages = LocalePresets.getTicketMessages(locale);
@@ -98,6 +117,12 @@ public class TicketConfig {
         this.noPermissionMessage = messages.get("noPermissionMessage");
         this.ticketLimitReachedMessage = messages.get("ticketLimitReachedMessage");
         this.ticketAlreadyClosedMessage = messages.get("ticketAlreadyClosedMessage");
+        // MC messages
+        this.mcBotNotConnectedMessage = messages.get("mcBotNotConnectedMessage");
+        this.mcGuildNotFoundMessage = messages.get("mcGuildNotFoundMessage");
+        this.mcCategoryNotFoundMessage = messages.get("mcCategoryNotFoundMessage");
+        this.mcTicketCreatedMessage = messages.get("mcTicketCreatedMessage");
+        this.mcDiscordNotFoundMessage = messages.get("mcDiscordNotFoundMessage");
         save();
     }
 }

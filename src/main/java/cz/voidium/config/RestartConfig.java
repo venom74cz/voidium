@@ -41,6 +41,14 @@ public class RestartConfig {
     // Restart delay in minutes (only used when restartType = DELAY)
     // Server will restart X minutes after startup
     private int delayMinutes = 60;
+    
+    // === RESTART MESSAGES ===
+    // Warning message sent to players before restart. Use %minutes% for remaining time.
+    private String warningMessage = "&cServer restart in %minutes% minutes!";
+    // Final message sent when restart starts
+    private String restartingNowMessage = "&cServer is restarting now!";
+    // Kick message shown to players when they are disconnected for restart
+    private String kickMessage = "&cServer is restarting. Please reconnect in a few minutes.";
 
     public RestartConfig(Path configPath) {
         this.configPath = configPath;
@@ -117,4 +125,22 @@ public class RestartConfig {
     public void setFixedRestartTimes(List<LocalTime> fixedRestartTimes) { this.fixedRestartTimes = fixedRestartTimes; }
     public void setIntervalHours(int intervalHours) { this.intervalHours = intervalHours; }
     public void setDelayMinutes(int delayMinutes) { this.delayMinutes = delayMinutes; }
+    
+    // Message getters
+    public String getWarningMessage() { return warningMessage; }
+    public String getRestartingNowMessage() { return restartingNowMessage; }
+    public String getKickMessage() { return kickMessage; }
+    
+    // Message setters
+    public void setWarningMessage(String warningMessage) { this.warningMessage = warningMessage; }
+    public void setRestartingNowMessage(String restartingNowMessage) { this.restartingNowMessage = restartingNowMessage; }
+    public void setKickMessage(String kickMessage) { this.kickMessage = kickMessage; }
+    
+    public void applyLocale(String locale) {
+        java.util.Map<String, String> messages = LocalePresets.getRestartMessages(locale);
+        this.warningMessage = messages.get("warningMessage");
+        this.restartingNowMessage = messages.get("restartingNowMessage");
+        this.kickMessage = messages.get("kickMessage");
+        save();
+    }
 }

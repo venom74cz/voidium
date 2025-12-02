@@ -219,14 +219,14 @@ public class TicketManager {
     public void createTicket(long discordId, String reason, String initialMessage, net.minecraft.server.level.ServerPlayer player) {
         JDA jda = DiscordManager.getInstance().getJda();
         if (jda == null) {
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cDiscord bot není připojen."));
+            player.sendSystemMessage(cz.voidium.config.VoidiumConfig.formatMessage(TicketConfig.getInstance().getMcBotNotConnectedMessage()));
             return;
         }
         
         String guildId = cz.voidium.config.DiscordConfig.getInstance().getGuildId();
         Guild guild = jda.getGuildById(guildId);
         if (guild == null) {
-             player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cNakonfigurovaný Discord server nebyl nalezen."));
+             player.sendSystemMessage(cz.voidium.config.VoidiumConfig.formatMessage(TicketConfig.getInstance().getMcGuildNotFoundMessage()));
              return;
         }
         
@@ -239,7 +239,7 @@ public class TicketManager {
             Category category = guild.getCategoryById(categoryId);
             
             if (category == null) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cTicket kategorie není nakonfigurována!"));
+                player.sendSystemMessage(cz.voidium.config.VoidiumConfig.formatMessage(config.getMcCategoryNotFoundMessage()));
                 LOGGER.warn("Ticket category not found! Check configuration.");
                 return;
             }
@@ -257,9 +257,9 @@ public class TicketManager {
             }
             
             createTicketWithMessage(member, reason, initialMessage, playerName);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§aTicket vytvořen na Discordu!"));
+            player.sendSystemMessage(cz.voidium.config.VoidiumConfig.formatMessage(config.getMcTicketCreatedMessage()));
         }, error -> {
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cTvůj Discord účet nebyl nalezen na serveru."));
+            player.sendSystemMessage(cz.voidium.config.VoidiumConfig.formatMessage(TicketConfig.getInstance().getMcDiscordNotFoundMessage()));
         });
     }
     

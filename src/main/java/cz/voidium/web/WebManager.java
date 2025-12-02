@@ -196,10 +196,16 @@ public class WebManager {
         en.put("restart.fixedRestartTimes", "Fixed Restart Times");
         en.put("restart.intervalHours", "Interval (Hours)");
         en.put("restart.delayMinutes", "Delay (Minutes)");
+        en.put("restart.warningMessage", "Warning Message");
+        en.put("restart.restartingNowMessage", "Restarting Now Message");
+        en.put("restart.kickMessage", "Kick Message");
         en.put("desc.restart.restartType", "FIXED_TIME: Restart at specific times | INTERVAL: Restart every X hours | DELAY: Restart after X minutes from start");
         en.put("desc.restart.fixedRestartTimes", "Set exact times when the server should restart (format: HH:MM)");
         en.put("desc.restart.intervalHours", "Number of hours between automatic restarts");
         en.put("desc.restart.delayMinutes", "Minutes to wait before the first restart after server start");
+        en.put("desc.restart.warningMessage", "Broadcast warning at 30, 15, 10, 5, 3, 2, 1 minutes before restart. Use %minutes% placeholder");
+        en.put("desc.restart.restartingNowMessage", "Final broadcast message when server restart begins (0 minutes remaining)");
+        en.put("desc.restart.kickMessage", "Message shown to players when they are kicked during server restart");
         
         // --- Announcements ---
         en.put("announcement.prefix", "Prefix");
@@ -339,9 +345,19 @@ public class WebManager {
         en.put("tickets.enableTranscript", "Enable Transcript");
         en.put("tickets.transcriptFormat", "Transcript Format");
         en.put("tickets.transcriptFilename", "Transcript Filename");
+        en.put("tickets.mcBotNotConnectedMessage", "Bot Not Connected (MC)");
+        en.put("tickets.mcGuildNotFoundMessage", "Guild Not Found (MC)");
+        en.put("tickets.mcCategoryNotFoundMessage", "Category Not Found (MC)");
+        en.put("tickets.mcTicketCreatedMessage", "Ticket Created (MC)");
+        en.put("tickets.mcDiscordNotFoundMessage", "Discord Not Found (MC)");
         en.put("desc.tickets.enableTickets", "Enable the Discord ticket system");
         en.put("desc.tickets.transcriptFormat", "Format: TXT (readable) or JSON (structured)");
         en.put("desc.tickets.transcriptFilename", "Filename template. Variables: %user%, %date%, %reason%");
+        en.put("desc.tickets.mcBotNotConnectedMessage", "Message sent to player when Discord bot is offline");
+        en.put("desc.tickets.mcGuildNotFoundMessage", "Message sent to player when Discord server is not found");
+        en.put("desc.tickets.mcCategoryNotFoundMessage", "Message sent to player when ticket category is not configured");
+        en.put("desc.tickets.mcTicketCreatedMessage", "Message sent to player when ticket is created");
+        en.put("desc.tickets.mcDiscordNotFoundMessage", "Message sent when player's Discord account is not found");
         
         // --- Tlačítka a UI elementy ---
         en.put("btn.save", "Save");
@@ -447,6 +463,9 @@ public class WebManager {
         en.put("config.restart.fixedRestartTimes.desc", "Exact times for server restart (format: HH:MM)");
         en.put("config.restart.intervalHours.desc", "Hours between automatic restarts");
         en.put("config.restart.delayMinutes.desc", "Minutes to wait before first restart after server start");
+        en.put("config.restart.warningMessage.desc", "Broadcast at 60, 30, 15, 10, 5, 3, 2, 1 min before restart. Use %minutes%");
+        en.put("config.restart.restartingNowMessage.desc", "Final message when restart begins (0 minutes remaining)");
+        en.put("config.restart.kickMessage.desc", "Disconnect message shown to players during restart");
         
         // --- Announcement descriptions ---
         en.put("config.announcement.prefix.desc", "Text prefix before each announcement. Color codes: &0-f, &#RRGGBB");
@@ -468,6 +487,11 @@ public class WebManager {
         en.put("config.tickets.enableTranscript.desc", "Save ticket conversation when closing");
         en.put("config.tickets.transcriptFormat.desc", "TXT = readable text, JSON = structured data");
         en.put("config.tickets.transcriptFilename.desc", "Filename template. Variables: %user%, %date%, %reason%");
+        en.put("config.tickets.mcBotNotConnectedMessage.desc", "In-game message when Discord bot is offline");
+        en.put("config.tickets.mcGuildNotFoundMessage.desc", "In-game message when Discord server not found");
+        en.put("config.tickets.mcCategoryNotFoundMessage.desc", "In-game message when ticket category not set");
+        en.put("config.tickets.mcTicketCreatedMessage.desc", "In-game message after ticket creation. Use %channel%");
+        en.put("config.tickets.mcDiscordNotFoundMessage.desc", "In-game message when player's Discord not on server");
         
         // --- Discord descriptions ---
         en.put("config.discord.enableDiscord.desc", "Master switch for Discord bot integration");
@@ -628,10 +652,16 @@ public class WebManager {
         cz.put("restart.fixedRestartTimes", "Pevné časy restartu");
         cz.put("restart.intervalHours", "Interval (hodiny)");
         cz.put("restart.delayMinutes", "Zpoždění (minuty)");
+        cz.put("restart.warningMessage", "Varovná zpráva");
+        cz.put("restart.restartingNowMessage", "Zpráva při restartu");
+        cz.put("restart.kickMessage", "Zpráva při odpojení");
         cz.put("desc.restart.restartType", "FIXED_TIME: V konkrétní časy | INTERVAL: Každých X hodin | DELAY: Po X minutách od startu");
         cz.put("desc.restart.fixedRestartTimes", "Nastavte přesné časy restartů (formát: HH:MM)");
         cz.put("desc.restart.intervalHours", "Počet hodin mezi automatickými restarty");
         cz.put("desc.restart.delayMinutes", "Minuty čekání před prvním restartem");
+        cz.put("desc.restart.warningMessage", "Varování vysílané 30, 15, 10, 5, 3, 2, 1 minut před restartem. Použijte %minutes% placeholder");
+        cz.put("desc.restart.restartingNowMessage", "Finální zpráva vysílaná při zahájení restartu serveru (0 minut zbývá)");
+        cz.put("desc.restart.kickMessage", "Zpráva zobrazená hráčům při jejich vyhození během restartu serveru");
         
         // --- Announcements ---
         cz.put("announcement.prefix", "Prefix");
@@ -771,9 +801,19 @@ public class WebManager {
         cz.put("tickets.enableTranscript", "Zapnout přepis");
         cz.put("tickets.transcriptFormat", "Formát přepisu");
         cz.put("tickets.transcriptFilename", "Název souboru přepisu");
+        cz.put("tickets.mcBotNotConnectedMessage", "Bot nepřipojen (MC)");
+        cz.put("tickets.mcGuildNotFoundMessage", "Server nenalezen (MC)");
+        cz.put("tickets.mcCategoryNotFoundMessage", "Kategorie nenalezena (MC)");
+        cz.put("tickets.mcTicketCreatedMessage", "Ticket vytvořen (MC)");
+        cz.put("tickets.mcDiscordNotFoundMessage", "Discord nenalezen (MC)");
         cz.put("desc.tickets.enableTickets", "Povolit systém ticketů na Discordu");
         cz.put("desc.tickets.transcriptFormat", "Formát: TXT (čitelný) nebo JSON (strukturovaný)");
         cz.put("desc.tickets.transcriptFilename", "Šablona názvu. Proměnné: %user%, %date%, %reason%");
+        cz.put("desc.tickets.mcBotNotConnectedMessage", "Zpráva hráči když je Discord bot offline");
+        cz.put("desc.tickets.mcGuildNotFoundMessage", "Zpráva hráči když Discord server není nalezen");
+        cz.put("desc.tickets.mcCategoryNotFoundMessage", "Zpráva hráči když kategorie ticketů není nastavena");
+        cz.put("desc.tickets.mcTicketCreatedMessage", "Zpráva hráči po vytvoření ticketu");
+        cz.put("desc.tickets.mcDiscordNotFoundMessage", "Zpráva když Discord účet hráče není nalezen");
         
         // --- Tlačítka a UI elementy ---
         cz.put("btn.save", "Uložit");
@@ -879,6 +919,9 @@ public class WebManager {
         cz.put("config.restart.fixedRestartTimes.desc", "Přesné časy restartů (formát: HH:MM)");
         cz.put("config.restart.intervalHours.desc", "Hodiny mezi automatickými restarty");
         cz.put("config.restart.delayMinutes.desc", "Minuty čekání před prvním restartem");
+        cz.put("config.restart.warningMessage.desc", "Vysílá se 60, 30, 15, 10, 5, 3, 2, 1 min před restartem. Použij %minutes%");
+        cz.put("config.restart.restartingNowMessage.desc", "Finální zpráva při startu restartu (0 minut zbývá)");
+        cz.put("config.restart.kickMessage.desc", "Zpráva zobrazená hráčům při odpojení během restartu");
         
         // --- Announcement descriptions ---
         cz.put("config.announcement.prefix.desc", "Textový prefix před zprávou. Barvy: &0-f, &#RRGGBB");
@@ -900,6 +943,11 @@ public class WebManager {
         cz.put("config.tickets.enableTranscript.desc", "Uložit konverzaci při zavření ticketu");
         cz.put("config.tickets.transcriptFormat.desc", "TXT = čitelný text, JSON = strukturovaná data");
         cz.put("config.tickets.transcriptFilename.desc", "Šablona názvu souboru. Proměnné: %user%, %date%, %reason%");
+        cz.put("config.tickets.mcBotNotConnectedMessage.desc", "Zpráva ve hře když je Discord bot offline");
+        cz.put("config.tickets.mcGuildNotFoundMessage.desc", "Zpráva ve hře když Discord server není nalezen");
+        cz.put("config.tickets.mcCategoryNotFoundMessage.desc", "Zpráva ve hře když není nastavena kategorie");
+        cz.put("config.tickets.mcTicketCreatedMessage.desc", "Zpráva ve hře po vytvoření ticketu. Použij %channel%");
+        cz.put("config.tickets.mcDiscordNotFoundMessage.desc", "Zpráva ve hře když hráčův Discord není na serveru");
         
         // --- Discord descriptions ---
         cz.put("config.discord.enableDiscord.desc", "Hlavní přepínač Discord integrace");
@@ -1450,6 +1498,7 @@ public class WebManager {
                     RanksConfig.getInstance().applyLocale(locale);
                     VoteConfig.getInstance().applyLocale(locale);
                     TicketConfig.getInstance().applyLocale(locale);
+                    RestartConfig.getInstance().applyLocale(locale);
                     
                     sendResponse(exchange, "{\"status\":\"ok\"}", 200);
                 } catch (Exception e) {
@@ -2690,6 +2739,9 @@ public class WebManager {
             json.append("\"restartType\":\"").append(restartTypeOut).append("\",");
             json.append("\"intervalHours\":").append(rc.getIntervalHours()).append(",");
             json.append("\"delayMinutes\":").append(rc.getDelayMinutes()).append(",");
+            json.append("\"warningMessage\":\"").append(escapeJson(rc.getWarningMessage())).append("\",");
+            json.append("\"restartingNowMessage\":\"").append(escapeJson(rc.getRestartingNowMessage())).append("\",");
+            json.append("\"kickMessage\":\"").append(escapeJson(rc.getKickMessage())).append("\",");
             json.append("\"fixedRestartTimes\":[");
             List<LocalTime> times = rc.getFixedRestartTimes();
             for (int i = 0; i < times.size(); i++) {
@@ -2834,7 +2886,12 @@ public class WebManager {
             json.append("\"ticketAlreadyClosedMessage\":\"").append(escapeJson(tc.getTicketAlreadyClosedMessage())).append("\",");
             json.append("\"enableTranscript\":").append(tc.isEnableTranscript()).append(",");
             json.append("\"transcriptFormat\":\"").append(escapeJson(tc.getTranscriptFormat())).append("\",");
-            json.append("\"transcriptFilename\":\"").append(escapeJson(tc.getTranscriptFilename())).append("\"");
+            json.append("\"transcriptFilename\":\"").append(escapeJson(tc.getTranscriptFilename())).append("\",");
+            json.append("\"mcBotNotConnectedMessage\":\"").append(escapeJson(tc.getMcBotNotConnectedMessage())).append("\",");
+            json.append("\"mcGuildNotFoundMessage\":\"").append(escapeJson(tc.getMcGuildNotFoundMessage())).append("\",");
+            json.append("\"mcCategoryNotFoundMessage\":\"").append(escapeJson(tc.getMcCategoryNotFoundMessage())).append("\",");
+            json.append("\"mcTicketCreatedMessage\":\"").append(escapeJson(tc.getMcTicketCreatedMessage())).append("\",");
+            json.append("\"mcDiscordNotFoundMessage\":\"").append(escapeJson(tc.getMcDiscordNotFoundMessage())).append("\"");
             json.append("},");
         }
         
@@ -3024,6 +3081,10 @@ public class WebManager {
         js.append("        } else if (type === 'DELAYED') {\n");
         js.append("            html += renderField('restart', {key: 'delayMinutes', type: 'number', min: 1, max: 1440, value: configData.restart.delayMinutes});\n");
         js.append("        }\n");
+        js.append("        html += '<h4>Messages</h4>';\n");
+        js.append("        html += renderField('restart', {key: 'warningMessage', type: 'text', value: configData.restart.warningMessage});\n");
+        js.append("        html += renderField('restart', {key: 'restartingNowMessage', type: 'text', value: configData.restart.restartingNowMessage});\n");
+        js.append("        html += renderField('restart', {key: 'kickMessage', type: 'text', value: configData.restart.kickMessage});\n");
         js.append("        html += '<button class=\\\"btn btn-save\\\" onclick=\\\"saveSection(\\'restart\\')\\\">' + t('btn.save') + '</button>';\n");
         js.append("        html += '</div></div>';\n");
         js.append("    }\n");
@@ -3098,7 +3159,12 @@ public class WebManager {
         js.append("            {key: 'ticketAlreadyClosedMessage', type: 'text', value: configData.tickets.ticketAlreadyClosedMessage},\n");
         js.append("            {key: 'enableTranscript', type: 'checkbox', value: configData.tickets.enableTranscript},\n");
         js.append("            {key: 'transcriptFormat', type: 'select', options: ['TXT', 'HTML', 'JSON'], value: configData.tickets.transcriptFormat},\n");
-        js.append("            {key: 'transcriptFilename', type: 'text', value: configData.tickets.transcriptFilename}\n");
+        js.append("            {key: 'transcriptFilename', type: 'text', value: configData.tickets.transcriptFilename},\n");
+        js.append("            {key: 'mcBotNotConnectedMessage', type: 'text', value: configData.tickets.mcBotNotConnectedMessage},\n");
+        js.append("            {key: 'mcGuildNotFoundMessage', type: 'text', value: configData.tickets.mcGuildNotFoundMessage},\n");
+        js.append("            {key: 'mcCategoryNotFoundMessage', type: 'text', value: configData.tickets.mcCategoryNotFoundMessage},\n");
+        js.append("            {key: 'mcTicketCreatedMessage', type: 'text', value: configData.tickets.mcTicketCreatedMessage},\n");
+        js.append("            {key: 'mcDiscordNotFoundMessage', type: 'text', value: configData.tickets.mcDiscordNotFoundMessage}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");

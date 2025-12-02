@@ -130,6 +130,12 @@ public class LocalePresets {
             messages.put("noPermissionMessage", "Nemáš oprávnění k této akci.");
             messages.put("ticketLimitReachedMessage", "Dosáhl jsi maximálního počtu otevřených ticketů.");
             messages.put("ticketAlreadyClosedMessage", "Tento ticket je již uzavřen.");
+            // MC in-game messages
+            messages.put("mcBotNotConnectedMessage", "&cDiscord bot není připojen.");
+            messages.put("mcGuildNotFoundMessage", "&cNakonfigurovaný Discord server nebyl nalezen.");
+            messages.put("mcCategoryNotFoundMessage", "&cTicket kategorie není nakonfigurována!");
+            messages.put("mcTicketCreatedMessage", "&aTicket vytvořen na Discordu!");
+            messages.put("mcDiscordNotFoundMessage", "&cTvůj Discord účet nebyl nalezen na serveru.");
         } else {
             // EN (default)
             messages.put("ticketCreatedMessage", "Ticket created in %channel%!");
@@ -138,6 +144,29 @@ public class LocalePresets {
             messages.put("noPermissionMessage", "You do not have permission to do this.");
             messages.put("ticketLimitReachedMessage", "You have reached the maximum number of open tickets.");
             messages.put("ticketAlreadyClosedMessage", "This ticket is already closed.");
+            // MC in-game messages
+            messages.put("mcBotNotConnectedMessage", "&cDiscord bot is not connected.");
+            messages.put("mcGuildNotFoundMessage", "&cConfigured Discord server was not found.");
+            messages.put("mcCategoryNotFoundMessage", "&cTicket category is not configured!");
+            messages.put("mcTicketCreatedMessage", "&aTicket created on Discord!");
+            messages.put("mcDiscordNotFoundMessage", "&cYour Discord account was not found on the server.");
+        }
+        
+        return messages;
+    }
+    
+    public static Map<String, String> getRestartMessages(String locale) {
+        Map<String, String> messages = new HashMap<>();
+        
+        if ("cz".equalsIgnoreCase(locale)) {
+            messages.put("warningMessage", "&cServer restartuje za %minutes% minut!");
+            messages.put("restartingNowMessage", "&cServer se nyní restartuje!");
+            messages.put("kickMessage", "&cServer se restartuje. Připoj se prosím znovu za pár minut.");
+        } else {
+            // EN (default)
+            messages.put("warningMessage", "&cServer restart in %minutes% minutes!");
+            messages.put("restartingNowMessage", "&cServer is restarting now!");
+            messages.put("kickMessage", "&cServer is restarting. Please reconnect in a few minutes.");
         }
         
         return messages;
