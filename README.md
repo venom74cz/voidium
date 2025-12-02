@@ -1,5 +1,6 @@
 # VOIDIUM – INTELLIGENT SERVER CONTROL
-DISCORD: https://discord.com/invite/3JYz3KWutJ
+##DISCORD: https://discord.com/invite/3JYz3KWutJ
+
 **🚀 The Ultimate All-in-One Server Control System: Automate Everything, Monitor Everything, Control Everything – From Restarts to Ranks, Discord to Data, All Through One Powerful Web Panel.**
 
 _Next-generation server management made with AI_
