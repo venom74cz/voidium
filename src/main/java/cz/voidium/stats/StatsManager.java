@@ -6,7 +6,6 @@ import com.google.gson.reflect.TypeToken;
 import cz.voidium.config.StatsConfig;
 import cz.voidium.discord.DiscordManager;
 import net.minecraft.server.MinecraftServer;
-import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +18,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import cz.voidium.config.StorageHelper;
 
 public class StatsManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("Voidium-Stats");
@@ -49,7 +49,7 @@ public class StatsManager {
     }
     
     private StatsManager() {
-        this.dataPath = FMLPaths.CONFIGDIR.get().resolve("voidium").resolve("voidium_stats_data.json");
+        this.dataPath = StorageHelper.resolve("voidium_stats_data.json");
         loadData();
     }
 

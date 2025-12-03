@@ -9,6 +9,7 @@ import cz.voidium.server.SkinRestorer;
 import cz.voidium.skin.SkinCache;
 import cz.voidium.commands.VoidiumCommand;
 import cz.voidium.vote.VoteManager;
+import cz.voidium.entitycleaner.EntityCleaner;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
@@ -31,6 +32,7 @@ public class Voidium {
     private AnnouncementManager announcementManager;
     private SkinRestorer skinRestorer;
     private VoteManager voteManager;
+    private EntityCleaner entityCleaner;
 
     public Voidium() {
         instance = this;
@@ -44,6 +46,20 @@ public class Voidium {
             } catch (Exception e) {
                 LOGGER.error("Failed to create voidium config directory", e);
             }
+            
+            // Initialize storage directory and migrate old files
+            cz.voidium.config.StorageHelper.init(voidiumDir);
+            cz.voidium.config.StorageHelper.migrateAll(voidiumDir,
+                "links.json",
+                "pending-votes.json",
+                "votes.log",
+                "votes-history.ndjson",
+                "voidium_stats_data.json",
+                "voidium_ranks_data.json",
+                "player_progress.json",
+                "skin-cache.json",
+                "last_restart.txt"
+            );
 
             // Inicializace konfigurace
             VoidiumConfig.init(voidiumDir);
@@ -53,6 +69,7 @@ public class Voidium {
             cz.voidium.config.RanksConfig.init(voidiumDir);
             cz.voidium.config.TicketConfig.init(voidiumDir);
             cz.voidium.config.PlayerListConfig.init(voidiumDir);
+            cz.voidium.config.EntityCleanerConfig.init(voidiumDir);
             
             // Registrace event listenerů
             NeoForge.EVENT_BUS.addListener(this::onServerStarting);
@@ -180,6 +197,13 @@ public class Voidium {
                 NeoForge.EVENT_BUS.register(new cz.voidium.discord.DiscordChatListener());
             }
             
+            // Start Entity Cleaner
+            if (cz.voidium.config.EntityCleanerConfig.getInstance().isEnabled()) {
+                entityCleaner = new EntityCleaner(event.getServer());
+                entityCleaner.start();
+                VoidiumCommand.setEntityCleaner(entityCleaner);
+            }
+            
             // Nastavení managerů pro příkazy
             VoidiumCommand.setManagers(restartManager, announcementManager);
             
@@ -188,7 +212,7 @@ public class Voidium {
             // Oznámení pro OPs
             if (announcementManager != null) {
                 announcementManager.broadcastToOps("&aVOIDIUM - INTELLIGENT SERVER CONTROL loaded and running!");
-                announcementManager.broadcastToOps("&eVersion: 1.3.1");
+                announcementManager.broadcastToOps("&eVersion: 2.1.0");
                 announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
             }
         } catch (Exception e) {
@@ -213,6 +237,9 @@ public class Voidium {
         }
         if (voteManager != null) {
             voteManager.shutdown();
+        }
+        if (entityCleaner != null) {
+            entityCleaner.stop();
         }
         
         // Stop PlayerListManager

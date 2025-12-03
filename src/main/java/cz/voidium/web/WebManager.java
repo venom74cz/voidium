@@ -297,6 +297,26 @@ public class WebManager {
         en.put("stats.enableStats", "Enable Statistics");
         en.put("stats.reportChannelId", "Report Channel ID");
         en.put("stats.reportTime", "Report Time (HH:MM)");
+        en.put("stats.reportTitle", "Report Title");
+        en.put("stats.reportPeakLabel", "Peak Players Label");
+        en.put("stats.reportAverageLabel", "Average Players Label");
+        en.put("stats.reportFooter", "Report Footer");
+        
+        // --- Entity Cleaner ---
+        en.put("entitycleaner.enabled", "Enable Entity Cleaner");
+        en.put("entitycleaner.cleanupIntervalSeconds", "Cleanup Interval (seconds)");
+        en.put("entitycleaner.warningTimes", "Warning Times (seconds before)");
+        en.put("entitycleaner.removeDroppedItems", "Remove Dropped Items");
+        en.put("entitycleaner.removePassiveMobs", "Remove Passive Mobs");
+        en.put("entitycleaner.removeHostileMobs", "Remove Hostile Mobs");
+        en.put("entitycleaner.removeXpOrbs", "Remove XP Orbs");
+        en.put("entitycleaner.removeArrows", "Remove Arrows");
+        en.put("entitycleaner.removeNamedEntities", "Remove Named Entities");
+        en.put("entitycleaner.removeTamedAnimals", "Remove Tamed Animals");
+        en.put("entitycleaner.entityWhitelist", "Entity Whitelist");
+        en.put("entitycleaner.itemWhitelist", "Item Whitelist");
+        en.put("entitycleaner.warningMessage", "Warning Message");
+        en.put("entitycleaner.cleanupMessage", "Cleanup Message");
         
         // --- Vote ---
         en.put("vote.enabled", "Enable Voting System");
@@ -382,6 +402,7 @@ public class WebManager {
         en.put("config.section.ranks", "Ranks");
         en.put("config.section.tickets", "Ticket System");
         en.put("config.section.playerlist", "Player List (TAB)");
+        en.put("config.section.entitycleaner", "Entity Cleaner");
         
         // --- Role prefix editor ---
         en.put("role.prefix.editor", "Role Prefix Editor");
@@ -457,6 +478,26 @@ public class WebManager {
         en.put("config.stats.enableStats.desc", "Enable daily server statistics reports");
         en.put("config.stats.reportChannelId.desc", "Discord channel ID for daily statistics reports");
         en.put("config.stats.reportTime.desc", "Time to send daily report (format: HH:MM)");
+        en.put("config.stats.reportTitle.desc", "Title for the daily stats report. Use %date% for date");
+        en.put("config.stats.reportPeakLabel.desc", "Label for peak players field");
+        en.put("config.stats.reportAverageLabel.desc", "Label for average players field");
+        en.put("config.stats.reportFooter.desc", "Footer text for the stats report");
+        
+        // --- Entity Cleaner descriptions ---
+        en.put("config.entitycleaner.enabled.desc", "Enable automatic entity cleanup");
+        en.put("config.entitycleaner.cleanupIntervalSeconds.desc", "Seconds between automatic cleanups (e.g. 300 = 5 minutes)");
+        en.put("config.entitycleaner.warningTimes.desc", "Seconds before cleanup to show warning (e.g. 30, 10, 5)");
+        en.put("config.entitycleaner.removeDroppedItems.desc", "Remove dropped items on the ground");
+        en.put("config.entitycleaner.removePassiveMobs.desc", "Remove passive mobs (cows, pigs, sheep, etc.)");
+        en.put("config.entitycleaner.removeHostileMobs.desc", "Remove hostile mobs (zombies, skeletons, etc.)");
+        en.put("config.entitycleaner.removeXpOrbs.desc", "Remove experience orbs");
+        en.put("config.entitycleaner.removeArrows.desc", "Remove arrows stuck in ground/walls");
+        en.put("config.entitycleaner.removeNamedEntities.desc", "If false, entities with custom names (name tags) are protected");
+        en.put("config.entitycleaner.removeTamedAnimals.desc", "If false, tamed animals (wolves, cats, horses) are protected");
+        en.put("config.entitycleaner.entityWhitelist.desc", "Entity types that will never be removed (minecraft:entity_id)");
+        en.put("config.entitycleaner.itemWhitelist.desc", "Dropped items that will never be removed (minecraft:item_id)");
+        en.put("config.entitycleaner.warningMessage.desc", "Warning before cleanup. Use %seconds% for time");
+        en.put("config.entitycleaner.cleanupMessage.desc", "Message after cleanup. Use %items%, %mobs%, %xp%, %arrows%");
         
         // --- Restart descriptions ---
         en.put("config.restart.restartType.desc", "FIXED_TIME: At specific times | INTERVAL: Every X hours | DELAY: X minutes from start");
@@ -753,6 +794,26 @@ public class WebManager {
         cz.put("stats.enableStats", "Zapnout statistiky");
         cz.put("stats.reportChannelId", "ID kanálu pro reporty");
         cz.put("stats.reportTime", "Čas reportu (HH:MM)");
+        cz.put("stats.reportTitle", "Titulek reportu");
+        cz.put("stats.reportPeakLabel", "Popisek maximálního počtu hráčů");
+        cz.put("stats.reportAverageLabel", "Popisek průměrného počtu hráčů");
+        cz.put("stats.reportFooter", "Patička reportu");
+        
+        // --- Entity Cleaner ---
+        cz.put("entitycleaner.enabled", "Zapnout čistič entit");
+        cz.put("entitycleaner.cleanupIntervalSeconds", "Interval čištění (sekundy)");
+        cz.put("entitycleaner.warningTimes", "Časy varování (sekundy před)");
+        cz.put("entitycleaner.removeDroppedItems", "Odstraňovat dropped itemy");
+        cz.put("entitycleaner.removePassiveMobs", "Odstraňovat pasivní moby");
+        cz.put("entitycleaner.removeHostileMobs", "Odstraňovat hostilní moby");
+        cz.put("entitycleaner.removeXpOrbs", "Odstraňovat XP orby");
+        cz.put("entitycleaner.removeArrows", "Odstraňovat šípy");
+        cz.put("entitycleaner.removeNamedEntities", "Odstraňovat pojmenované entity");
+        cz.put("entitycleaner.removeTamedAnimals", "Odstraňovat ochočená zvířata");
+        cz.put("entitycleaner.entityWhitelist", "Whitelist entit");
+        cz.put("entitycleaner.itemWhitelist", "Whitelist itemů");
+        cz.put("entitycleaner.warningMessage", "Varovná zpráva");
+        cz.put("entitycleaner.cleanupMessage", "Zpráva po čištění");
         
         // --- Vote ---
         cz.put("vote.enabled", "Zapnout hlasovací systém");
@@ -838,6 +899,7 @@ public class WebManager {
         cz.put("config.section.ranks", "Ranky");
         cz.put("config.section.tickets", "Systém ticketů");
         cz.put("config.section.playerlist", "Seznam hráčů (TAB)");
+        cz.put("config.section.entitycleaner", "Čistič entit");
         
         // --- Role prefix editor ---
         cz.put("role.prefix.editor", "Editor prefixů rolí");
@@ -913,6 +975,26 @@ public class WebManager {
         cz.put("config.stats.enableStats.desc", "Povolit denní reporty statistik serveru");
         cz.put("config.stats.reportChannelId.desc", "ID Discord kanálu pro denní reporty");
         cz.put("config.stats.reportTime.desc", "Čas odeslání denního reportu (formát: HH:MM)");
+        cz.put("config.stats.reportTitle.desc", "Titulek pro denní report. Použijte %date% pro datum");
+        cz.put("config.stats.reportPeakLabel.desc", "Popisek pro pole maximálního počtu hráčů");
+        cz.put("config.stats.reportAverageLabel.desc", "Popisek pro pole průměrného počtu hráčů");
+        cz.put("config.stats.reportFooter.desc", "Text patičky pro statistický report");
+        
+        // --- Entity Cleaner descriptions ---
+        cz.put("config.entitycleaner.enabled.desc", "Povolit automatické čištění entit");
+        cz.put("config.entitycleaner.cleanupIntervalSeconds.desc", "Sekundy mezi čištěními (např. 300 = 5 minut)");
+        cz.put("config.entitycleaner.warningTimes.desc", "Sekundy před čištěním pro varování (např. 30, 10, 5)");
+        cz.put("config.entitycleaner.removeDroppedItems.desc", "Odstraňovat itemy ležící na zemi");
+        cz.put("config.entitycleaner.removePassiveMobs.desc", "Odstraňovat pasivní moby (krávy, prasata, ovce...)");
+        cz.put("config.entitycleaner.removeHostileMobs.desc", "Odstraňovat hostilní moby (zombie, kostlivci...)");
+        cz.put("config.entitycleaner.removeXpOrbs.desc", "Odstraňovat XP orby");
+        cz.put("config.entitycleaner.removeArrows.desc", "Odstraňovat šípy zaseknuté v zemi/zdech");
+        cz.put("config.entitycleaner.removeNamedEntities.desc", "Pokud false, pojmenované entity (name tags) jsou chráněny");
+        cz.put("config.entitycleaner.removeTamedAnimals.desc", "Pokud false, ochočená zvířata (vlci, kočky, koně) jsou chráněna");
+        cz.put("config.entitycleaner.entityWhitelist.desc", "Typy entit co nebudou nikdy odstraněny (minecraft:entity_id)");
+        cz.put("config.entitycleaner.itemWhitelist.desc", "Dropped itemy co nebudou nikdy odstraněny (minecraft:item_id)");
+        cz.put("config.entitycleaner.warningMessage.desc", "Varování před čištěním. Použij %seconds% pro čas");
+        cz.put("config.entitycleaner.cleanupMessage.desc", "Zpráva po čištění. Použij %items%, %mobs%, %xp%, %arrows%");
         
         // --- Restart descriptions ---
         cz.put("config.restart.restartType.desc", "FIXED_TIME: V konkrétní časy | INTERVAL: Každých X hodin | DELAY: X minut od startu");
@@ -1399,6 +1481,10 @@ public class WebManager {
                                 if (updateConfig(PlayerListConfig.class, PlayerListConfig.getInstance(), data)) 
                                     changedFiles.add("PlayerListConfig");
                                 break;
+                            case "entitycleaner":
+                                if (updateConfig(EntityCleanerConfig.class, EntityCleanerConfig.getInstance(), data)) 
+                                    changedFiles.add("EntityCleanerConfig");
+                                break;
                         }
                     } else {
                         // Starý formát - {web: {...}, general: {...}, ...}
@@ -1425,6 +1511,8 @@ public class WebManager {
                             changedFiles.add("DiscordConfig");
                         if (updateConfig(StatsConfig.class, StatsConfig.getInstance(), json.get("stats"))) 
                             changedFiles.add("StatsConfig");
+                        if (updateConfig(EntityCleanerConfig.class, EntityCleanerConfig.getInstance(), json.get("entitycleaner"))) 
+                            changedFiles.add("EntityCleanerConfig");
                         if (updateConfig(VoteConfig.class, VoteConfig.getInstance(), json.get("vote"))) 
                             changedFiles.add("VoteConfig");
                         if (updateConfig(RanksConfig.class, RanksConfig.getInstance(), json.get("ranks"))) 
@@ -1499,6 +1587,9 @@ public class WebManager {
                     VoteConfig.getInstance().applyLocale(locale);
                     TicketConfig.getInstance().applyLocale(locale);
                     RestartConfig.getInstance().applyLocale(locale);
+                    StatsConfig.getInstance().applyLocale(locale);
+                    PlayerListConfig.getInstance().applyLocale(locale);
+                    EntityCleanerConfig.getInstance().applyLocale(locale);
                     
                     sendResponse(exchange, "{\"status\":\"ok\"}", 200);
                 } catch (Exception e) {
@@ -2826,7 +2917,52 @@ public class WebManager {
             json.append("\"stats\":{");
             json.append("\"enableStats\":").append(sc.isEnableStats()).append(",");
             json.append("\"reportChannelId\":\"").append(escapeJson(sc.getReportChannelId())).append("\",");
-            json.append("\"reportTime\":\"").append(sc.getReportTime().toString()).append("\"");
+            json.append("\"reportTime\":\"").append(sc.getReportTime().toString()).append("\",");
+            json.append("\"reportTitle\":\"").append(escapeJson(sc.getReportTitle())).append("\",");
+            json.append("\"reportPeakLabel\":\"").append(escapeJson(sc.getReportPeakLabel())).append("\",");
+            json.append("\"reportAverageLabel\":\"").append(escapeJson(sc.getReportAverageLabel())).append("\",");
+            json.append("\"reportFooter\":\"").append(escapeJson(sc.getReportFooter())).append("\"");
+            json.append("},");
+        }
+        
+        // =====================================================================
+        // ENTITY CLEANER CONFIG
+        // =====================================================================
+        if (EntityCleanerConfig.getInstance() != null) {
+            EntityCleanerConfig ec = EntityCleanerConfig.getInstance();
+            json.append("\"entitycleaner\":{");
+            json.append("\"enabled\":").append(ec.isEnabled()).append(",");
+            json.append("\"cleanupIntervalSeconds\":").append(ec.getCleanupIntervalSeconds()).append(",");
+            json.append("\"warningTimes\":[");
+            List<Integer> wt = ec.getWarningTimes();
+            for (int i = 0; i < wt.size(); i++) {
+                json.append(wt.get(i));
+                if (i < wt.size() - 1) json.append(",");
+            }
+            json.append("],");
+            json.append("\"removeDroppedItems\":").append(ec.isRemoveDroppedItems()).append(",");
+            json.append("\"removePassiveMobs\":").append(ec.isRemovePassiveMobs()).append(",");
+            json.append("\"removeHostileMobs\":").append(ec.isRemoveHostileMobs()).append(",");
+            json.append("\"removeXpOrbs\":").append(ec.isRemoveXpOrbs()).append(",");
+            json.append("\"removeArrows\":").append(ec.isRemoveArrows()).append(",");
+            json.append("\"removeNamedEntities\":").append(ec.isRemoveNamedEntities()).append(",");
+            json.append("\"removeTamedAnimals\":").append(ec.isRemoveTamedAnimals()).append(",");
+            json.append("\"entityWhitelist\":[");
+            List<String> ew = ec.getEntityWhitelist();
+            for (int i = 0; i < ew.size(); i++) {
+                json.append("\"").append(escapeJson(ew.get(i))).append("\"");
+                if (i < ew.size() - 1) json.append(",");
+            }
+            json.append("],");
+            json.append("\"itemWhitelist\":[");
+            List<String> iw = ec.getItemWhitelist();
+            for (int i = 0; i < iw.size(); i++) {
+                json.append("\"").append(escapeJson(iw.get(i))).append("\"");
+                if (i < iw.size() - 1) json.append(",");
+            }
+            json.append("],");
+            json.append("\"warningMessage\":\"").append(escapeJson(ec.getWarningMessage())).append("\",");
+            json.append("\"cleanupMessage\":\"").append(escapeJson(ec.getCleanupMessage())).append("\"");
             json.append("},");
         }
         
@@ -3110,7 +3246,32 @@ public class WebManager {
         js.append("        html += renderSection('stats', t('config.section.stats'), [\n");
         js.append("            {key: 'enableStats', type: 'checkbox', value: configData.stats.enableStats},\n");
         js.append("            {key: 'reportChannelId', type: 'text', value: configData.stats.reportChannelId},\n");
-        js.append("            {key: 'reportTime', type: 'time', value: configData.stats.reportTime}\n");
+        js.append("            {key: 'reportTime', type: 'time', value: configData.stats.reportTime},\n");
+        js.append("            {key: 'reportTitle', type: 'text', value: configData.stats.reportTitle},\n");
+        js.append("            {key: 'reportPeakLabel', type: 'text', value: configData.stats.reportPeakLabel},\n");
+        js.append("            {key: 'reportAverageLabel', type: 'text', value: configData.stats.reportAverageLabel},\n");
+        js.append("            {key: 'reportFooter', type: 'text', value: configData.stats.reportFooter}\n");
+        js.append("        ]);\n");
+        js.append("    }\n");
+        js.append("    \n");
+        
+        js.append("    // Sekce: Entity Cleaner\n");
+        js.append("    if (configData.entitycleaner) {\n");
+        js.append("        html += renderSection('entitycleaner', t('config.section.entitycleaner'), [\n");
+        js.append("            {key: 'enabled', type: 'checkbox', value: configData.entitycleaner.enabled},\n");
+        js.append("            {key: 'cleanupIntervalSeconds', type: 'number', min: 60, max: 3600, value: configData.entitycleaner.cleanupIntervalSeconds},\n");
+        js.append("            {key: 'warningTimes', type: 'numberlist', value: configData.entitycleaner.warningTimes},\n");
+        js.append("            {key: 'removeDroppedItems', type: 'checkbox', value: configData.entitycleaner.removeDroppedItems},\n");
+        js.append("            {key: 'removePassiveMobs', type: 'checkbox', value: configData.entitycleaner.removePassiveMobs},\n");
+        js.append("            {key: 'removeHostileMobs', type: 'checkbox', value: configData.entitycleaner.removeHostileMobs},\n");
+        js.append("            {key: 'removeXpOrbs', type: 'checkbox', value: configData.entitycleaner.removeXpOrbs},\n");
+        js.append("            {key: 'removeArrows', type: 'checkbox', value: configData.entitycleaner.removeArrows},\n");
+        js.append("            {key: 'removeNamedEntities', type: 'checkbox', value: configData.entitycleaner.removeNamedEntities},\n");
+        js.append("            {key: 'removeTamedAnimals', type: 'checkbox', value: configData.entitycleaner.removeTamedAnimals},\n");
+        js.append("            {key: 'entityWhitelist', type: 'stringlist', value: configData.entitycleaner.entityWhitelist},\n");
+        js.append("            {key: 'itemWhitelist', type: 'stringlist', value: configData.entitycleaner.itemWhitelist},\n");
+        js.append("            {key: 'warningMessage', type: 'text', value: configData.entitycleaner.warningMessage},\n");
+        js.append("            {key: 'cleanupMessage', type: 'text', value: configData.entitycleaner.cleanupMessage}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
@@ -3258,6 +3419,9 @@ public class WebManager {
         js.append("        case 'stringlist':\n");
         js.append("            html += renderStringList(id, field.value || []);\n");
         js.append("            break;\n");
+        js.append("        case 'numberlist':\n");
+        js.append("            html += renderNumberList(id, field.value || []);\n");
+        js.append("            break;\n");
         js.append("        case 'ranklist':\n");
         js.append("            html += renderRankList(id, field.value || []);\n");
         js.append("            break;\n");
@@ -3314,6 +3478,20 @@ public class WebManager {
         js.append("        html += '</div>';\n");
         js.append("    });\n");
         js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addStringItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
+        js.append("    html += '</div>';\n");
+        js.append("    return html;\n");
+        js.append("}\n\n");
+        
+        // Number list (for arrays of integers like warningTimes)
+        js.append("function renderNumberList(id, numbers) {\n");
+        js.append("    let html = '<div class=\"list-editor number-list-editor\" id=\"' + id + '-container\">';\n");
+        js.append("    numbers.forEach((num, idx) => {\n");
+        js.append("        html += '<div class=\"list-item\">';\n");
+        js.append("        html += '<input type=\"number\" data-numberlist=\"' + id + '\" data-idx=\"' + idx + '\" value=\"' + num + '\" min=\"0\">';\n");
+        js.append("        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + id + '\\', ' + idx + ')\">×</button>';\n");
+        js.append("        html += '</div>';\n");
+        js.append("    });\n");
+        js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addNumberItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
@@ -3585,7 +3763,7 @@ public class WebManager {
         
         // Funkce pro uložení všech sekcí najednou (pro sticky save bar)
         js.append("async function saveConfig() {\n");
-        js.append("    const sections = ['web', 'general', 'restart', 'announcement', 'discord', 'stats', 'vote', 'ranks', 'tickets', 'playerlist'];\n");
+        js.append("    const sections = ['web', 'general', 'restart', 'announcement', 'discord', 'stats', 'vote', 'ranks', 'tickets', 'playerlist', 'entitycleaner'];\n");
         js.append("    let success = true;\n");
         js.append("    \n");
         js.append("    for (const sectionId of sections) {\n");
@@ -3687,13 +3865,25 @@ public class WebManager {
         js.append("        }\n");
         js.append("    });\n");
         js.append("    \n");
-        js.append("    // Collect lists\n");
-        js.append("    section.querySelectorAll('.list-editor').forEach(container => {\n");
+        js.append("    // Collect string lists\n");
+        js.append("    section.querySelectorAll('.list-editor:not(.number-list-editor)').forEach(container => {\n");
         js.append("        const listId = container.id.replace('-container', '');\n");
         js.append("        const key = listId.replace(sectionId + '_', '');\n");
         js.append("        const items = [];\n");
         js.append("        container.querySelectorAll('input[data-list]').forEach(input => {\n");
         js.append("            if (input.value) items.push(input.value);\n");
+        js.append("        });\n");
+        js.append("        data[key] = items;\n");
+        js.append("    });\n");
+        js.append("    \n");
+        js.append("    // Collect number lists (as integer arrays)\n");
+        js.append("    section.querySelectorAll('.number-list-editor').forEach(container => {\n");
+        js.append("        const listId = container.id.replace('-container', '');\n");
+        js.append("        const key = listId.replace(sectionId + '_', '');\n");
+        js.append("        const items = [];\n");
+        js.append("        container.querySelectorAll('input[data-numberlist]').forEach(input => {\n");
+        js.append("            const val = parseInt(input.value);\n");
+        js.append("            if (!isNaN(val)) items.push(val);\n");
         js.append("        });\n");
         js.append("        data[key] = items;\n");
         js.append("    });\n");
@@ -3773,6 +3963,17 @@ public class WebManager {
         js.append("    const div = document.createElement('div');\n");
         js.append("    div.className = 'list-item';\n");
         js.append("    div.innerHTML = '<input type=\"text\" data-list=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"\">' +\n");
+        js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
+        js.append("    container.insertBefore(div, container.lastElementChild);\n");
+        js.append("}\n\n");
+        
+        js.append("function addNumberItem(listId) {\n");
+        js.append("    const container = document.getElementById(listId + '-container');\n");
+        js.append("    const items = container.querySelectorAll('.list-item');\n");
+        js.append("    const newIdx = items.length;\n");
+        js.append("    const div = document.createElement('div');\n");
+        js.append("    div.className = 'list-item';\n");
+        js.append("    div.innerHTML = '<input type=\"number\" data-numberlist=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"0\" min=\"0\">' +\n");
         js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
         js.append("    container.insertBefore(div, container.lastElementChild);\n");
         js.append("}\n\n");

@@ -4,12 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import cz.voidium.config.DiscordConfig;
-import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import cz.voidium.config.StorageHelper;
 
 public class LinkManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -26,7 +26,7 @@ public class LinkManager {
     private Map<String, Long> codeExpiry = new ConcurrentHashMap<>();
 
     private LinkManager() {
-        this.dataPath = FMLPaths.CONFIGDIR.get().resolve("voidium").resolve("links.json");
+        this.dataPath = StorageHelper.resolve("links.json");
         load();
     }
 

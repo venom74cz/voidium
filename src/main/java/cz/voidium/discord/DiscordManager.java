@@ -425,12 +425,16 @@ public class DiscordManager extends ListenerAdapter {
         net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
         if (channel != null) {
             LOGGER.info("Sending stats report to channel: {}", channel.getName());
+            
+            StatsConfig sc = StatsConfig.getInstance();
+            String title = sc.getReportTitle().replace("%date%", date);
+            
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("📊 Denní Statistiky - " + date);
+            eb.setTitle(title);
             eb.setColor(Color.CYAN);
-            eb.addField("Peak Hráčů", String.valueOf(peak), true);
-            eb.addField("Průměr Hráčů", String.format("%.2f", average), true);
-            eb.setFooter("Voidium Stats");
+            eb.addField(sc.getReportPeakLabel(), String.valueOf(peak), true);
+            eb.addField(sc.getReportAverageLabel(), String.format("%.2f", average), true);
+            eb.setFooter(sc.getReportFooter());
             
             channel.sendMessageEmbeds(eb.build()).queue(
                 success -> LOGGER.info("Stats report sent successfully"),
@@ -510,7 +514,8 @@ public class DiscordManager extends ListenerAdapter {
         if (!DiscordConfig.getInstance().isEnableTopicUpdate()) return;
         
         topicExecutor = Executors.newSingleThreadScheduledExecutor();
-        topicExecutor.scheduleAtFixedRate(this::updateChannelTopic, 1, 6, TimeUnit.MINUTES);
+        // Discord rate limit: ~2 updates per 10 minutes, so 10 min interval is safe
+        topicExecutor.scheduleAtFixedRate(this::updateChannelTopic, 2, 10, TimeUnit.MINUTES);
     }
 
     private void stopTopicUpdater() {

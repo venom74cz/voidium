@@ -12,6 +12,7 @@ import cz.voidium.server.AnnouncementManager;
 import cz.voidium.server.SkinRestorer;
 import cz.voidium.vote.VoteManager;
 import cz.voidium.discord.DiscordManager;
+import cz.voidium.entitycleaner.EntityCleaner;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -23,6 +24,7 @@ public class VoidiumCommand {
     private static AnnouncementManager announcementManager;
     private static SkinRestorer skinRestorer;
     private static VoteManager voteManager;
+    private static EntityCleaner entityCleaner;
     
     public static void setManagers(RestartManager restart, AnnouncementManager announcement) {
         restartManager = restart;
@@ -30,6 +32,7 @@ public class VoidiumCommand {
     }
     public static void setSkinRestorer(SkinRestorer restorer) { skinRestorer = restorer; }
     public static void setVoteManager(VoteManager manager) { voteManager = manager; }
+    public static void setEntityCleaner(EntityCleaner cleaner) { entityCleaner = cleaner; }
     
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("voidium")
@@ -73,6 +76,19 @@ public class VoidiumCommand {
             .then(Commands.literal("web")
                 .requires(source -> source.hasPermission(2))
                 .executes(VoidiumCommand::web))
+            .then(Commands.literal("clear")
+                .requires(source -> source.hasPermission(2))
+                .executes(VoidiumCommand::clearAll)
+                .then(Commands.literal("items")
+                    .executes(VoidiumCommand::clearItems))
+                .then(Commands.literal("mobs")
+                    .executes(VoidiumCommand::clearMobs))
+                .then(Commands.literal("xp")
+                    .executes(VoidiumCommand::clearXp))
+                .then(Commands.literal("arrows")
+                    .executes(VoidiumCommand::clearArrows))
+                .then(Commands.literal("preview")
+                    .executes(VoidiumCommand::clearPreview)))
             .executes(VoidiumCommand::showHelp)
         );
     }
@@ -90,6 +106,9 @@ public class VoidiumCommand {
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium votes clear §7- Clear all pending votes"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium status §7- Show mod status (everyone)"), false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium web §7- Show Web Control URL"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium clear §7- Clear all entities (items, mobs, xp, arrows)"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium clear items|mobs|xp|arrows §7- Clear specific type"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium clear preview §7- Preview what would be cleared"), false);
         return 1;
     }
 
@@ -130,9 +149,14 @@ public class VoidiumCommand {
             cz.voidium.config.GeneralConfig.init(voidiumDir);
             cz.voidium.config.RestartConfig.init(voidiumDir);
             cz.voidium.config.AnnouncementConfig.init(voidiumDir);
+            cz.voidium.config.EntityCleanerConfig.init(voidiumDir);
             
             if (voteManager != null) {
                 voteManager.reload();
+            }
+            
+            if (entityCleaner != null) {
+                entityCleaner.reload();
             }
             
             DiscordManager.getInstance().setServer(context.getSource().getServer());
@@ -176,7 +200,7 @@ public class VoidiumCommand {
     private static int status(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fServer status:"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Server name: §e" + context.getSource().getServer().getMotd()), false);
-    context.getSource().sendSuccess(() -> Component.literal("§7Version: §e1.3.2"), false);
+    context.getSource().sendSuccess(() -> Component.literal("§7Version: §e2.1.0"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7Mod count: §e" + net.neoforged.fml.ModList.get().size()), false);
         
         // TPS informace
@@ -320,6 +344,69 @@ public class VoidiumCommand {
     private static int web(CommandContext<CommandSourceStack> context) {
         String url = cz.voidium.web.WebManager.getInstance().getWebUrl();
         context.getSource().sendSuccess(() -> Component.literal("§aWeb Control Interface: §b" + url), false);
+        return 1;
+    }
+    
+    // === Entity Cleaner Commands ===
+    
+    private static int clearAll(CommandContext<CommandSourceStack> context) {
+        if (entityCleaner == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cEntityCleaner is not available!"));
+            return 0;
+        }
+        EntityCleaner.CleanupResult result = entityCleaner.forceCleanup(true, true, true, true);
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aCleared: §e" + result.items + "§a items, §e" + result.mobs + "§a mobs, §e" + result.xpOrbs + "§a XP orbs, §e" + result.arrows + "§a arrows"), true);
+        return 1;
+    }
+    
+    private static int clearItems(CommandContext<CommandSourceStack> context) {
+        if (entityCleaner == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cEntityCleaner is not available!"));
+            return 0;
+        }
+        EntityCleaner.CleanupResult result = entityCleaner.forceCleanup(true, false, false, false);
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aCleared §e" + result.items + "§a dropped items"), true);
+        return 1;
+    }
+    
+    private static int clearMobs(CommandContext<CommandSourceStack> context) {
+        if (entityCleaner == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cEntityCleaner is not available!"));
+            return 0;
+        }
+        EntityCleaner.CleanupResult result = entityCleaner.forceCleanup(false, true, false, false);
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aCleared §e" + result.mobs + "§a mobs"), true);
+        return 1;
+    }
+    
+    private static int clearXp(CommandContext<CommandSourceStack> context) {
+        if (entityCleaner == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cEntityCleaner is not available!"));
+            return 0;
+        }
+        EntityCleaner.CleanupResult result = entityCleaner.forceCleanup(false, false, true, false);
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aCleared §e" + result.xpOrbs + "§a XP orbs"), true);
+        return 1;
+    }
+    
+    private static int clearArrows(CommandContext<CommandSourceStack> context) {
+        if (entityCleaner == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cEntityCleaner is not available!"));
+            return 0;
+        }
+        EntityCleaner.CleanupResult result = entityCleaner.forceCleanup(false, false, false, true);
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aCleared §e" + result.arrows + "§a arrows"), true);
+        return 1;
+    }
+    
+    private static int clearPreview(CommandContext<CommandSourceStack> context) {
+        if (entityCleaner == null) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cEntityCleaner is not available!"));
+            return 0;
+        }
+        EntityCleaner.CleanupResult result = entityCleaner.previewCleanup();
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fWould clear: §e" + result.items + "§f items, §e" + result.mobs + "§f mobs, §e" + result.xpOrbs + "§f XP orbs, §e" + result.arrows + "§f arrows"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §fTotal: §e" + result.total() + "§f entities"), false);
         return 1;
     }
 }

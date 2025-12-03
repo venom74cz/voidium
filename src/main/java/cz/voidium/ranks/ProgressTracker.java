@@ -3,7 +3,7 @@ package cz.voidium.ranks;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import net.neoforged.fml.loading.FMLPaths;
+import cz.voidium.config.StorageHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class ProgressTracker {
     }
     
     private ProgressTracker() {
-        this.dataPath = FMLPaths.CONFIGDIR.get().resolve("voidium").resolve("player_progress.json");
+        this.dataPath = StorageHelper.resolve("player_progress.json");
         load();
     }
     

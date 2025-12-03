@@ -3,7 +3,7 @@ package cz.voidium.ranks;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import net.neoforged.fml.loading.FMLPaths;
+import cz.voidium.config.StorageHelper;
 
 import java.io.*;
 import java.nio.file.*;
@@ -19,7 +19,7 @@ public class RankStorage {
     private Map<String, Set<String>> playerRanks = new ConcurrentHashMap<>();
 
     private RankStorage() {
-        this.dataPath = FMLPaths.CONFIGDIR.get().resolve("voidium").resolve("voidium_ranks_data.json");
+        this.dataPath = StorageHelper.resolve("voidium_ranks_data.json");
         load();
     }
 

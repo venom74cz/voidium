@@ -86,4 +86,16 @@ public class PlayerListConfig {
     public String getDefaultPrefix() { return defaultPrefix; }
     public String getDefaultSuffix() { return defaultSuffix; }
     public int getUpdateIntervalSeconds() { return updateIntervalSeconds; }
+    
+    // Apply locale preset
+    public void applyLocale(String locale) {
+        java.util.Map<String, String> messages = LocalePresets.getPlayerListMessages(locale);
+        this.headerLine1 = messages.get("headerLine1");
+        this.headerLine2 = messages.get("headerLine2");
+        this.headerLine3 = messages.get("headerLine3");
+        this.footerLine1 = messages.get("footerLine1");
+        this.footerLine2 = messages.get("footerLine2");
+        this.footerLine3 = messages.get("footerLine3");
+        save();
+    }
 }

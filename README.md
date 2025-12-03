@@ -1,21 +1,38 @@
 # VOIDIUM – INTELLIGENT SERVER CONTROL
-## DISCORD: https://discord.com/invite/3JYz3KWutJ
+## [DISCORD](https://discord.com/invite/3JYz3KWutJ)
 
 **🚀 The Ultimate All-in-One Server Control System: Automate Everything, Monitor Everything, Control Everything – From Restarts to Ranks, Discord to Data, All Through One Powerful Web Panel.**
 
 _Next-generation server management made with AI_
+
+---
 
 ## 🔄 Restart System
 
 *   Fixed-time, interval, delayed, and manual restarts
 *   Boss bar countdown and structured warnings
 *   Configurable restart types and schedules
+*   Customizable warning messages with color codes
 
 ## 📢 Announcements
 
 *   Scheduled and manual broadcasts
 *   Color codes, formatting, custom prefix, hot reload
 *   Multiple announcement support with intervals
+
+## 🧹 Entity Cleaner (ClearLag Alternative)
+
+*   **Automatic Cleanup**: Configurable interval (default 5 minutes)
+*   **Warning System**: Alerts at 30s, 10s, 5s before cleanup
+*   **Safe by Default**: Only removes items, XP orbs, and arrows - mobs are protected
+*   **Entity Types**: Dropped items, XP orbs, arrows, passive mobs, hostile mobs
+*   **Protection System**: 
+    *   Named entities (name tags) protected by default
+    *   Tamed animals protected by default
+    *   Entity whitelist (villagers, iron golems, etc.)
+    *   Item whitelist (diamonds, netherite, etc.)
+*   **Commands**: `/voidium clear`, `/voidium clear items|mobs|xp|arrows`, `/voidium clear preview`
+*   **Farm-Friendly**: Won't break mob farms or animal farms with default settings
 
 ## 📊 Monitoring & Utilities
 
@@ -27,7 +44,7 @@ _Next-generation server management made with AI_
 
 ## 🌐 Web Control Panel
 
-*   **Full Configuration Management**: Edit ALL mod configs (Discord, Votes, Restarts, Ranks, Tickets, Stats, PlayerList) directly from your browser
+*   **Full Configuration Management**: Edit ALL mod configs (Discord, Votes, Restarts, Ranks, Tickets, Stats, PlayerList, EntityCleaner) directly from your browser
 *   **Player Management**: View online and offline players, kick/ban users, and manage Discord links
 *   **Live Statistics**: Real-time graphs showing player count and TPS over 24 hours
 *   **Localization**: Fully translated into English and Czech with "Reset to Default" functionality
@@ -47,7 +64,7 @@ _Next-generation server management made with AI_
 *   **Status Messages**: Automated server lifecycle announcements (Starting, Online, Stopping, Offline) with debug logging
 *   **Channel Topic Updater**: Automatically updates channel topic with live stats (Online/Max players, Uptime)
 *   **Ban Synchronization**: Bidirectional ban sync between game and Discord server
-*   **Daily Stats**: Automated performance reports with peak and average player counts
+*   **Daily Stats**: Automated performance reports with configurable labels and messages
 *   **Role Sync**: Map Discord roles to in-game permissions
 *   **Webhooks**: Support for logging events via Discord webhooks
 
@@ -103,34 +120,59 @@ _Next-generation server management made with AI_
 *   **Web Panel Integration**: Full configuration through browser interface
 *   **Live Updates**: Configurable refresh interval (minimum 3 seconds)
 
+---
+
 ## ✅ Commands
 
 ### Operators
-`/voidium restart <minutes>` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium cancel` · `/voidium config` · `/voidium reload` · `/voidium skin <player>` · `/voidium votes pending [player]` · `/voidium votes clear`
+`/voidium reload` · `/voidium restart <minutes>` · `/voidium cancel` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium config` · `/voidium skin <player>` · `/voidium votes pending [player]` · `/voidium votes clear` · `/voidium web` · `/voidium clear` · `/voidium clear items|mobs|xp|arrows` · `/voidium clear preview`
 
 ### Players
 `/voidium status` · `/link` · `/ticket <reason> <message>`
 
+---
+
 ## 🔧 Technical
 
-*   Minecraft: 1.21.1-1.21.10
-*   Loader: NeoForge (java21)
-*   Server-only (clients not required)
-*   License: MIT
-*   Lightweight & modular
+*   **Minecraft**: 1.21.1-1.21.10
+*   **Loader**: NeoForge 21.1.208+ (Java 21)
+*   **Server-only**: Clients do not need the mod
+*   **License**: MIT
+*   **Lightweight & modular**
 
-## 📌 Notes
+---
 
-*   All configuration files are stored in `config/voidium/` directory
-*   Discord Channel IDs and Role IDs are properly handled as strings (no precision loss)
-*   `skinCacheHours` below 1 is forced to 1
-*   Expired cache entries refresh at next login
-*   Safe in online mode (skin feature auto-skips)
-*   `votes.json` includes generated shared secret + RSA keys
-*   Offline votes are queued in `pending-votes.json` and delivered on player login
-*   Discord-Minecraft links are stored in `links.json`
-*   Statistics data is saved in `voidium_stats_data.json`
-*   Web panel accessible via token link printed to console on server start
+## 📌 Configuration Files
 
+All configuration files are stored in `config/voidium/`:
+
+| File | Description |
+|------|-------------|
+| `general.json` | Master toggles for all modules |
+| `restart.json` | Restart schedules and messages |
+| `announcements.json` | Broadcast messages and intervals |
+| `discord.json` | Discord bot settings, chat bridge, whitelist |
+| `stats.json` | Daily statistics reports |
+| `ranks.json` | Auto-rank milestones and conditions |
+| `votes.json` | Vote rewards and NuVotifier settings |
+| `tickets.json` | Ticket system messages and limits |
+| `playerlist.json` | TAB header/footer customization |
+| `entitycleaner.json` | Entity cleanup settings and whitelists |
+| `web.json` | Web panel port and authentication |
+
+### Storage Files (in `config/voidium/storage/`):
+| File | Description |
+|------|-------------|
+| `links.json` | Discord-Minecraft account links |
+| `pending-votes.json` | Offline vote queue |
+| `votes.log` | Vote history (plain text) |
+| `votes-history.ndjson` | Vote analytics |
+| `voidium_stats_data.json` | Player statistics |
+| `voidium_ranks_data.json` | Rank assignments |
+| `player_progress.json` | Achievement progress |
+| `skin-cache.json` | Cached player skins |
+| `last_restart.txt` | Last restart timestamp |
+
+---
 
 **One mod. Complete control. Zero complexity.**

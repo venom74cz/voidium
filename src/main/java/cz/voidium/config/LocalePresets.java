@@ -171,4 +171,61 @@ public class LocalePresets {
         
         return messages;
     }
+    
+    public static Map<String, String> getEntityCleanerMessages(String locale) {
+        Map<String, String> messages = new HashMap<>();
+        
+        if ("cz".equalsIgnoreCase(locale)) {
+            messages.put("warningMessage", "&e[EntityCleaner] &fČištění entit za &c%seconds% &fsekund!");
+            messages.put("cleanupMessage", "&a[EntityCleaner] &fOdstraněno &e%items% itemů&f, &e%mobs% mobů&f, &e%xp% XP orbů&f, &e%arrows% šípů&f.");
+        } else {
+            // EN (default)
+            messages.put("warningMessage", "&e[EntityCleaner] &fClearing entities in &c%seconds% &fseconds!");
+            messages.put("cleanupMessage", "&a[EntityCleaner] &fRemoved &e%items% items&f, &e%mobs% mobs&f, &e%xp% XP orbs&f, &e%arrows% arrows&f.");
+        }
+        
+        return messages;
+    }
+    
+    public static Map<String, String> getStatsMessages(String locale) {
+        Map<String, String> messages = new HashMap<>();
+        
+        if ("cz".equalsIgnoreCase(locale)) {
+            messages.put("reportTitle", "📊 Denní statistiky - %date%");
+            messages.put("reportPeakLabel", "Maximum hráčů");
+            messages.put("reportAverageLabel", "Průměr hráčů");
+            messages.put("reportFooter", "Voidium Stats");
+        } else {
+            // EN (default)
+            messages.put("reportTitle", "📊 Daily Statistics - %date%");
+            messages.put("reportPeakLabel", "Peak Players");
+            messages.put("reportAverageLabel", "Average Players");
+            messages.put("reportFooter", "Voidium Stats");
+        }
+        
+        return messages;
+    }
+    
+    public static Map<String, String> getPlayerListMessages(String locale) {
+        Map<String, String> messages = new HashMap<>();
+        
+        if ("cz".equalsIgnoreCase(locale)) {
+            messages.put("headerLine1", "§b§l✦ VOIDIUM SERVER ✦");
+            messages.put("headerLine2", "§7Online: §a%online%§7/§a%max%");
+            messages.put("headerLine3", "");
+            messages.put("footerLine1", "§7TPS: §a%tps%");
+            messages.put("footerLine2", "§7Ping: §e%ping%ms");
+            messages.put("footerLine3", "");
+        } else {
+            // EN (default)
+            messages.put("headerLine1", "§b§l✦ VOIDIUM SERVER ✦");
+            messages.put("headerLine2", "§7Online: §a%online%§7/§a%max%");
+            messages.put("headerLine3", "");
+            messages.put("footerLine1", "§7TPS: §a%tps%");
+            messages.put("footerLine2", "§7Ping: §e%ping%ms");
+            messages.put("footerLine3", "");
+        }
+        
+        return messages;
+    }
 }

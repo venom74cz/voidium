@@ -166,15 +166,15 @@ public class VoteConfig {
     }
 
     public Path getResolvedVoteLogFile() {
-        return resolveConfigPath(logging.voteLogFile);
+        return StorageHelper.resolve(logging.voteLogFile);
     }
 
     public Path getResolvedArchivePath() {
-        return resolveConfigPath(logging.archivePath);
+        return StorageHelper.resolve(logging.archivePath);
     }
 
     public Path getResolvedPendingQueueFile() {
-        return resolveConfigPath(logging.pendingQueueFile);
+        return StorageHelper.resolve(logging.pendingQueueFile);
     }
 
     private static String generateSharedSecret() {

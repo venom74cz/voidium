@@ -1,6 +1,7 @@
 package cz.voidium.skin;
 
 import com.google.gson.*;
+import cz.voidium.config.StorageHelper;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Simple persistent skin cache: maps lowercase player name -> CachedEntry (uuid, value, signature, timestamp).
- * Stored as JSON at config/voidium/skin-cache.json.
+ * Stored as JSON at config/voidium/storage/skin-cache.json.
  */
 public final class SkinCache {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -25,8 +26,8 @@ public final class SkinCache {
 
     public static void init(Path configDir) {
         try {
-            // configDir is now the voidium directory
-            filePath = configDir.resolve("skin-cache.json");
+            // Use storage directory for cache file
+            filePath = StorageHelper.resolve("skin-cache.json");
             load();
         } catch (Exception e) {
             LOGGER.warn("SkinCache init failed: {}", e.getMessage());

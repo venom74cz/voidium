@@ -14,6 +14,12 @@ public class StatsConfig {
     private boolean enableStats = true;
     private String reportChannelId = "";
     private String reportTime = "09:00"; // HH:mm
+    
+    // Customizable messages for stats report
+    private String reportTitle = "📊 Daily Statistics - %date%";
+    private String reportPeakLabel = "Peak Players";
+    private String reportAverageLabel = "Average Players";
+    private String reportFooter = "Voidium Stats";
 
     public StatsConfig(Path configPath) {
         this.configPath = configPath;
@@ -55,5 +61,21 @@ public class StatsConfig {
         } catch (Exception e) {
             return LocalTime.of(9, 0);
         }
+    }
+    
+    // Message getters
+    public String getReportTitle() { return reportTitle; }
+    public String getReportPeakLabel() { return reportPeakLabel; }
+    public String getReportAverageLabel() { return reportAverageLabel; }
+    public String getReportFooter() { return reportFooter; }
+    
+    // Apply locale preset
+    public void applyLocale(String locale) {
+        java.util.Map<String, String> messages = LocalePresets.getStatsMessages(locale);
+        this.reportTitle = messages.get("reportTitle");
+        this.reportPeakLabel = messages.get("reportPeakLabel");
+        this.reportAverageLabel = messages.get("reportAverageLabel");
+        this.reportFooter = messages.get("reportFooter");
+        save();
     }
 }

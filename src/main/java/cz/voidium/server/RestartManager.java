@@ -2,6 +2,7 @@ package cz.voidium.server;
 
 import cz.voidium.config.VoidiumConfig;
 import cz.voidium.config.RestartConfig;
+import cz.voidium.config.StorageHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.network.chat.Component;
 
@@ -22,8 +23,8 @@ public class RestartManager {
     private ScheduledExecutorService scheduler;
     private long serverStartTime;
     
-    // Soubor pro uložení posledního restartu
-    private static final String LAST_RESTART_FILE = "config/voidium/last_restart.txt";
+    // Soubor pro uložení posledního restartu (now in storage directory)
+    private static final String LAST_RESTART_FILE = "last_restart.txt";
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     // Poslední úspěšný restart (načtený ze souboru nebo null)
@@ -248,7 +249,7 @@ public class RestartManager {
     // === Persistence pro last restart time ===
     
     private LocalDateTime loadLastRestartTime() {
-        Path path = Paths.get(LAST_RESTART_FILE);
+        Path path = StorageHelper.resolve(LAST_RESTART_FILE);
         if (!Files.exists(path)) {
             return null;
         }
@@ -269,7 +270,7 @@ public class RestartManager {
     }
     
     private void saveLastRestartTime(LocalDateTime time) {
-        Path path = Paths.get(LAST_RESTART_FILE);
+        Path path = StorageHelper.resolve(LAST_RESTART_FILE);
         try {
             Files.createDirectories(path.getParent());
             Files.writeString(path, time.format(DATE_TIME_FORMAT));
