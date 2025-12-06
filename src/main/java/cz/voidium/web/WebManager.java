@@ -46,48 +46,48 @@ import java.util.UUID;
 // ============================================================================
 
 public class WebManager {
-    
+
     // ========================= KONSTANTY ====================================
-    
+
     /** Logger pro výpisy do konzole */
     private static final Logger LOGGER = LoggerFactory.getLogger("Voidium-Web");
-    
+
     /** Gson instance pro JSON serializaci s podporou LocalTime */
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(LocalTime.class, new VoidiumConfig.LocalTimeAdapter())
             .setLongSerializationPolicy(com.google.gson.LongSerializationPolicy.STRING)
             .create();
-    
+
     // ========================= INSTANCE PROMĚNNÉ ============================
-    
+
     /** Singleton instance */
     private static WebManager instance;
-    
+
     /** HTTP server instance */
     private HttpServer server;
-    
+
     /** Reference na Minecraft server */
     private MinecraftServer mcServer;
-    
+
     /** Autentizační token (generován při startu) */
     private String authToken;
-    
+
     // ========================================================================
-    //                          PŘEKLADY (LANG)
+    // PŘEKLADY (LANG)
     // ========================================================================
     // Mapa obsahuje všechny texty UI v EN a CZ
-    // Klíče: 
-    //   - prosté texty: "title", "dashboard", "save"
-    //   - názvy polí: "section.fieldName" (např. "discord.botToken")
-    //   - popisy polí: "desc.section.fieldName" (např. "desc.discord.botToken")
+    // Klíče:
+    // - prosté texty: "title", "dashboard", "save"
+    // - názvy polí: "section.fieldName" (např. "discord.botToken")
+    // - popisy polí: "desc.section.fieldName" (např. "desc.discord.botToken")
     // ========================================================================
-    
+
     private static final Map<String, Map<String, String>> LANG = new HashMap<>();
-    
+
     static {
         // ==================== ENGLISH (DEFAULT) =============================
         Map<String, String> en = new HashMap<>();
-        
+
         // --- Základní UI texty ---
         en.put("title", "Voidium Control Panel");
         en.put("unauthorized", "Unauthorized. Please use the link from server console.");
@@ -96,7 +96,7 @@ public class WebManager {
         en.put("status", "Server Status");
         en.put("online", "Online");
         en.put("offline", "Offline");
-        
+
         // --- Statistiky serveru ---
         en.put("players", "Players");
         en.put("active_players", "Active Players");
@@ -110,7 +110,7 @@ public class WebManager {
         en.put("uptime", "Uptime");
         en.put("cpu", "CPU Usage");
         en.put("server_info", "Server Information");
-        
+
         // --- Akce ---
         en.put("actions", "Quick Actions");
         en.put("restart", "Restart Server");
@@ -125,12 +125,12 @@ public class WebManager {
         en.put("add", "Add");
         en.put("remove", "Remove");
         en.put("cancel", "Cancel");
-        
+
         // --- Potvrzení a zprávy ---
         en.put("confirm_action", "Are you sure?");
         en.put("kicked_by_admin", "Kicked by admin");
         en.put("message_placeholder", "Type your message here...");
-        
+
         // --- Sekce konfigurace ---
         en.put("general", "General");
         en.put("web", "Web");
@@ -141,16 +141,17 @@ public class WebManager {
         en.put("ranks", "Ranks");
         en.put("tickets", "Tickets");
         en.put("playerlist", "Player List (TAB)");
-        
+
         // --- Reset locale ---
         en.put("locale_reset_title", "Message Language Reset");
-        en.put("locale_reset_description", "Reset all player-facing messages to English or Czech. This does NOT change ports, IDs, or technical settings.");
+        en.put("locale_reset_description",
+                "Reset all player-facing messages to English or Czech. This does NOT change ports, IDs, or technical settings.");
         en.put("reset_to_english", "Reset Messages to English");
         en.put("reset_to_czech", "Reset Messages to Czech");
         en.put("locale_reset_success", "Messages successfully reset to {locale}!");
         en.put("locale_reset_confirm_en", "Are you sure you want to reset all messages to English?");
         en.put("locale_reset_confirm_cz", "Are you sure you want to reset all messages to Czech?");
-        
+
         // --- Popisy sekcí ---
         en.put("desc.server_info", "Real-time server statistics and resource usage");
         en.put("desc.actions", "Quick actions to manage your server");
@@ -158,7 +159,7 @@ public class WebManager {
         en.put("desc.restart", "Restart the Minecraft server. All players will be disconnected.");
         en.put("desc.announce", "Send a broadcast message to all online players");
         en.put("desc.kick", "Disconnect this player from the server");
-        
+
         // --- Role prefix editor ---
         en.put("label.prefix", "Prefix");
         en.put("label.suffix", "Suffix");
@@ -168,15 +169,15 @@ public class WebManager {
         en.put("placeholder.suffix", "Text after name (e.g.,  &4★)");
         en.put("placeholder.color", "Name color (e.g., &4 for red)");
         en.put("placeholder.priority", "Higher = applied first");
-        
+
         // =====================================================================
         // KONFIGURACE - NÁZVY POLÍ (section.fieldName)
         // =====================================================================
-        
+
         // --- Web ---
         en.put("web.language", "Language");
         en.put("desc.web.language", "Choose the interface language for the control panel");
-        
+
         // --- General ---
         en.put("general.enableMod", "Enable Mod");
         en.put("general.enableRestarts", "Enable Restarts");
@@ -190,7 +191,7 @@ public class WebManager {
         en.put("general.enablePlayerList", "Enable Player List");
         en.put("general.skinCacheHours", "Skin Cache Duration (Hours)");
         en.put("general.modPrefix", "Mod Prefix");
-        
+
         // --- Restart ---
         en.put("restart.restartType", "Restart Type");
         en.put("restart.fixedRestartTimes", "Fixed Restart Times");
@@ -199,22 +200,27 @@ public class WebManager {
         en.put("restart.warningMessage", "Warning Message");
         en.put("restart.restartingNowMessage", "Restarting Now Message");
         en.put("restart.kickMessage", "Kick Message");
-        en.put("desc.restart.restartType", "FIXED_TIME: Restart at specific times | INTERVAL: Restart every X hours | DELAY: Restart after X minutes from start");
+        en.put("desc.restart.restartType",
+                "FIXED_TIME: Restart at specific times | INTERVAL: Restart every X hours | DELAY: Restart after X minutes from start");
         en.put("desc.restart.fixedRestartTimes", "Set exact times when the server should restart (format: HH:MM)");
         en.put("desc.restart.intervalHours", "Number of hours between automatic restarts");
         en.put("desc.restart.delayMinutes", "Minutes to wait before the first restart after server start");
-        en.put("desc.restart.warningMessage", "Broadcast warning at 30, 15, 10, 5, 3, 2, 1 minutes before restart. Use %minutes% placeholder");
-        en.put("desc.restart.restartingNowMessage", "Final broadcast message when server restart begins (0 minutes remaining)");
+        en.put("desc.restart.warningMessage",
+                "Broadcast warning at 30, 15, 10, 5, 3, 2, 1 minutes before restart. Use %minutes% placeholder");
+        en.put("desc.restart.restartingNowMessage",
+                "Final broadcast message when server restart begins (0 minutes remaining)");
         en.put("desc.restart.kickMessage", "Message shown to players when they are kicked during server restart");
-        
+
         // --- Announcements ---
         en.put("announcement.prefix", "Prefix");
         en.put("announcement.announcementIntervalMinutes", "Interval (Minutes)");
         en.put("announcement.announcements", "Messages");
         en.put("desc.announcement.prefix", "Text prefix added before each announcement message");
-        en.put("desc.announcement.announcementIntervalMinutes", "Time interval in minutes between automatic announcements");
-        en.put("desc.announcement.announcements", "List of messages that will be broadcasted automatically in rotation");
-        
+        en.put("desc.announcement.announcementIntervalMinutes",
+                "Time interval in minutes between automatic announcements");
+        en.put("desc.announcement.announcements",
+                "List of messages that will be broadcasted automatically in rotation");
+
         // --- Ranks ---
         en.put("ranks.enableAutoRanks", "Enable Auto Ranks");
         en.put("ranks.checkIntervalMinutes", "Check Interval (Minutes)");
@@ -225,9 +231,11 @@ public class WebManager {
         en.put("ranks.hours", "Hours Needed");
         en.put("desc.ranks.enableAutoRanks", "Automatically promote players to higher ranks based on playtime");
         en.put("desc.ranks.checkIntervalMinutes", "How often to check if players should be promoted (in minutes)");
-        en.put("desc.ranks.promotionMessage", "Message sent to player when promoted. Variables: {player}, {rank}, {hours}");
-        en.put("desc.ranks.ranks", "Define ranks with required playtime hours. PREFIX adds text before name, SUFFIX after name");
-        
+        en.put("desc.ranks.promotionMessage",
+                "Message sent to player when promoted. Variables: {player}, {rank}, {hours}");
+        en.put("desc.ranks.ranks",
+                "Define ranks with required playtime hours. PREFIX adds text before name, SUFFIX after name");
+
         // --- Discord ---
         en.put("discord.enableDiscord", "Enable Discord Integration");
         en.put("discord.botToken", "Bot Token");
@@ -271,12 +279,13 @@ public class WebManager {
         en.put("discord.ticketCreatedMessage", "Ticket Created Message");
         en.put("discord.ticketClosingMessage", "Ticket Closing Message");
         en.put("discord.textChannelOnlyMessage", "Text Channel Only Message");
-        
+
         en.put("desc.discord.botToken", "Your Discord bot token from Discord Developer Portal");
         en.put("desc.discord.guildId", "Your Discord server (guild) ID");
         en.put("desc.discord.botActivityType", "Activity Type: PLAYING, WATCHING, LISTENING, COMPETING");
         en.put("desc.discord.botActivityText", "Text displayed in bot status");
-        en.put("desc.discord.kickMessage", "Message shown to non-whitelisted players. Use %code% for verification code");
+        en.put("desc.discord.kickMessage",
+                "Message shown to non-whitelisted players. Use %code% for verification code");
         en.put("desc.discord.linkSuccessMessage", "Message sent when account is linked. Use %player% for player name");
         en.put("desc.discord.alreadyLinkedMessage", "Message when max accounts reached. Use %max% for limit");
         en.put("desc.discord.chatWebhookUrl", "Webhook URL for sending Minecraft chat to Discord");
@@ -285,14 +294,16 @@ public class WebManager {
         en.put("desc.discord.discordToMinecraftFormat", "Format for Discord→MC. Variables: %user%, %message%");
         en.put("desc.discord.invalidCodeMessage", "Message when invalid or expired code is entered");
         en.put("desc.discord.notLinkedMessage", "Message when user is not linked and enters invalid code");
-        en.put("desc.discord.alreadyLinkedSingleMessage", "Message when user is already linked (1 account). Use %uuid%");
-        en.put("desc.discord.alreadyLinkedMultipleMessage", "Message when user is linked to multiple accounts. Use %count%");
+        en.put("desc.discord.alreadyLinkedSingleMessage",
+                "Message when user is already linked (1 account). Use %uuid%");
+        en.put("desc.discord.alreadyLinkedMultipleMessage",
+                "Message when user is linked to multiple accounts. Use %count%");
         en.put("desc.discord.unlinkSuccessMessage", "Message when accounts are successfully unlinked");
         en.put("desc.discord.wrongGuildMessage", "Message when command is used in wrong Discord server");
         en.put("desc.discord.ticketCreatedMessage", "Message when a ticket is created");
         en.put("desc.discord.ticketClosingMessage", "Message when a ticket is being closed");
         en.put("desc.discord.textChannelOnlyMessage", "Message when command requires text channel");
-        
+
         // --- Stats ---
         en.put("stats.enableStats", "Enable Statistics");
         en.put("stats.reportChannelId", "Report Channel ID");
@@ -301,7 +312,7 @@ public class WebManager {
         en.put("stats.reportPeakLabel", "Peak Players Label");
         en.put("stats.reportAverageLabel", "Average Players Label");
         en.put("stats.reportFooter", "Report Footer");
-        
+
         // --- Entity Cleaner ---
         en.put("entitycleaner.enabled", "Enable Entity Cleaner");
         en.put("entitycleaner.cleanupIntervalSeconds", "Cleanup Interval (seconds)");
@@ -317,7 +328,7 @@ public class WebManager {
         en.put("entitycleaner.itemWhitelist", "Item Whitelist");
         en.put("entitycleaner.warningMessage", "Warning Message");
         en.put("entitycleaner.cleanupMessage", "Cleanup Message");
-        
+
         // --- Vote ---
         en.put("vote.enabled", "Enable Voting System");
         en.put("vote.host", "Host Address");
@@ -331,7 +342,7 @@ public class WebManager {
         en.put("vote.commands", "Commands to Execute");
         en.put("desc.vote.announcementMessage", "Vote announcement. Use %PLAYER% for player name");
         en.put("desc.vote.commands", "Commands executed when player votes. Use %PLAYER% for player name");
-        
+
         // --- PlayerList ---
         en.put("playerlist.enableCustomPlayerList", "Enable Custom Player List");
         en.put("playerlist.headerLine1", "Header Line 1");
@@ -349,7 +360,7 @@ public class WebManager {
         en.put("desc.playerlist.enableCustomPlayerList", "Enable custom TAB list header/footer");
         en.put("desc.playerlist.headerLine1", "First line of TAB header. Variables: %online%, %max%, %tps%");
         en.put("desc.playerlist.playerNameFormat", "Format: %rank_prefix%, %player_name%, %rank_suffix%");
-        
+
         // --- Tickets ---
         en.put("tickets.enableTickets", "Enable Ticket System");
         en.put("tickets.ticketCategoryId", "Ticket Category ID");
@@ -375,10 +386,11 @@ public class WebManager {
         en.put("desc.tickets.transcriptFilename", "Filename template. Variables: %user%, %date%, %reason%");
         en.put("desc.tickets.mcBotNotConnectedMessage", "Message sent to player when Discord bot is offline");
         en.put("desc.tickets.mcGuildNotFoundMessage", "Message sent to player when Discord server is not found");
-        en.put("desc.tickets.mcCategoryNotFoundMessage", "Message sent to player when ticket category is not configured");
+        en.put("desc.tickets.mcCategoryNotFoundMessage",
+                "Message sent to player when ticket category is not configured");
         en.put("desc.tickets.mcTicketCreatedMessage", "Message sent to player when ticket is created");
         en.put("desc.tickets.mcDiscordNotFoundMessage", "Message sent when player's Discord account is not found");
-        
+
         // --- Tlačítka a UI elementy ---
         en.put("btn.save", "Save");
         en.put("btn.cancel", "Cancel");
@@ -387,7 +399,7 @@ public class WebManager {
         en.put("label.enabled", "Enabled");
         en.put("label.disabled", "Disabled");
         en.put("loading", "Loading...");
-        
+
         // --- Config sekce pro JavaScript ---
         en.put("config.save.success", "Configuration saved successfully!");
         en.put("config.save.error", "Failed to save configuration");
@@ -403,32 +415,33 @@ public class WebManager {
         en.put("config.section.tickets", "Ticket System");
         en.put("config.section.playerlist", "Player List (TAB)");
         en.put("config.section.entitycleaner", "Entity Cleaner");
-        
+
         // --- Role prefix editor ---
         en.put("role.prefix.editor", "Role Prefix Editor");
         en.put("role.prefix.add", "Add Role Prefix");
         en.put("role.prefix.remove", "Remove");
         en.put("color.picker.title", "Select Color");
-        
+
         // --- Ranks placeholders ---
         en.put("ranks.value.placeholder", "Prefix/Suffix text (e.g. &a[VIP])");
         en.put("ranks.hours.placeholder", "Required hours");
         en.put("ranks.conditions.label", "Custom Conditions (Optional)");
-        en.put("ranks.conditions.desc", "Add extra requirements beyond playtime. Type: what to track | Target: specific item/mob/biome | Count: how many needed");
+        en.put("ranks.conditions.desc",
+                "Add extra requirements beyond playtime. Type: what to track | Target: specific item/mob/biome | Count: how many needed");
         en.put("ranks.condition.type", "Condition Type");
         en.put("ranks.condition.target", "Target (e.g. minecraft:zombie)");
         en.put("ranks.condition.count", "Required Count");
-        
+
         // --- Language and locale ---
         en.put("language.changed", "Language changed! Reloading...");
         en.put("locale.reset.confirm", "Are you sure you want to reset all locale messages?");
         en.put("locale.reset.success", "Locale messages reset successfully!");
         en.put("locale.reset.error", "Failed to reset locale messages");
-        
+
         // --- Web config fields ---
         en.put("config.web.language", "Interface Language");
         en.put("config.web.language.desc", "Choose language for the control panel interface");
-        
+
         // --- More field descriptions ---
         en.put("config.general.enableMod.desc", "Master switch for enabling/disabling the entire Voidium mod");
         en.put("config.general.enableRestarts.desc", "Enable automatic server restarts");
@@ -442,7 +455,7 @@ public class WebManager {
         en.put("config.general.enablePlayerList.desc", "Enable custom TAB list");
         en.put("config.general.skinCacheHours.desc", "How long to cache player skins (hours)");
         en.put("config.general.modPrefix.desc", "Prefix for all mod messages in chat");
-        
+
         // --- Vote descriptions ---
         en.put("config.vote.enabled.desc", "Enable the Votifier voting system");
         en.put("config.vote.host.desc", "Host address for Votifier listener (usually 0.0.0.0)");
@@ -452,13 +465,13 @@ public class WebManager {
         en.put("config.vote.sharedSecret.desc", "Shared secret for V2 protocol");
         en.put("config.vote.announceVotes.desc", "Broadcast vote announcements to all players");
         en.put("config.vote.announcementCooldown.desc", "Cooldown between vote announcements (seconds)");
-        
+
         // --- Ranks descriptions ---
         en.put("config.ranks.enableAutoRanks.desc", "Automatically assign ranks based on playtime");
         en.put("config.ranks.checkIntervalMinutes.desc", "How often to check playtime for promotions (minutes)");
         en.put("config.ranks.promotionMessage.desc", "Message sent on promotion. Variables: {player}, {rank}, {hours}");
         en.put("config.ranks.ranks.desc", "List of playtime ranks. Type: PREFIX (before name) or SUFFIX (after name)");
-        
+
         // --- PlayerList descriptions ---
         en.put("config.playerlist.enableCustomPlayerList.desc", "Enable custom TAB list header and footer");
         en.put("config.playerlist.headerLine1.desc", "Variables: %online%, %max%, %tps%, %playtime%, %time%, %memory%");
@@ -469,11 +482,14 @@ public class WebManager {
         en.put("config.playerlist.footerLine3.desc", "Variables: %online%, %max%, %tps%, %playtime%, %time%, %memory%");
         en.put("config.playerlist.enableCustomNames.desc", "Enable custom player name formatting in TAB");
         en.put("config.playerlist.playerNameFormat.desc", "Variables: %rank_prefix%, %player_name%, %rank_suffix%");
-        en.put("config.playerlist.defaultPrefix.desc", "Default prefix when player has no rank. Color codes: &0-f, &#RRGGBB");
-        en.put("config.playerlist.defaultSuffix.desc", "Default suffix when player has no rank. Color codes: &0-f, &#RRGGBB");
-        en.put("config.playerlist.combineMultipleRanks.desc", "Combine all rank prefixes/suffixes instead of using highest priority only");
+        en.put("config.playerlist.defaultPrefix.desc",
+                "Default prefix when player has no rank. Color codes: &0-f, &#RRGGBB");
+        en.put("config.playerlist.defaultSuffix.desc",
+                "Default suffix when player has no rank. Color codes: &0-f, &#RRGGBB");
+        en.put("config.playerlist.combineMultipleRanks.desc",
+                "Combine all rank prefixes/suffixes instead of using highest priority only");
         en.put("config.playerlist.updateIntervalSeconds.desc", "How often to refresh the TAB list (in seconds)");
-        
+
         // --- Stats descriptions ---
         en.put("config.stats.enableStats.desc", "Enable daily server statistics reports");
         en.put("config.stats.reportChannelId.desc", "Discord channel ID for daily statistics reports");
@@ -482,37 +498,46 @@ public class WebManager {
         en.put("config.stats.reportPeakLabel.desc", "Label for peak players field");
         en.put("config.stats.reportAverageLabel.desc", "Label for average players field");
         en.put("config.stats.reportFooter.desc", "Footer text for the stats report");
-        
+
         // --- Entity Cleaner descriptions ---
         en.put("config.entitycleaner.enabled.desc", "Enable automatic entity cleanup");
-        en.put("config.entitycleaner.cleanupIntervalSeconds.desc", "Seconds between automatic cleanups (e.g. 300 = 5 minutes)");
+        en.put("config.entitycleaner.cleanupIntervalSeconds.desc",
+                "Seconds between automatic cleanups (e.g. 300 = 5 minutes)");
         en.put("config.entitycleaner.warningTimes.desc", "Seconds before cleanup to show warning (e.g. 30, 10, 5)");
         en.put("config.entitycleaner.removeDroppedItems.desc", "Remove dropped items on the ground");
         en.put("config.entitycleaner.removePassiveMobs.desc", "Remove passive mobs (cows, pigs, sheep, etc.)");
         en.put("config.entitycleaner.removeHostileMobs.desc", "Remove hostile mobs (zombies, skeletons, etc.)");
         en.put("config.entitycleaner.removeXpOrbs.desc", "Remove experience orbs");
         en.put("config.entitycleaner.removeArrows.desc", "Remove arrows stuck in ground/walls");
-        en.put("config.entitycleaner.removeNamedEntities.desc", "If false, entities with custom names (name tags) are protected");
-        en.put("config.entitycleaner.removeTamedAnimals.desc", "If false, tamed animals (wolves, cats, horses) are protected");
-        en.put("config.entitycleaner.entityWhitelist.desc", "Entity types that will never be removed (minecraft:entity_id)");
-        en.put("config.entitycleaner.itemWhitelist.desc", "Dropped items that will never be removed (minecraft:item_id)");
+        en.put("config.entitycleaner.removeNamedEntities.desc",
+                "If false, entities with custom names (name tags) are protected");
+        en.put("config.entitycleaner.removeTamedAnimals.desc",
+                "If false, tamed animals (wolves, cats, horses) are protected");
+        en.put("config.entitycleaner.entityWhitelist.desc",
+                "Entity types that will never be removed (minecraft:entity_id)");
+        en.put("config.entitycleaner.itemWhitelist.desc",
+                "Dropped items that will never be removed (minecraft:item_id)");
         en.put("config.entitycleaner.warningMessage.desc", "Warning before cleanup. Use %seconds% for time");
-        en.put("config.entitycleaner.cleanupMessage.desc", "Message after cleanup. Use %items%, %mobs%, %xp%, %arrows%");
-        
+        en.put("config.entitycleaner.cleanupMessage.desc",
+                "Message after cleanup. Use %items%, %mobs%, %xp%, %arrows%");
+
         // --- Restart descriptions ---
-        en.put("config.restart.restartType.desc", "FIXED_TIME: At specific times | INTERVAL: Every X hours | DELAY: X minutes from start");
+        en.put("config.restart.restartType.desc",
+                "FIXED_TIME: At specific times | INTERVAL: Every X hours | DELAY: X minutes from start");
         en.put("config.restart.fixedRestartTimes.desc", "Exact times for server restart (format: HH:MM)");
         en.put("config.restart.intervalHours.desc", "Hours between automatic restarts");
         en.put("config.restart.delayMinutes.desc", "Minutes to wait before first restart after server start");
-        en.put("config.restart.warningMessage.desc", "Broadcast at 60, 30, 15, 10, 5, 3, 2, 1 min before restart. Use %minutes%");
+        en.put("config.restart.warningMessage.desc",
+                "Broadcast at 60, 30, 15, 10, 5, 3, 2, 1 min before restart. Use %minutes%");
         en.put("config.restart.restartingNowMessage.desc", "Final message when restart begins (0 minutes remaining)");
         en.put("config.restart.kickMessage.desc", "Disconnect message shown to players during restart");
-        
+
         // --- Announcement descriptions ---
         en.put("config.announcement.prefix.desc", "Text prefix before each announcement. Color codes: &0-f, &#RRGGBB");
         en.put("config.announcement.announcementIntervalMinutes.desc", "Minutes between automatic announcements");
-        en.put("config.announcement.announcements.desc", "Messages to broadcast. Color codes: &0-f (legacy), &#RRGGBB (hex)");
-        
+        en.put("config.announcement.announcements.desc",
+                "Messages to broadcast. Color codes: &0-f (legacy), &#RRGGBB (hex)");
+
         // --- Tickets descriptions ---
         en.put("config.tickets.enableTickets.desc", "Enable Discord ticket support system");
         en.put("config.tickets.ticketCategoryId.desc", "Discord category ID where ticket channels will be created");
@@ -520,10 +545,12 @@ public class WebManager {
         en.put("config.tickets.ticketChannelTopic.desc", "Topic for ticket channels. Variables: %player%, %reason%");
         en.put("config.tickets.maxTicketsPerUser.desc", "Maximum open tickets per player");
         en.put("config.tickets.ticketCreatedMessage.desc", "Message in MC when ticket created. Variables: %channel%");
-        en.put("config.tickets.ticketWelcomeMessage.desc", "Welcome message in ticket channel. Variables: %user%, %reason%");
+        en.put("config.tickets.ticketWelcomeMessage.desc",
+                "Welcome message in ticket channel. Variables: %user%, %reason%");
         en.put("config.tickets.ticketCloseMessage.desc", "Message when ticket is closed");
         en.put("config.tickets.noPermissionMessage.desc", "Message when user lacks permission");
-        en.put("config.tickets.ticketLimitReachedMessage.desc", "Message when user reaches ticket limit. Variables: %max%");
+        en.put("config.tickets.ticketLimitReachedMessage.desc",
+                "Message when user reaches ticket limit. Variables: %max%");
         en.put("config.tickets.ticketAlreadyClosedMessage.desc", "Message when ticket is already closed");
         en.put("config.tickets.enableTranscript.desc", "Save ticket conversation when closing");
         en.put("config.tickets.transcriptFormat.desc", "TXT = readable text, JSON = structured data");
@@ -533,7 +560,7 @@ public class WebManager {
         en.put("config.tickets.mcCategoryNotFoundMessage.desc", "In-game message when ticket category not set");
         en.put("config.tickets.mcTicketCreatedMessage.desc", "In-game message after ticket creation. Use %channel%");
         en.put("config.tickets.mcDiscordNotFoundMessage.desc", "In-game message when player's Discord not on server");
-        
+
         // --- Discord descriptions ---
         en.put("config.discord.enableDiscord.desc", "Master switch for Discord bot integration");
         en.put("config.discord.botToken.desc", "Your bot token from Discord Developer Portal (keep secret!)");
@@ -555,7 +582,8 @@ public class WebManager {
         en.put("config.discord.syncBansMcToDiscord.desc", "Ban Discord user when banned in MC");
         en.put("config.discord.enableChatBridge.desc", "Enable two-way chat between MC and Discord");
         en.put("config.discord.minecraftToDiscordFormat.desc", "Format for MC→Discord. Variables: %player%, %message%");
-        en.put("config.discord.discordToMinecraftFormat.desc", "Format for Discord→MC. Variables: %user%, %message%. Color codes: &0-f");
+        en.put("config.discord.discordToMinecraftFormat.desc",
+                "Format for Discord→MC. Variables: %user%, %message%. Color codes: &0-f");
         en.put("config.discord.translateEmojis.desc", "Convert Discord emoji names to Unicode characters");
         en.put("config.discord.chatWebhookUrl.desc", "Webhook URL for chat (shows player heads as avatar)");
         en.put("config.discord.enableConsoleLog.desc", "Send server console output to Discord");
@@ -566,25 +594,29 @@ public class WebManager {
         en.put("config.discord.statusMessageStopped.desc", "Message when server is offline");
         en.put("config.discord.enableTopicUpdate.desc", "Update channel topic with server info");
         en.put("config.discord.channelTopicFormat.desc", "Topic format. Variables: %online%, %max%, %tps%, %uptime%");
-        en.put("config.discord.uptimeFormat.desc", "Uptime display format. Variables: %d% (days), %h% (hours), %m% (minutes)");
+        en.put("config.discord.uptimeFormat.desc",
+                "Uptime display format. Variables: %d% (days), %h% (hours), %m% (minutes)");
         en.put("config.discord.invalidCodeMessage.desc", "Message when invalid/expired code is entered");
         en.put("config.discord.notLinkedMessage.desc", "Message when user is not linked");
-        en.put("config.discord.alreadyLinkedSingleMessage.desc", "Message when already linked (1 account). Variables: %uuid%");
-        en.put("config.discord.alreadyLinkedMultipleMessage.desc", "Message when linked to multiple accounts. Variables: %count%");
+        en.put("config.discord.alreadyLinkedSingleMessage.desc",
+                "Message when already linked (1 account). Variables: %uuid%");
+        en.put("config.discord.alreadyLinkedMultipleMessage.desc",
+                "Message when linked to multiple accounts. Variables: %count%");
         en.put("config.discord.unlinkSuccessMessage.desc", "Message when accounts are unlinked");
         en.put("config.discord.wrongGuildMessage.desc", "Message when command used in wrong server");
         en.put("config.discord.ticketCreatedMessage.desc", "Message when ticket is created");
         en.put("config.discord.ticketClosingMessage.desc", "Message when ticket is closing");
         en.put("config.discord.textChannelOnlyMessage.desc", "Message when command requires text channel");
-        
+
         // --- Help text for color codes ---
-        en.put("help.colorcodes", "Color codes: &0-9, &a-f (legacy), &#RRGGBB (hex). Formatting: &l (bold), &o (italic), &n (underline), &m (strike), &r (reset)");
-        
+        en.put("help.colorcodes",
+                "Color codes: &0-9, &a-f (legacy), &#RRGGBB (hex). Formatting: &l (bold), &o (italic), &n (underline), &m (strike), &r (reset)");
+
         LANG.put("en", en);
-        
+
         // ==================== ČEŠTINA =======================================
         Map<String, String> cz = new HashMap<>();
-        
+
         // --- Základní UI texty ---
         cz.put("title", "Ovládací panel Voidium");
         cz.put("unauthorized", "Neautorizováno. Použijte prosím odkaz z konzole serveru.");
@@ -593,7 +625,7 @@ public class WebManager {
         cz.put("status", "Stav serveru");
         cz.put("online", "Online");
         cz.put("offline", "Offline");
-        
+
         // --- Statistiky serveru ---
         cz.put("players", "Hráči");
         cz.put("active_players", "Aktivní hráči");
@@ -607,7 +639,7 @@ public class WebManager {
         cz.put("uptime", "Doba běhu");
         cz.put("cpu", "Vytížení CPU");
         cz.put("server_info", "Informace o serveru");
-        
+
         // --- Akce ---
         cz.put("actions", "Rychlé akce");
         cz.put("restart", "Restartovat server");
@@ -622,12 +654,12 @@ public class WebManager {
         cz.put("add", "Přidat");
         cz.put("remove", "Odebrat");
         cz.put("cancel", "Zrušit");
-        
+
         // --- Potvrzení a zprávy ---
         cz.put("confirm_action", "Jste si jistí?");
         cz.put("kicked_by_admin", "Vyhozen administrátorem");
         cz.put("message_placeholder", "Napište zprávu zde...");
-        
+
         // --- Sekce konfigurace ---
         cz.put("general", "Obecné");
         cz.put("web", "Web");
@@ -638,16 +670,17 @@ public class WebManager {
         cz.put("ranks", "Ranky");
         cz.put("tickets", "Tickety");
         cz.put("playerlist", "Seznam hráčů (TAB)");
-        
+
         // --- Reset locale ---
         cz.put("locale_reset_title", "Reset jazyka zpráv");
-        cz.put("locale_reset_description", "Resetuje všechny zprávy do angličtiny nebo češtiny. Nezmění porty, ID ani technická nastavení.");
+        cz.put("locale_reset_description",
+                "Resetuje všechny zprávy do angličtiny nebo češtiny. Nezmění porty, ID ani technická nastavení.");
         cz.put("reset_to_english", "Resetovat zprávy do angličtiny");
         cz.put("reset_to_czech", "Resetovat zprávy do češtiny");
         cz.put("locale_reset_success", "Zprávy úspěšně resetovány do {locale}!");
         cz.put("locale_reset_confirm_en", "Opravdu chcete resetovat všechny zprávy do angličtiny?");
         cz.put("locale_reset_confirm_cz", "Opravdu chcete resetovat všechny zprávy do češtiny?");
-        
+
         // --- Popisy sekcí ---
         cz.put("desc.server_info", "Statistiky serveru a využití zdrojů v reálném čase");
         cz.put("desc.actions", "Rychlé akce pro správu serveru");
@@ -655,7 +688,7 @@ public class WebManager {
         cz.put("desc.restart", "Restartuje server. Všichni hráči budou odpojeni.");
         cz.put("desc.announce", "Odešle zprávu všem online hráčům");
         cz.put("desc.kick", "Odpojí tohoto hráče ze serveru");
-        
+
         // --- Role prefix editor ---
         cz.put("label.prefix", "Prefix");
         cz.put("label.suffix", "Suffix");
@@ -665,15 +698,15 @@ public class WebManager {
         cz.put("placeholder.suffix", "Text za jménem (např.  &4★)");
         cz.put("placeholder.color", "Barva jména (např. &4 pro červenou)");
         cz.put("placeholder.priority", "Vyšší číslo = vyšší priorita");
-        
+
         // =====================================================================
         // KONFIGURACE - NÁZVY POLÍ (section.fieldName) - ČEŠTINA
         // =====================================================================
-        
+
         // --- Web ---
         cz.put("web.language", "Jazyk");
         cz.put("desc.web.language", "Vyberte jazyk rozhraní ovládacího panelu");
-        
+
         // --- General ---
         cz.put("general.enableMod", "Zapnout mod");
         cz.put("general.enableRestarts", "Zapnout restarty");
@@ -687,7 +720,7 @@ public class WebManager {
         cz.put("general.enablePlayerList", "Zapnout seznam hráčů");
         cz.put("general.skinCacheHours", "Doba cachování skinů (hodiny)");
         cz.put("general.modPrefix", "Prefix modu");
-        
+
         // --- Restart ---
         cz.put("restart.restartType", "Typ restartu");
         cz.put("restart.fixedRestartTimes", "Pevné časy restartu");
@@ -696,14 +729,17 @@ public class WebManager {
         cz.put("restart.warningMessage", "Varovná zpráva");
         cz.put("restart.restartingNowMessage", "Zpráva při restartu");
         cz.put("restart.kickMessage", "Zpráva při odpojení");
-        cz.put("desc.restart.restartType", "FIXED_TIME: V konkrétní časy | INTERVAL: Každých X hodin | DELAY: Po X minutách od startu");
+        cz.put("desc.restart.restartType",
+                "FIXED_TIME: V konkrétní časy | INTERVAL: Každých X hodin | DELAY: Po X minutách od startu");
         cz.put("desc.restart.fixedRestartTimes", "Nastavte přesné časy restartů (formát: HH:MM)");
         cz.put("desc.restart.intervalHours", "Počet hodin mezi automatickými restarty");
         cz.put("desc.restart.delayMinutes", "Minuty čekání před prvním restartem");
-        cz.put("desc.restart.warningMessage", "Varování vysílané 30, 15, 10, 5, 3, 2, 1 minut před restartem. Použijte %minutes% placeholder");
-        cz.put("desc.restart.restartingNowMessage", "Finální zpráva vysílaná při zahájení restartu serveru (0 minut zbývá)");
+        cz.put("desc.restart.warningMessage",
+                "Varování vysílané 30, 15, 10, 5, 3, 2, 1 minut před restartem. Použijte %minutes% placeholder");
+        cz.put("desc.restart.restartingNowMessage",
+                "Finální zpráva vysílaná při zahájení restartu serveru (0 minut zbývá)");
         cz.put("desc.restart.kickMessage", "Zpráva zobrazená hráčům při jejich vyhození během restartu serveru");
-        
+
         // --- Announcements ---
         cz.put("announcement.prefix", "Prefix");
         cz.put("announcement.announcementIntervalMinutes", "Interval (minuty)");
@@ -711,7 +747,7 @@ public class WebManager {
         cz.put("desc.announcement.prefix", "Textový prefix přidaný před každou zprávu");
         cz.put("desc.announcement.announcementIntervalMinutes", "Časový interval mezi oznámeními");
         cz.put("desc.announcement.announcements", "Seznam zpráv vysílaných v rotaci");
-        
+
         // --- Ranks ---
         cz.put("ranks.enableAutoRanks", "Zapnout auto ranky");
         cz.put("ranks.checkIntervalMinutes", "Interval kontroly (minuty)");
@@ -724,7 +760,7 @@ public class WebManager {
         cz.put("desc.ranks.checkIntervalMinutes", "Jak často kontrolovat povýšení (v minutách)");
         cz.put("desc.ranks.promotionMessage", "Zpráva při povýšení. Proměnné: {player}, {rank}, {hours}");
         cz.put("desc.ranks.ranks", "Definice ranků s požadovanými hodinami. PREFIX/SUFFIX");
-        
+
         // --- Discord ---
         cz.put("discord.enableDiscord", "Zapnout Discord integraci");
         cz.put("discord.botToken", "Token bota");
@@ -768,7 +804,7 @@ public class WebManager {
         cz.put("discord.ticketCreatedMessage", "Zpráva o vytvoření ticketu");
         cz.put("discord.ticketClosingMessage", "Zpráva o zavírání ticketu");
         cz.put("discord.textChannelOnlyMessage", "Zpráva pouze pro textový kanál");
-        
+
         cz.put("desc.discord.botToken", "Token Discord bota z Developer Portal");
         cz.put("desc.discord.guildId", "ID vašeho Discord serveru");
         cz.put("desc.discord.botActivityType", "Typ aktivity: PLAYING, WATCHING, LISTENING, COMPETING");
@@ -782,14 +818,16 @@ public class WebManager {
         cz.put("desc.discord.discordToMinecraftFormat", "Formát Discord→MC. Proměnné: %user%, %message%");
         cz.put("desc.discord.invalidCodeMessage", "Zpráva při zadání neplatného nebo expirovaného kódu");
         cz.put("desc.discord.notLinkedMessage", "Zpráva když uživatel není propojen a zadá neplatný kód");
-        cz.put("desc.discord.alreadyLinkedSingleMessage", "Zpráva když je uživatel již propojen (1 účet). Použijte %uuid%");
-        cz.put("desc.discord.alreadyLinkedMultipleMessage", "Zpráva když je uživatel propojen k více účtům. Použijte %count%");
+        cz.put("desc.discord.alreadyLinkedSingleMessage",
+                "Zpráva když je uživatel již propojen (1 účet). Použijte %uuid%");
+        cz.put("desc.discord.alreadyLinkedMultipleMessage",
+                "Zpráva když je uživatel propojen k více účtům. Použijte %count%");
         cz.put("desc.discord.unlinkSuccessMessage", "Zpráva při úspěšném odpojení účtů");
         cz.put("desc.discord.wrongGuildMessage", "Zpráva když je příkaz použit na špatném Discord serveru");
         cz.put("desc.discord.ticketCreatedMessage", "Zpráva při vytvoření ticketu");
         cz.put("desc.discord.ticketClosingMessage", "Zpráva při zavírání ticketu");
         cz.put("desc.discord.textChannelOnlyMessage", "Zpráva když příkaz vyžaduje textový kanál");
-        
+
         // --- Stats ---
         cz.put("stats.enableStats", "Zapnout statistiky");
         cz.put("stats.reportChannelId", "ID kanálu pro reporty");
@@ -798,7 +836,7 @@ public class WebManager {
         cz.put("stats.reportPeakLabel", "Popisek maximálního počtu hráčů");
         cz.put("stats.reportAverageLabel", "Popisek průměrného počtu hráčů");
         cz.put("stats.reportFooter", "Patička reportu");
-        
+
         // --- Entity Cleaner ---
         cz.put("entitycleaner.enabled", "Zapnout čistič entit");
         cz.put("entitycleaner.cleanupIntervalSeconds", "Interval čištění (sekundy)");
@@ -814,7 +852,7 @@ public class WebManager {
         cz.put("entitycleaner.itemWhitelist", "Whitelist itemů");
         cz.put("entitycleaner.warningMessage", "Varovná zpráva");
         cz.put("entitycleaner.cleanupMessage", "Zpráva po čištění");
-        
+
         // --- Vote ---
         cz.put("vote.enabled", "Zapnout hlasovací systém");
         cz.put("vote.host", "Adresa hostitele");
@@ -828,7 +866,7 @@ public class WebManager {
         cz.put("vote.commands", "Příkazy k vykonání");
         cz.put("desc.vote.announcementMessage", "Oznámení o hlasování. Použijte %PLAYER%");
         cz.put("desc.vote.commands", "Příkazy při hlasování. Použijte %PLAYER%");
-        
+
         // --- PlayerList ---
         cz.put("playerlist.enableCustomPlayerList", "Zapnout vlastní seznam hráčů");
         cz.put("playerlist.headerLine1", "Hlavička řádek 1");
@@ -846,7 +884,7 @@ public class WebManager {
         cz.put("desc.playerlist.enableCustomPlayerList", "Zapnout vlastní TAB header/footer");
         cz.put("desc.playerlist.headerLine1", "První řádek hlavičky. Proměnné: %online%, %max%, %tps%");
         cz.put("desc.playerlist.playerNameFormat", "Formát: %rank_prefix%, %player_name%, %rank_suffix%");
-        
+
         // --- Tickets ---
         cz.put("tickets.enableTickets", "Zapnout systém ticketů");
         cz.put("tickets.ticketCategoryId", "ID kategorie ticketů");
@@ -875,7 +913,7 @@ public class WebManager {
         cz.put("desc.tickets.mcCategoryNotFoundMessage", "Zpráva hráči když kategorie ticketů není nastavena");
         cz.put("desc.tickets.mcTicketCreatedMessage", "Zpráva hráči po vytvoření ticketu");
         cz.put("desc.tickets.mcDiscordNotFoundMessage", "Zpráva když Discord účet hráče není nalezen");
-        
+
         // --- Tlačítka a UI elementy ---
         cz.put("btn.save", "Uložit");
         cz.put("btn.cancel", "Zrušit");
@@ -884,7 +922,7 @@ public class WebManager {
         cz.put("label.enabled", "Zapnuto");
         cz.put("label.disabled", "Vypnuto");
         cz.put("loading", "Načítání...");
-        
+
         // --- Config sekce pro JavaScript ---
         cz.put("config.save.success", "Konfigurace byla úspěšně uložena!");
         cz.put("config.save.error", "Nepodařilo se uložit konfiguraci");
@@ -900,32 +938,33 @@ public class WebManager {
         cz.put("config.section.tickets", "Systém ticketů");
         cz.put("config.section.playerlist", "Seznam hráčů (TAB)");
         cz.put("config.section.entitycleaner", "Čistič entit");
-        
+
         // --- Role prefix editor ---
         cz.put("role.prefix.editor", "Editor prefixů rolí");
         cz.put("role.prefix.add", "Přidat prefix role");
         cz.put("role.prefix.remove", "Odebrat");
         cz.put("color.picker.title", "Vybrat barvu");
-        
+
         // --- Ranks placeholders ---
         cz.put("ranks.value.placeholder", "Prefix/Suffix text (např. &a[VIP])");
         cz.put("ranks.hours.placeholder", "Požadované hodiny");
         cz.put("ranks.conditions.label", "Vlastní podmínky (volitelné)");
-        cz.put("ranks.conditions.desc", "Přidejte extra požadavky kromě času. Typ: co sledovat | Cíl: konkrétní item/mob/biom | Počet: kolik je potřeba");
+        cz.put("ranks.conditions.desc",
+                "Přidejte extra požadavky kromě času. Typ: co sledovat | Cíl: konkrétní item/mob/biom | Počet: kolik je potřeba");
         cz.put("ranks.condition.type", "Typ podmínky");
         cz.put("ranks.condition.target", "Cíl (např. minecraft:zombie)");
         cz.put("ranks.condition.count", "Požadovaný počet");
-        
+
         // --- Language and locale ---
         cz.put("language.changed", "Jazyk změněn! Obnovování...");
         cz.put("locale.reset.confirm", "Opravdu chcete resetovat všechny lokalizované zprávy?");
         cz.put("locale.reset.success", "Zprávy úspěšně resetovány!");
         cz.put("locale.reset.error", "Nepodařilo se resetovat zprávy");
-        
+
         // --- Web config fields ---
         cz.put("config.web.language", "Jazyk rozhraní");
         cz.put("config.web.language.desc", "Vyberte jazyk rozhraní ovládacího panelu");
-        
+
         // --- More field descriptions ---
         cz.put("config.general.enableMod.desc", "Hlavní přepínač pro zapnutí/vypnutí celého Voidium modu");
         cz.put("config.general.enableRestarts.desc", "Povolit automatické restarty serveru");
@@ -939,7 +978,7 @@ public class WebManager {
         cz.put("config.general.enablePlayerList.desc", "Povolit vlastní TAB seznam");
         cz.put("config.general.skinCacheHours.desc", "Jak dlouho ukládat skiny do cache (hodiny)");
         cz.put("config.general.modPrefix.desc", "Prefix pro všechny zprávy modu v chatu");
-        
+
         // --- Vote descriptions ---
         cz.put("config.vote.enabled.desc", "Povolit hlasovací systém Votifier");
         cz.put("config.vote.host.desc", "Host adresa pro Votifier listener (obvykle 0.0.0.0)");
@@ -949,13 +988,13 @@ public class WebManager {
         cz.put("config.vote.sharedSecret.desc", "Sdílené tajemství pro V2 protokol");
         cz.put("config.vote.announceVotes.desc", "Oznamovat hlasy všem hráčům");
         cz.put("config.vote.announcementCooldown.desc", "Prodleva mezi oznámeními hlasů (sekundy)");
-        
+
         // --- Ranks descriptions ---
         cz.put("config.ranks.enableAutoRanks.desc", "Automaticky přidělovat ranky podle odehraného času");
         cz.put("config.ranks.checkIntervalMinutes.desc", "Jak často kontrolovat odehraný čas (minuty)");
         cz.put("config.ranks.promotionMessage.desc", "Zpráva při povýšení. Proměnné: {player}, {rank}, {hours}");
         cz.put("config.ranks.ranks.desc", "Seznam ranků. Typ: PREFIX (před jménem) nebo SUFFIX (za jménem)");
-        
+
         // --- PlayerList descriptions ---
         cz.put("config.playerlist.enableCustomPlayerList.desc", "Povolit vlastní TAB header a footer");
         cz.put("config.playerlist.headerLine1.desc", "Proměnné: %online%, %max%, %tps%, %playtime%, %time%, %memory%");
@@ -968,9 +1007,10 @@ public class WebManager {
         cz.put("config.playerlist.playerNameFormat.desc", "Proměnné: %rank_prefix%, %player_name%, %rank_suffix%");
         cz.put("config.playerlist.defaultPrefix.desc", "Výchozí prefix bez ranku. Barvy: &0-f, &#RRGGBB");
         cz.put("config.playerlist.defaultSuffix.desc", "Výchozí suffix bez ranku. Barvy: &0-f, &#RRGGBB");
-        cz.put("config.playerlist.combineMultipleRanks.desc", "Kombinovat všechny ranky místo použití jen nejvyšší priority");
+        cz.put("config.playerlist.combineMultipleRanks.desc",
+                "Kombinovat všechny ranky místo použití jen nejvyšší priority");
         cz.put("config.playerlist.updateIntervalSeconds.desc", "Jak často aktualizovat TAB seznam (sekundy)");
-        
+
         // --- Stats descriptions ---
         cz.put("config.stats.enableStats.desc", "Povolit denní reporty statistik serveru");
         cz.put("config.stats.reportChannelId.desc", "ID Discord kanálu pro denní reporty");
@@ -979,7 +1019,7 @@ public class WebManager {
         cz.put("config.stats.reportPeakLabel.desc", "Popisek pro pole maximálního počtu hráčů");
         cz.put("config.stats.reportAverageLabel.desc", "Popisek pro pole průměrného počtu hráčů");
         cz.put("config.stats.reportFooter.desc", "Text patičky pro statistický report");
-        
+
         // --- Entity Cleaner descriptions ---
         cz.put("config.entitycleaner.enabled.desc", "Povolit automatické čištění entit");
         cz.put("config.entitycleaner.cleanupIntervalSeconds.desc", "Sekundy mezi čištěními (např. 300 = 5 minut)");
@@ -989,27 +1029,33 @@ public class WebManager {
         cz.put("config.entitycleaner.removeHostileMobs.desc", "Odstraňovat hostilní moby (zombie, kostlivci...)");
         cz.put("config.entitycleaner.removeXpOrbs.desc", "Odstraňovat XP orby");
         cz.put("config.entitycleaner.removeArrows.desc", "Odstraňovat šípy zaseknuté v zemi/zdech");
-        cz.put("config.entitycleaner.removeNamedEntities.desc", "Pokud false, pojmenované entity (name tags) jsou chráněny");
-        cz.put("config.entitycleaner.removeTamedAnimals.desc", "Pokud false, ochočená zvířata (vlci, kočky, koně) jsou chráněna");
-        cz.put("config.entitycleaner.entityWhitelist.desc", "Typy entit co nebudou nikdy odstraněny (minecraft:entity_id)");
-        cz.put("config.entitycleaner.itemWhitelist.desc", "Dropped itemy co nebudou nikdy odstraněny (minecraft:item_id)");
+        cz.put("config.entitycleaner.removeNamedEntities.desc",
+                "Pokud false, pojmenované entity (name tags) jsou chráněny");
+        cz.put("config.entitycleaner.removeTamedAnimals.desc",
+                "Pokud false, ochočená zvířata (vlci, kočky, koně) jsou chráněna");
+        cz.put("config.entitycleaner.entityWhitelist.desc",
+                "Typy entit co nebudou nikdy odstraněny (minecraft:entity_id)");
+        cz.put("config.entitycleaner.itemWhitelist.desc",
+                "Dropped itemy co nebudou nikdy odstraněny (minecraft:item_id)");
         cz.put("config.entitycleaner.warningMessage.desc", "Varování před čištěním. Použij %seconds% pro čas");
         cz.put("config.entitycleaner.cleanupMessage.desc", "Zpráva po čištění. Použij %items%, %mobs%, %xp%, %arrows%");
-        
+
         // --- Restart descriptions ---
-        cz.put("config.restart.restartType.desc", "FIXED_TIME: V konkrétní časy | INTERVAL: Každých X hodin | DELAY: X minut od startu");
+        cz.put("config.restart.restartType.desc",
+                "FIXED_TIME: V konkrétní časy | INTERVAL: Každých X hodin | DELAY: X minut od startu");
         cz.put("config.restart.fixedRestartTimes.desc", "Přesné časy restartů (formát: HH:MM)");
         cz.put("config.restart.intervalHours.desc", "Hodiny mezi automatickými restarty");
         cz.put("config.restart.delayMinutes.desc", "Minuty čekání před prvním restartem");
-        cz.put("config.restart.warningMessage.desc", "Vysílá se 60, 30, 15, 10, 5, 3, 2, 1 min před restartem. Použij %minutes%");
+        cz.put("config.restart.warningMessage.desc",
+                "Vysílá se 60, 30, 15, 10, 5, 3, 2, 1 min před restartem. Použij %minutes%");
         cz.put("config.restart.restartingNowMessage.desc", "Finální zpráva při startu restartu (0 minut zbývá)");
         cz.put("config.restart.kickMessage.desc", "Zpráva zobrazená hráčům při odpojení během restartu");
-        
+
         // --- Announcement descriptions ---
         cz.put("config.announcement.prefix.desc", "Textový prefix před zprávou. Barvy: &0-f, &#RRGGBB");
         cz.put("config.announcement.announcementIntervalMinutes.desc", "Minuty mezi automatickými oznámeními");
         cz.put("config.announcement.announcements.desc", "Zprávy k vysílání. Barvy: &0-f (legacy), &#RRGGBB (hex)");
-        
+
         // --- Tickets descriptions ---
         cz.put("config.tickets.enableTickets.desc", "Povolit Discord systém ticketů");
         cz.put("config.tickets.ticketCategoryId.desc", "ID Discord kategorie pro vytváření ticket kanálů");
@@ -1030,7 +1076,7 @@ public class WebManager {
         cz.put("config.tickets.mcCategoryNotFoundMessage.desc", "Zpráva ve hře když není nastavena kategorie");
         cz.put("config.tickets.mcTicketCreatedMessage.desc", "Zpráva ve hře po vytvoření ticketu. Použij %channel%");
         cz.put("config.tickets.mcDiscordNotFoundMessage.desc", "Zpráva ve hře když hráčův Discord není na serveru");
-        
+
         // --- Discord descriptions ---
         cz.put("config.discord.enableDiscord.desc", "Hlavní přepínač Discord integrace");
         cz.put("config.discord.botToken.desc", "Token bota z Discord Developer Portal (udržujte v tajnosti!)");
@@ -1052,7 +1098,8 @@ public class WebManager {
         cz.put("config.discord.syncBansMcToDiscord.desc", "Zabanovat Discord uživatele při banu v MC");
         cz.put("config.discord.enableChatBridge.desc", "Povolit obousměrný chat mezi MC a Discordem");
         cz.put("config.discord.minecraftToDiscordFormat.desc", "Formát MC→Discord. Proměnné: %player%, %message%");
-        cz.put("config.discord.discordToMinecraftFormat.desc", "Formát Discord→MC. Proměnné: %user%, %message%. Barvy: &0-f");
+        cz.put("config.discord.discordToMinecraftFormat.desc",
+                "Formát Discord→MC. Proměnné: %user%, %message%. Barvy: &0-f");
         cz.put("config.discord.translateEmojis.desc", "Převádět Discord emoji na Unicode znaky");
         cz.put("config.discord.chatWebhookUrl.desc", "Webhook URL pro chat (zobrazí hlavy hráčů jako avatar)");
         cz.put("config.discord.enableConsoleLog.desc", "Odesílat výstup konzole na Discord");
@@ -1066,33 +1113,37 @@ public class WebManager {
         cz.put("config.discord.uptimeFormat.desc", "Formát uptime. Proměnné: %d% (dny), %h% (hodiny), %m% (minuty)");
         cz.put("config.discord.invalidCodeMessage.desc", "Zpráva při zadání neplatného/expirovaného kódu");
         cz.put("config.discord.notLinkedMessage.desc", "Zpráva když uživatel není propojený");
-        cz.put("config.discord.alreadyLinkedSingleMessage.desc", "Zpráva když už je propojený (1 účet). Proměnné: %uuid%");
-        cz.put("config.discord.alreadyLinkedMultipleMessage.desc", "Zpráva při více propojených účtech. Proměnné: %count%");
+        cz.put("config.discord.alreadyLinkedSingleMessage.desc",
+                "Zpráva když už je propojený (1 účet). Proměnné: %uuid%");
+        cz.put("config.discord.alreadyLinkedMultipleMessage.desc",
+                "Zpráva při více propojených účtech. Proměnné: %count%");
         cz.put("config.discord.unlinkSuccessMessage.desc", "Zpráva při odpojení účtů");
         cz.put("config.discord.wrongGuildMessage.desc", "Zpráva při použití příkazu na špatném serveru");
         cz.put("config.discord.ticketCreatedMessage.desc", "Zpráva při vytvoření ticketu");
         cz.put("config.discord.ticketClosingMessage.desc", "Zpráva při zavírání ticketu");
         cz.put("config.discord.textChannelOnlyMessage.desc", "Zpráva když příkaz vyžaduje textový kanál");
-        
+
         // --- Help text for color codes ---
-        cz.put("help.colorcodes", "Barevné kódy: &0-9, &a-f (legacy), &#RRGGBB (hex). Formátování: &l (tučně), &o (kurzíva), &n (podtržení), &m (přeškrtnutí), &r (reset)");
-        
+        cz.put("help.colorcodes",
+                "Barevné kódy: &0-9, &a-f (legacy), &#RRGGBB (hex). Formátování: &l (tučně), &o (kurzíva), &n (podtržení), &m (přeškrtnutí), &r (reset)");
+
         LANG.put("cz", cz);
     }
-    
+
     // ========================================================================
-    //                     KONSTRUKTOR A SINGLETON
+    // KONSTRUKTOR A SINGLETON
     // ========================================================================
-    
+
     /**
      * Privátní konstruktor pro singleton pattern
      */
     public WebManager() {
         instance = this;
     }
-    
+
     /**
      * Získá singleton instanci WebManageru
+     * 
      * @return Instance WebManageru
      */
     public static WebManager getInstance() {
@@ -1101,19 +1152,20 @@ public class WebManager {
         }
         return instance;
     }
-    
+
     /**
      * Nastaví referenci na Minecraft server
+     * 
      * @param server Minecraft server instance
      */
     public void setServer(MinecraftServer server) {
         this.mcServer = server;
     }
-    
+
     // ========================================================================
-    //                     START / STOP SERVERU
+    // START / STOP SERVERU
     // ========================================================================
-    
+
     /**
      * Spustí HTTP server pro web panel
      */
@@ -1121,9 +1173,9 @@ public class WebManager {
         try {
             WebConfig config = WebConfig.getInstance();
             authToken = UUID.randomUUID().toString();
-            
+
             server = HttpServer.create(new InetSocketAddress(config.getPort()), 0);
-            
+
             // Registrace HTTP handlerů
             server.createContext("/", new DashboardHandler());
             server.createContext("/css/style.css", new StyleHandler());
@@ -1132,17 +1184,17 @@ public class WebManager {
             server.createContext("/api/locale", new LocaleResetHandler());
             server.createContext("/api/stats/history", new StatsHistoryHandler());
             server.createContext("/api/discord/roles", new DiscordRolesHandler());
-            
+
             server.setExecutor(null);
             server.start();
-            
+
             LOGGER.info("Web Control Panel started on port {}", config.getPort());
             LOGGER.info("Access URL: {}", getWebUrl());
         } catch (IOException e) {
             LOGGER.error("Failed to start Web Control Panel", e);
         }
     }
-    
+
     /**
      * Zastaví HTTP server
      */
@@ -1153,15 +1205,16 @@ public class WebManager {
             LOGGER.info("Web Control Panel stopped");
         }
     }
-    
+
     /**
      * Vygeneruje URL pro přístup k web panelu
+     * 
      * @return URL s autentizačním tokenem
      */
     public String getWebUrl() {
         WebConfig config = WebConfig.getInstance();
         String hostname = config.getPublicHostname();
-        
+
         // Pokus o detekci IP adresy serveru
         if (("localhost".equals(hostname) || "127.0.0.1".equals(hostname)) && mcServer != null) {
             try {
@@ -1170,11 +1223,13 @@ public class WebManager {
                     hostname = serverIp;
                 } else {
                     // Fallback na detekci z network interface
-                    java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface.getNetworkInterfaces();
+                    java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface
+                            .getNetworkInterfaces();
                     while (interfaces.hasMoreElements()) {
                         java.net.NetworkInterface iface = interfaces.nextElement();
-                        if (iface.isLoopback() || !iface.isUp()) continue;
-                        
+                        if (iface.isLoopback() || !iface.isUp())
+                            continue;
+
                         java.util.Enumeration<java.net.InetAddress> addresses = iface.getInetAddresses();
                         while (addresses.hasMoreElements()) {
                             java.net.InetAddress addr = addresses.nextElement();
@@ -1189,16 +1244,17 @@ public class WebManager {
                 LOGGER.warn("Failed to detect server IP", e);
             }
         }
-        
+
         return "http://" + hostname + ":" + config.getPort() + "/?token=" + authToken;
     }
-    
+
     // ========================================================================
-    //                     UTILITY METODY
+    // UTILITY METODY
     // ========================================================================
-    
+
     /**
      * Získá překlad textu podle aktuálního jazyka
+     * 
      * @param key Klíč překladu
      * @return Přeložený text nebo klíč pokud překlad neexistuje
      */
@@ -1206,37 +1262,42 @@ public class WebManager {
         String langCode = WebConfig.getInstance().getLanguage();
         return LANG.getOrDefault(langCode, LANG.get("en")).getOrDefault(key, key);
     }
-    
+
     /**
      * Escapuje string pro bezpečné vložení do JSON
+     * 
      * @param str Vstupní string
      * @return Escapovaný string
      */
     private String escapeJson(String str) {
-        if (str == null) return "";
+        if (str == null)
+            return "";
         return str.replace("\\", "\\\\")
-                  .replace("\"", "\\\"")
-                  .replace("\n", "\\n")
-                  .replace("\r", "\\r")
-                  .replace("\t", "\\t");
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
-    
+
     /**
      * Escapuje string pro bezpečné vložení do HTML
+     * 
      * @param str Vstupní string
      * @return Escapovaný string
      */
     private String escapeHtml(String str) {
-        if (str == null) return "";
+        if (str == null)
+            return "";
         return str.replace("&", "&amp;")
-                  .replace("<", "&lt;")
-                  .replace(">", "&gt;")
-                  .replace("\"", "&quot;")
-                  .replace("'", "&#39;");
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
-    
+
     /**
      * Ověří, zda je request autentizován
+     * 
      * @param exchange HTTP exchange
      * @return true pokud je autentizován
      */
@@ -1248,17 +1309,18 @@ public class WebManager {
             exchange.getResponseHeaders().set("Set-Cookie", "session=" + authToken + "; Path=/; HttpOnly");
             return true;
         }
-        
+
         // Kontrola cookie
         String cookie = exchange.getRequestHeaders().getFirst("Cookie");
         return cookie != null && cookie.contains("session=" + authToken) && authToken != null;
     }
-    
+
     /**
      * Odešle HTTP response
+     * 
      * @param exchange HTTP exchange
      * @param response Tělo odpovědi
-     * @param code HTTP status kód
+     * @param code     HTTP status kód
      */
     private void sendResponse(HttpExchange exchange, String response, int code) throws IOException {
         byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
@@ -1267,9 +1329,10 @@ public class WebManager {
             os.write(bytes);
         }
     }
-    
+
     /**
      * Přesměruje na jinou URL
+     * 
      * @param exchange HTTP exchange
      * @param location Cílová URL
      */
@@ -1277,9 +1340,10 @@ public class WebManager {
         exchange.getResponseHeaders().set("Location", location);
         exchange.sendResponseHeaders(302, -1);
     }
-    
+
     /**
      * Parsuje URL-encoded parametry z těla requestu
+     * 
      * @param body Tělo requestu
      * @return Mapa parametrů
      */
@@ -1293,15 +1357,15 @@ public class WebManager {
         }
         return params;
     }
-    
+
     // ========================================================================
-    //                     HTTP HANDLERY
+    // HTTP HANDLERY
     // ========================================================================
     // Každý handler zpracovává specifický endpoint
     // ========================================================================
-    
+
     // TODO: Implementovat handlery v další části
-    
+
     /**
      * Handler pro hlavní stránku (Dashboard)
      */
@@ -1309,18 +1373,19 @@ public class WebManager {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if (!isAuthenticated(exchange)) {
-                String html = "<html><body style='background:#1a1a1a;color:#fff;font-family:sans-serif;text-align:center;padding-top:50px;'>" +
-                              "<h1>" + t("unauthorized") + "</h1></body></html>";
+                String html = "<html><body style='background:#1a1a1a;color:#fff;font-family:sans-serif;text-align:center;padding-top:50px;'>"
+                        +
+                        "<h1>" + t("unauthorized") + "</h1></body></html>";
                 sendResponse(exchange, html, 401);
                 return;
             }
-            
+
             exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
             String html = buildFullHtml();
             sendResponse(exchange, html, 200);
         }
     }
-    
+
     /**
      * Handler pro CSS styly
      */
@@ -1332,7 +1397,7 @@ public class WebManager {
             sendResponse(exchange, css, 200);
         }
     }
-    
+
     /**
      * Handler pro akce (restart, kick, broadcast)
      */
@@ -1343,20 +1408,19 @@ public class WebManager {
                 sendResponse(exchange, "Unauthorized", 401);
                 return;
             }
-            
+
             if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
                 String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 Map<String, String> params = parseParams(body);
                 String action = params.get("action");
-                
+
                 if ("restart".equals(action)) {
                     mcServer.execute(() -> mcServer.halt(false));
                 } else if ("announce".equals(action)) {
                     String msg = params.get("message");
                     if (msg != null && !msg.isEmpty()) {
                         mcServer.execute(() -> mcServer.getPlayerList().broadcastSystemMessage(
-                            Component.literal("§8[§bVoidium§8] §f" + msg.replace("&", "§")), false
-                        ));
+                                Component.literal("§8[§bVoidium§8] §f" + msg.replace("&", "§")), false));
                     }
                 } else if ("kick".equals(action)) {
                     String player = params.get("player");
@@ -1370,31 +1434,35 @@ public class WebManager {
                     if (uuid != null && name != null) {
                         mcServer.execute(() -> {
                             var profile = new com.mojang.authlib.GameProfile(UUID.fromString(uuid), name);
-                            mcServer.getPlayerList().getBans().add(new net.minecraft.server.players.UserBanListEntry(profile, null, "WebPanel", null, null));
+                            mcServer.getPlayerList().getBans().add(new net.minecraft.server.players.UserBanListEntry(
+                                    profile, null, "WebPanel", null, null));
                             ServerPlayer sp = mcServer.getPlayerList().getPlayer(UUID.fromString(uuid));
-                            if (sp != null) sp.connection.disconnect(Component.literal("Banned"));
+                            if (sp != null)
+                                sp.connection.disconnect(Component.literal("Banned"));
                         });
                     }
                 } else if ("unlink".equals(action)) {
                     String uuid = params.get("uuid");
                     if (uuid != null && cz.voidium.discord.LinkManager.getInstance() != null) {
-                        mcServer.execute(() -> cz.voidium.discord.LinkManager.getInstance().unlink(UUID.fromString(uuid)));
+                        mcServer.execute(
+                                () -> cz.voidium.discord.LinkManager.getInstance().unlink(UUID.fromString(uuid)));
                     }
                 } else if ("unban".equals(action)) {
                     String uuid = params.get("uuid");
                     if (uuid != null) {
                         mcServer.execute(() -> {
                             var profile = mcServer.getProfileCache().get(UUID.fromString(uuid)).orElse(null);
-                            if (profile != null) mcServer.getPlayerList().getBans().remove(profile);
+                            if (profile != null)
+                                mcServer.getPlayerList().getBans().remove(profile);
                         });
                     }
                 }
-                
+
                 redirect(exchange, "/");
             }
         }
     }
-    
+
     /**
      * Handler pro ukládání konfigurace
      */
@@ -1405,9 +1473,9 @@ public class WebManager {
                 sendResponse(exchange, "Unauthorized", 401);
                 return;
             }
-            
+
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-            
+
             // GET - vrátí aktuální konfiguraci
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
                 try {
@@ -1419,20 +1487,19 @@ public class WebManager {
                 }
                 return;
             }
-            
+
             // POST - uloží konfiguraci
             if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
                 try {
                     JsonObject json = JsonParser.parseReader(
-                        new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)
-                    ).getAsJsonObject();
-                    
+                            new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).getAsJsonObject();
+
                     List<String> changedFiles = new ArrayList<>();
-                    
+
                     // Formát: {section: 'web', data: {...}} NEBO {web: {...}, general: {...}, ...}
                     String section = json.has("section") ? json.get("section").getAsString() : null;
                     JsonObject data = json.has("data") ? json.getAsJsonObject("data") : null;
-                    
+
                     // Pokud je to section/data formát
                     if (section != null && data != null) {
                         switch (section) {
@@ -1446,43 +1513,43 @@ public class WebManager {
                                 }
                                 break;
                             case "general":
-                                if (updateConfig(GeneralConfig.class, GeneralConfig.getInstance(), data)) 
+                                if (updateConfig(GeneralConfig.class, GeneralConfig.getInstance(), data))
                                     changedFiles.add("GeneralConfig");
                                 break;
                             case "restart":
-                                if (updateConfig(RestartConfig.class, RestartConfig.getInstance(), data)) 
+                                if (updateConfig(RestartConfig.class, RestartConfig.getInstance(), data))
                                     changedFiles.add("RestartConfig");
                                 break;
                             case "announcement":
-                                if (updateConfig(AnnouncementConfig.class, AnnouncementConfig.getInstance(), data)) 
+                                if (updateConfig(AnnouncementConfig.class, AnnouncementConfig.getInstance(), data))
                                     changedFiles.add("AnnouncementConfig");
                                 break;
                             case "discord":
-                                if (updateConfig(DiscordConfig.class, DiscordConfig.getInstance(), data)) 
+                                if (updateConfig(DiscordConfig.class, DiscordConfig.getInstance(), data))
                                     changedFiles.add("DiscordConfig");
                                 break;
                             case "stats":
-                                if (updateConfig(StatsConfig.class, StatsConfig.getInstance(), data)) 
+                                if (updateConfig(StatsConfig.class, StatsConfig.getInstance(), data))
                                     changedFiles.add("StatsConfig");
                                 break;
                             case "vote":
-                                if (updateConfig(VoteConfig.class, VoteConfig.getInstance(), data)) 
+                                if (updateConfig(VoteConfig.class, VoteConfig.getInstance(), data))
                                     changedFiles.add("VoteConfig");
                                 break;
                             case "ranks":
-                                if (updateConfig(RanksConfig.class, RanksConfig.getInstance(), data)) 
+                                if (updateConfig(RanksConfig.class, RanksConfig.getInstance(), data))
                                     changedFiles.add("RanksConfig");
                                 break;
                             case "tickets":
-                                if (updateConfig(TicketConfig.class, TicketConfig.getInstance(), data)) 
+                                if (updateConfig(TicketConfig.class, TicketConfig.getInstance(), data))
                                     changedFiles.add("TicketConfig");
                                 break;
                             case "playerlist":
-                                if (updateConfig(PlayerListConfig.class, PlayerListConfig.getInstance(), data)) 
+                                if (updateConfig(PlayerListConfig.class, PlayerListConfig.getInstance(), data))
                                     changedFiles.add("PlayerListConfig");
                                 break;
                             case "entitycleaner":
-                                if (updateConfig(EntityCleanerConfig.class, EntityCleanerConfig.getInstance(), data)) 
+                                if (updateConfig(EntityCleanerConfig.class, EntityCleanerConfig.getInstance(), data))
                                     changedFiles.add("EntityCleanerConfig");
                                 break;
                         }
@@ -1499,47 +1566,53 @@ public class WebManager {
                                 changedFiles.add("WebConfig");
                             }
                         }
-                        
+
                         // Ostatní configy
-                        if (updateConfig(GeneralConfig.class, GeneralConfig.getInstance(), json.get("general"))) 
+                        if (updateConfig(GeneralConfig.class, GeneralConfig.getInstance(), json.get("general")))
                             changedFiles.add("GeneralConfig");
-                        if (updateConfig(RestartConfig.class, RestartConfig.getInstance(), json.get("restart"))) 
+                        if (updateConfig(RestartConfig.class, RestartConfig.getInstance(), json.get("restart")))
                             changedFiles.add("RestartConfig");
-                        if (updateConfig(AnnouncementConfig.class, AnnouncementConfig.getInstance(), json.get("announcement"))) 
+                        if (updateConfig(AnnouncementConfig.class, AnnouncementConfig.getInstance(),
+                                json.get("announcement")))
                             changedFiles.add("AnnouncementConfig");
-                        if (updateConfig(DiscordConfig.class, DiscordConfig.getInstance(), json.get("discord"))) 
+                        if (updateConfig(DiscordConfig.class, DiscordConfig.getInstance(), json.get("discord")))
                             changedFiles.add("DiscordConfig");
-                        if (updateConfig(StatsConfig.class, StatsConfig.getInstance(), json.get("stats"))) 
+                        if (updateConfig(StatsConfig.class, StatsConfig.getInstance(), json.get("stats")))
                             changedFiles.add("StatsConfig");
-                        if (updateConfig(EntityCleanerConfig.class, EntityCleanerConfig.getInstance(), json.get("entitycleaner"))) 
+                        if (updateConfig(EntityCleanerConfig.class, EntityCleanerConfig.getInstance(),
+                                json.get("entitycleaner")))
                             changedFiles.add("EntityCleanerConfig");
-                        if (updateConfig(VoteConfig.class, VoteConfig.getInstance(), json.get("vote"))) 
+                        if (updateConfig(VoteConfig.class, VoteConfig.getInstance(), json.get("vote")))
                             changedFiles.add("VoteConfig");
-                        if (updateConfig(RanksConfig.class, RanksConfig.getInstance(), json.get("ranks"))) 
+                        if (updateConfig(RanksConfig.class, RanksConfig.getInstance(), json.get("ranks")))
                             changedFiles.add("RanksConfig");
-                        if (updateConfig(TicketConfig.class, TicketConfig.getInstance(), json.get("tickets"))) 
+                        if (updateConfig(TicketConfig.class, TicketConfig.getInstance(), json.get("tickets")))
                             changedFiles.add("TicketConfig");
-                        if (updateConfig(PlayerListConfig.class, PlayerListConfig.getInstance(), json.get("playerlist"))) 
+                        if (updateConfig(PlayerListConfig.class, PlayerListConfig.getInstance(),
+                                json.get("playerlist")))
                             changedFiles.add("PlayerListConfig");
                     }
-                    
+
                     sendResponse(exchange, "{\"status\":\"ok\"}", 200);
                 } catch (Exception e) {
                     LOGGER.error("Failed to update config", e);
-                    sendResponse(exchange, "{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}", 500);
+                    sendResponse(exchange, "{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}",
+                            500);
                 }
             }
         }
-        
+
         /**
          * Aktualizuje config pomocí reflexe
          */
         private <T> boolean updateConfig(Class<T> clazz, T instance, JsonElement json) {
-            if (json == null || instance == null) return false;
+            if (json == null || instance == null)
+                return false;
             try {
                 T temp = GSON.fromJson(json, clazz);
                 for (Field field : clazz.getDeclaredFields()) {
-                    if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
+                    if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers()))
+                        continue;
                     field.setAccessible(true);
                     Object newValue = field.get(temp);
                     if (newValue != null) {
@@ -1554,7 +1627,7 @@ public class WebManager {
             }
         }
     }
-    
+
     /**
      * Handler pro reset locale
      */
@@ -1565,20 +1638,20 @@ public class WebManager {
                 sendResponse(exchange, "{\"status\":\"error\",\"message\":\"Unauthorized\"}", 401);
                 return;
             }
-            
+
             if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
                 try {
                     String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-                    
+
                     // Parse JSON body
                     JsonObject json = GSON.fromJson(body, JsonObject.class);
                     String locale = json.has("locale") ? json.get("locale").getAsString() : null;
-                    
+
                     if (locale == null || (!locale.equals("en") && !locale.equals("cz"))) {
                         sendResponse(exchange, "{\"status\":\"error\",\"message\":\"Invalid locale\"}", 400);
                         return;
                     }
-                    
+
                     // Aplikovat locale na všechny configy
                     GeneralConfig.getInstance().applyLocale(locale);
                     AnnouncementConfig.getInstance().applyLocale(locale);
@@ -1590,16 +1663,17 @@ public class WebManager {
                     StatsConfig.getInstance().applyLocale(locale);
                     PlayerListConfig.getInstance().applyLocale(locale);
                     EntityCleanerConfig.getInstance().applyLocale(locale);
-                    
+
                     sendResponse(exchange, "{\"status\":\"ok\"}", 200);
                 } catch (Exception e) {
                     LOGGER.error("Failed to reset locale", e);
-                    sendResponse(exchange, "{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}", 500);
+                    sendResponse(exchange, "{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}",
+                            500);
                 }
             }
         }
     }
-    
+
     /**
      * Handler pro historii statistik
      */
@@ -1610,15 +1684,15 @@ public class WebManager {
                 sendResponse(exchange, "Unauthorized", 401);
                 return;
             }
-            
+
             List<StatsManager.DataPoint> history = StatsManager.getInstance().getHistory();
             String json = GSON.toJson(history);
-            
+
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             sendResponse(exchange, json, 200);
         }
     }
-    
+
     /**
      * Handler pro Discord role
      */
@@ -1629,23 +1703,23 @@ public class WebManager {
                 sendResponse(exchange, "Unauthorized", 401);
                 return;
             }
-            
+
             try {
                 List<Role> roles = DiscordManager.getInstance().getRoles();
                 List<Map<String, String>> roleList = new ArrayList<>();
-                
+
                 for (Role role : roles) {
                     Map<String, String> map = new HashMap<>();
                     map.put("id", role.getId());
                     map.put("name", role.getName());
-                    String hexColor = role.getColor() != null 
-                        ? String.format("#%06x", role.getColor().getRGB() & 0xFFFFFF) 
-                        : "#99aab5";
+                    String hexColor = role.getColor() != null
+                            ? String.format("#%06x", role.getColor().getRGB() & 0xFFFFFF)
+                            : "#99aab5";
                     map.put("color", hexColor);
                     map.put("colorHex", hexColor.equals("#000000") ? "" : "&#" + hexColor.substring(1).toUpperCase());
                     roleList.add(map);
                 }
-                
+
                 String json = GSON.toJson(roleList);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 sendResponse(exchange, json, 200);
@@ -1655,26 +1729,27 @@ public class WebManager {
             }
         }
     }
-    
+
     // ========================================================================
-    //                     HTML GENERÁTORY
+    // HTML GENERÁTORY
     // ========================================================================
     // TODO: Implementovat v další části
     // ========================================================================
-    
+
     /**
      * Sestaví kompletní HTML stránku
+     * 
      * @return HTML string
      */
     private String buildFullHtml() {
         StringBuilder sb = new StringBuilder();
-        
+
         // Získat aktuální jazyk z konfigurace
         String lang = "en";
         if (WebConfig.getInstance() != null && WebConfig.getInstance().getLanguage() != null) {
             lang = WebConfig.getInstance().getLanguage();
         }
-        
+
         // =====================================================================
         // HTML HEAD
         // =====================================================================
@@ -1685,8 +1760,9 @@ public class WebManager {
         sb.append("<link rel='stylesheet' href='/css/style.css'>");
         sb.append("<link rel='preconnect' href='https://fonts.googleapis.com'>");
         sb.append("<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>");
-        sb.append("<link href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap' rel='stylesheet'>");
-        
+        sb.append(
+                "<link href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap' rel='stylesheet'>");
+
         // Základní JS funkce v head (aby byly dostupné hned)
         sb.append("<script>");
         sb.append("function switchTab(tabId){");
@@ -1703,7 +1779,7 @@ public class WebManager {
         sb.append("}");
         sb.append("</script>");
         sb.append("</head><body>");
-        
+
         // =====================================================================
         // HEADER
         // =====================================================================
@@ -1711,63 +1787,67 @@ public class WebManager {
         sb.append("<h1>⚡ Voidium Control Panel</h1>");
         sb.append("<span class='status-badge'>● ").append(t("online")).append("</span>");
         sb.append("</header>");
-        
+
         sb.append("<div class='container'>");
-        
+
         // =====================================================================
         // TABY (DASHBOARD / CONFIG)
         // =====================================================================
         sb.append("<div class='tabs'>");
-        sb.append("<div class='tab active' onclick='switchTab(\"dashboard\")'>📊 ").append(t("dashboard")).append("</div>");
+        sb.append("<div class='tab active' onclick='switchTab(\"dashboard\")'>📊 ").append(t("dashboard"))
+                .append("</div>");
         sb.append("<div class='tab' onclick='switchTab(\"config\")'>⚙️ ").append(t("config")).append("</div>");
         sb.append("</div>");
-        
+
         // =====================================================================
         // DASHBOARD TAB
         // =====================================================================
         sb.append("<div id='dashboard' class='tab-content active'>");
         sb.append(buildDashboardContent());
         sb.append("</div>");
-        
+
         // =====================================================================
         // CONFIG TAB
         // =====================================================================
         sb.append("<div id='config' class='tab-content'>");
         sb.append(buildConfigContent());
         sb.append("</div>");
-        
+
         // =====================================================================
         // STICKY SAVE BAR
         // =====================================================================
         sb.append("<div class='sticky-save-bar' style='display:none;' id='sticky-save-bar'>");
-        sb.append("<button id='save-btn' class='success' onclick='saveConfig()'>💾 ").append(t("save")).append("</button>");
+        sb.append("<button id='save-btn' class='success' onclick='saveConfig()'>💾 ").append(t("save"))
+                .append("</button>");
         sb.append("<button class='danger' onclick='location.reload()'>❌ ").append(t("cancel")).append("</button>");
         sb.append("</div>");
-        
+
         sb.append("</div>"); // container
-        
+
         // =====================================================================
         // CONFIG DATA (JSON)
         // =====================================================================
         String configJson = buildConfigJson();
-        sb.append("<script type='application/json' id='config-data'>").append(configJson.replace("</", "<\\/")).append("</script>");
-        
+        sb.append("<script type='application/json' id='config-data'>").append(configJson.replace("</", "<\\/"))
+                .append("</script>");
+
         // =====================================================================
         // JAVASCRIPT
         // =====================================================================
         sb.append(buildJavaScript(lang));
-        
+
         sb.append("</body></html>");
         return sb.toString();
     }
-    
+
     /**
      * Sestaví CSS styly
+     * 
      * @return CSS string
      */
     private String buildCss() {
         StringBuilder css = new StringBuilder();
-        
+
         // =====================================================================
         // RESET A ZÁKLADNÍ STYLY
         // =====================================================================
@@ -1779,7 +1859,7 @@ public class WebManager {
         css.append("  min-height: 100vh;");
         css.append("  overflow-x: hidden;");
         css.append("}");
-        
+
         // =====================================================================
         // KONTEJNER
         // =====================================================================
@@ -1789,7 +1869,7 @@ public class WebManager {
         css.append("  padding: 20px;");
         css.append("  padding-bottom: 100px;"); // Prostor pro sticky bar
         css.append("}");
-        
+
         // =====================================================================
         // HEADER
         // =====================================================================
@@ -1812,7 +1892,7 @@ public class WebManager {
         css.append("  text-shadow: 0 0 20px rgba(187, 134, 252, 0.5);");
         css.append("  letter-spacing: -0.5px;");
         css.append("}");
-        
+
         // =====================================================================
         // STATUS BADGE
         // =====================================================================
@@ -1830,7 +1910,7 @@ public class WebManager {
         css.append("  0%, 100% { box-shadow: 0 4px 20px rgba(0, 212, 170, 0.4); }");
         css.append("  50% { box-shadow: 0 4px 30px rgba(0, 212, 170, 0.7); }");
         css.append("}");
-        
+
         // =====================================================================
         // KARTY
         // =====================================================================
@@ -1880,7 +1960,7 @@ public class WebManager {
         css.append("  animation: blink 2s ease-in-out infinite;");
         css.append("}");
         css.append("@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }");
-        
+
         // =====================================================================
         // COLLAPSIBLE KARTY
         // =====================================================================
@@ -1898,7 +1978,7 @@ public class WebManager {
         css.append("  transition: max-height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;");
         css.append("}");
         css.append(".collapsible-card.collapsed .card-body { max-height: 0; opacity: 0; }");
-        
+
         // =====================================================================
         // STATISTIKY GRID
         // =====================================================================
@@ -1937,11 +2017,12 @@ public class WebManager {
         css.append("  color: #00d4aa;");
         css.append("  text-shadow: 0 2px 10px rgba(0, 212, 170, 0.5);");
         css.append("}");
-        
+
         // =====================================================================
         // FORMULÁŘOVÉ PRVKY
         // =====================================================================
-        css.append("input[type='text'], input[type='number'], input[type='password'], select, input[type='time'], textarea {");
+        css.append(
+                "input[type='text'], input[type='number'], input[type='password'], select, input[type='time'], textarea {");
         css.append("  width: 100%;");
         css.append("  padding: 14px;");
         css.append("  margin: 8px 0 20px;");
@@ -1965,7 +2046,8 @@ public class WebManager {
         css.append("  appearance: none;");
         css.append("  -webkit-appearance: none;");
         css.append("  -moz-appearance: none;");
-        css.append("  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23bb86fc' d='M6 8L1 3h10z'/%3E%3C/svg%3E\");");
+        css.append(
+                "  background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23bb86fc' d='M6 8L1 3h10z'/%3E%3C/svg%3E\");");
         css.append("  background-repeat: no-repeat;");
         css.append("  background-position: right 12px center;");
         css.append("  padding-right: 36px;");
@@ -1988,7 +2070,7 @@ public class WebManager {
         css.append("  font-weight: 600;");
         css.append("  font-size: 0.95em;");
         css.append("}");
-        
+
         // =====================================================================
         // TLAČÍTKA
         // =====================================================================
@@ -2023,7 +2105,7 @@ public class WebManager {
         css.append("  box-shadow: 0 5px 20px rgba(0, 176, 155, 0.4);");
         css.append("}");
         css.append("button.success:hover:not(:disabled) { box-shadow: 0 8px 30px rgba(0, 176, 155, 0.6); }");
-        
+
         // =====================================================================
         // SWITCH (TOGGLE)
         // =====================================================================
@@ -2061,7 +2143,7 @@ public class WebManager {
         css.append("  border-color: #bb86fc;");
         css.append("}");
         css.append("input:checked + .slider:before { transform: translateX(28px); }");
-        
+
         // =====================================================================
         // TABY
         // =====================================================================
@@ -2095,8 +2177,9 @@ public class WebManager {
         css.append("}");
         css.append(".tab-content { display: none; animation: fadeInUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }");
         css.append(".tab-content.active { display: block; }");
-        css.append("@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }");
-        
+        css.append(
+                "@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }");
+
         // =====================================================================
         // TABULKA
         // =====================================================================
@@ -2126,7 +2209,7 @@ public class WebManager {
         css.append("}");
         css.append("thead tr th:first-child { border-radius: 12px 0 0 12px; }");
         css.append("thead tr th:last-child { border-radius: 0 12px 12px 0; }");
-        
+
         // =====================================================================
         // POLE SEZNAMU (ARRAY ITEMS)
         // =====================================================================
@@ -2138,7 +2221,7 @@ public class WebManager {
         css.append("}");
         css.append(".array-item input { margin: 0 !important; flex: 1; }");
         css.append(".array-item button { padding: 10px 15px; margin: 0; }");
-        
+
         // =====================================================================
         // NO PLAYERS
         // =====================================================================
@@ -2148,7 +2231,7 @@ public class WebManager {
         css.append("  color: #aaa;");
         css.append("  font-style: italic;");
         css.append("}");
-        
+
         // =====================================================================
         // STICKY SAVE BAR
         // =====================================================================
@@ -2168,9 +2251,10 @@ public class WebManager {
         css.append("  gap: 15px;");
         css.append("  animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);");
         css.append("}");
-        css.append("@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }");
+        css.append(
+                "@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }");
         css.append(".sticky-save-bar button { min-width: 200px; }");
-        
+
         // =====================================================================
         // TOOLTIPS
         // =====================================================================
@@ -2193,7 +2277,7 @@ public class WebManager {
         css.append("  max-width: 300px;");
         css.append("  white-space: normal;");
         css.append("}");
-        
+
         // =====================================================================
         // RESPONZIVNÍ DESIGN
         // =====================================================================
@@ -2204,7 +2288,7 @@ public class WebManager {
         css.append("  .sticky-save-bar { flex-direction: column; }");
         css.append("  .sticky-save-bar button { min-width: unset; width: 100%; }");
         css.append("}");
-        
+
         // =====================================================================
         // CONFIG SEKCE (pro JavaScript renderování)
         // =====================================================================
@@ -2255,7 +2339,7 @@ public class WebManager {
         css.append("  padding: 0 25px;");
         css.append("  opacity: 0;");
         css.append("}");
-        
+
         // =====================================================================
         // FORM GROUP (lepší styling)
         // =====================================================================
@@ -2302,7 +2386,7 @@ public class WebManager {
         css.append("  border-left: 3px solid #bb86fc;");
         css.append("  border-radius: 4px;");
         css.append("}");
-        
+
         // =====================================================================
         // TLAČÍTKO SAVE V SEKCI
         // =====================================================================
@@ -2325,7 +2409,7 @@ public class WebManager {
         css.append("  transform: translateY(-3px);");
         css.append("  box-shadow: 0 8px 30px rgba(0, 176, 155, 0.6);");
         css.append("}");
-        
+
         // =====================================================================
         // LIST EDITOR (pro timelist, stringlist)
         // =====================================================================
@@ -2358,7 +2442,7 @@ public class WebManager {
         css.append("  background: linear-gradient(135deg, #6200ea, #b388ff) !important;");
         css.append("  margin-top: 10px;");
         css.append("}");
-        
+
         // =====================================================================
         // ROLE PREFIX EDITOR - VYLEPŠENÝ
         // =====================================================================
@@ -2424,11 +2508,12 @@ public class WebManager {
         css.append("  background: transparent;");
         css.append("}");
         css.append(".color-picker::-webkit-color-swatch-wrapper { padding: 2px; }");
-        css.append(".color-picker::-webkit-color-swatch { border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }");
+        css.append(
+                ".color-picker::-webkit-color-swatch { border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }");
         css.append("@media (max-width: 900px) {");
         css.append("  .role-prefix-item { grid-template-columns: 1fr; }");
         css.append("}");
-        
+
         // =====================================================================
         // RANK LIST EDITOR
         // =====================================================================
@@ -2453,7 +2538,7 @@ public class WebManager {
         css.append("@media (max-width: 768px) {");
         css.append("  .rank-item { grid-template-columns: 1fr; }");
         css.append("}");
-        
+
         // =====================================================================
         // PLAYTIME RANK LIST EDITOR (type/value/hours)
         // =====================================================================
@@ -2511,7 +2596,7 @@ public class WebManager {
         css.append("  .playtime-rank-item { grid-template-columns: 1fr; }");
         css.append("  .custom-condition-item { grid-template-columns: 1fr; }");
         css.append("}");
-        
+
         // =====================================================================
         // LANGUAGE BUTTONS
         // =====================================================================
@@ -2541,7 +2626,7 @@ public class WebManager {
         css.append("  color: #fff;");
         css.append("  box-shadow: 0 5px 20px rgba(98, 0, 234, 0.4);");
         css.append("}");
-        
+
         // =====================================================================
         // TOAST NOTIFIKACE
         // =====================================================================
@@ -2572,7 +2657,7 @@ public class WebManager {
         css.append(".toast-info {");
         css.append("  background: linear-gradient(135deg, #6200ea, #b388ff);");
         css.append("}");
-        
+
         // =====================================================================
         // DISCORD SECTION SUBHEADERS
         // =====================================================================
@@ -2584,21 +2669,22 @@ public class WebManager {
         css.append("  font-size: 1.1em;");
         css.append("}");
         css.append(".section-content h4:first-child { margin-top: 0; }");
-        
+
         return css.toString();
     }
-    
+
     // ========================================================================
-    //                     CONFIG JSON BUILDER
+    // CONFIG JSON BUILDER
     // ========================================================================
-    
+
     /**
      * Sestaví obsah Dashboard tabu
+     * 
      * @return HTML string
      */
     private String buildDashboardContent() {
         StringBuilder sb = new StringBuilder();
-        
+
         // Výpočet paměti
         Runtime runtime = Runtime.getRuntime();
         long maxMemory = runtime.maxMemory() / 1024 / 1024;
@@ -2606,7 +2692,7 @@ public class WebManager {
         long freeMemory = runtime.freeMemory() / 1024 / 1024;
         long usedMemory = totalMemory - freeMemory;
         int memoryPercent = (int) ((usedMemory * 100) / maxMemory);
-        
+
         // =====================================================================
         // GRAF HISTORIE
         // =====================================================================
@@ -2614,72 +2700,82 @@ public class WebManager {
         sb.append("<h2>📈 Performance History</h2>");
         sb.append("<canvas id='statsChart' style='width:100%;height:300px;'></canvas>");
         sb.append("</div>");
-        
+
         // =====================================================================
         // STATISTIKY SERVERU
         // =====================================================================
         sb.append("<div class='card'>");
         sb.append("<h2>").append(t("server_info")).append("</h2>");
-        sb.append("<p style='color:#aaa;font-size:0.9em;margin:-10px 0 20px;'>").append(t("desc.server_info")).append("</p>");
+        sb.append("<p style='color:#aaa;font-size:0.9em;margin:-10px 0 20px;'>").append(t("desc.server_info"))
+                .append("</p>");
         sb.append("<div class='stat-grid'>");
-        
+
         // Hráči
         sb.append("<div class='stat-item'>");
         sb.append("<div class='stat-label'>").append(t("active_players")).append("</div>");
         sb.append("<div class='stat-value highlight'>").append(mcServer.getPlayerCount());
-        sb.append("<span style='font-size:0.5em;color:#aaa;'>/").append(mcServer.getMaxPlayers()).append("</span></div>");
+        sb.append("<span style='font-size:0.5em;color:#aaa;'>/").append(mcServer.getMaxPlayers())
+                .append("</span></div>");
         sb.append("</div>");
-        
+
         // Použitá paměť
         sb.append("<div class='stat-item'>");
         sb.append("<div class='stat-label'>").append(t("used_memory")).append("</div>");
-        sb.append("<div class='stat-value'>").append(usedMemory).append("<span style='font-size:0.4em;color:#aaa;'> MB</span></div>");
-        sb.append("<div style='background:rgba(0,0,0,0.3);height:8px;border-radius:10px;margin-top:10px;overflow:hidden;'>");
-        sb.append("<div style='width:").append(memoryPercent).append("%;height:100%;background:linear-gradient(90deg,#00d4aa,#bb86fc);border-radius:10px;'></div>");
+        sb.append("<div class='stat-value'>").append(usedMemory)
+                .append("<span style='font-size:0.4em;color:#aaa;'> MB</span></div>");
+        sb.append(
+                "<div style='background:rgba(0,0,0,0.3);height:8px;border-radius:10px;margin-top:10px;overflow:hidden;'>");
+        sb.append("<div style='width:").append(memoryPercent)
+                .append("%;height:100%;background:linear-gradient(90deg,#00d4aa,#bb86fc);border-radius:10px;'></div>");
         sb.append("</div></div>");
-        
+
         // Max paměť
         sb.append("<div class='stat-item'>");
         sb.append("<div class='stat-label'>").append(t("max_memory")).append("</div>");
-        sb.append("<div class='stat-value'>").append(maxMemory).append("<span style='font-size:0.4em;color:#aaa;'> MB</span></div>");
+        sb.append("<div class='stat-value'>").append(maxMemory)
+                .append("<span style='font-size:0.4em;color:#aaa;'> MB</span></div>");
         sb.append("</div>");
-        
+
         // Volná paměť
         sb.append("<div class='stat-item'>");
         sb.append("<div class='stat-label'>").append(t("free_memory")).append("</div>");
-        sb.append("<div class='stat-value'>").append(maxMemory - usedMemory).append("<span style='font-size:0.4em;color:#aaa;'> MB</span></div>");
+        sb.append("<div class='stat-value'>").append(maxMemory - usedMemory)
+                .append("<span style='font-size:0.4em;color:#aaa;'> MB</span></div>");
         sb.append("</div>");
-        
+
         sb.append("</div></div>");
-        
+
         // =====================================================================
         // RYCHLÉ AKCE
         // =====================================================================
         sb.append("<div class='card'>");
         sb.append("<h2>").append(t("actions")).append("</h2>");
-        sb.append("<p style='color:#aaa;font-size:0.9em;margin:-10px 0 20px;'>").append(t("desc.actions")).append("</p>");
-        
+        sb.append("<p style='color:#aaa;font-size:0.9em;margin:-10px 0 20px;'>").append(t("desc.actions"))
+                .append("</p>");
+
         sb.append("<div style='display:flex;gap:15px;flex-wrap:wrap;margin-bottom:20px;'>");
-        
+
         // Restart tlačítko
         sb.append("<form method='POST' action='/api/action' style='flex:1;min-width:200px;'>");
         sb.append("<input type='hidden' name='action' value='restart'>");
         sb.append("<button type='submit' class='danger' style='width:100%;' onclick='return confirm(\"");
         sb.append(t("confirm_action")).append("\")'>🔄 ").append(t("restart")).append("</button>");
         sb.append("</form>");
-        
+
         // Refresh tlačítko
-        sb.append("<button onclick='location.reload()' style='flex:1;min-width:200px;'>🔃 ").append(t("refresh")).append("</button>");
+        sb.append("<button onclick='location.reload()' style='flex:1;min-width:200px;'>🔃 ").append(t("refresh"))
+                .append("</button>");
         sb.append("</div>");
-        
+
         // Broadcast formulář
         sb.append("<form method='POST' action='/api/action' style='display:flex;gap:15px;'>");
         sb.append("<input type='hidden' name='action' value='announce'>");
-        sb.append("<input type='text' name='message' placeholder='").append(t("message_placeholder")).append("' style='margin:0;flex:1;'>");
+        sb.append("<input type='text' name='message' placeholder='").append(t("message_placeholder"))
+                .append("' style='margin:0;flex:1;'>");
         sb.append("<button type='submit'>📢 ").append(t("send")).append("</button>");
         sb.append("</form>");
         sb.append("</div>");
-        
+
         // =====================================================================
         // SEZNAM HRÁČŮ
         // =====================================================================
@@ -2692,12 +2788,26 @@ public class WebManager {
         sb.append("<th>Discord</th>");
         sb.append("<th>Actions</th>");
         sb.append("</tr></thead><tbody>");
-        
+
         java.util.Set<UUID> allPlayers = new java.util.HashSet<>();
-        for (ServerPlayer p : mcServer.getPlayerList().getPlayers()) allPlayers.add(p.getUUID());
-        for (com.mojang.authlib.GameProfile p : mcServer.getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).toList()) allPlayers.add(p.getId());
-        try { java.nio.file.Path playerDir = mcServer.getWorldPath(net.minecraft.world.level.storage.LevelResource.PLAYER_DATA_DIR); if (java.nio.file.Files.exists(playerDir)) { for (java.nio.file.Path f : java.nio.file.Files.list(playerDir).toList()) { String name = f.getFileName().toString(); if (name.endsWith(".dat")) allPlayers.add(UUID.fromString(name.replace(".dat", ""))); } } } catch (Exception e) {}
-        
+        for (ServerPlayer p : mcServer.getPlayerList().getPlayers())
+            allPlayers.add(p.getUUID());
+        for (com.mojang.authlib.GameProfile p : mcServer.getPlayerList().getPlayers().stream()
+                .map(ServerPlayer::getGameProfile).toList())
+            allPlayers.add(p.getId());
+        try {
+            java.nio.file.Path playerDir = mcServer
+                    .getWorldPath(net.minecraft.world.level.storage.LevelResource.PLAYER_DATA_DIR);
+            if (java.nio.file.Files.exists(playerDir)) {
+                for (java.nio.file.Path f : java.nio.file.Files.list(playerDir).toList()) {
+                    String name = f.getFileName().toString();
+                    if (name.endsWith(".dat"))
+                        allPlayers.add(UUID.fromString(name.replace(".dat", "")));
+                }
+            }
+        } catch (Exception e) {
+        }
+
         for (UUID uuid : allPlayers) {
             com.mojang.authlib.GameProfile profile = mcServer.getProfileCache().get(uuid).orElse(null);
             String name = profile != null ? profile.getName() : uuid.toString().substring(0, 8);
@@ -2705,89 +2815,102 @@ public class WebManager {
             Long discordIdLong = cz.voidium.discord.LinkManager.getInstance().getDiscordId(uuid);
             String discordId = discordIdLong != null ? discordIdLong.toString() : null;
             boolean linked = discordId != null;
-            
+
             sb.append("<tr>");
             sb.append("<td><strong>").append(escapeHtml(name)).append("</strong></td>");
             sb.append("<td style='font-family:monospace;font-size:0.85em;color:#aaa;'>").append(uuid).append("</td>");
-            sb.append("<td>").append(online ? "<span style='color:#0f0'>●</span> Online" : "<span style='color:#666'>●</span> Offline").append("</td>");
-            sb.append("<td>").append(linked ? "<span style='color:#5865F2'>✓</span> Linked" : "<span style='color:#666'>✗</span> Not linked").append("</td>");
+            sb.append("<td>").append(
+                    online ? "<span style='color:#0f0'>●</span> Online" : "<span style='color:#666'>●</span> Offline")
+                    .append("</td>");
+            sb.append("<td>").append(linked ? "<span style='color:#5865F2'>✓</span> Linked"
+                    : "<span style='color:#666'>✗</span> Not linked").append("</td>");
             sb.append("<td style='display:flex;gap:5px;'>");
-            
+
             if (online) {
                 sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
                 sb.append("<input type='hidden' name='action' value='kick'>");
                 sb.append("<input type='hidden' name='player' value='").append(escapeHtml(name)).append("'>");
-                sb.append("<button type='submit' class='danger' style='padding:6px 12px;font-size:0.8em;'>Kick</button>");
+                sb.append(
+                        "<button type='submit' class='danger' style='padding:6px 12px;font-size:0.8em;'>Kick</button>");
                 sb.append("</form>");
             }
-            
+
             boolean isBanned = mcServer.getPlayerList().getBans().get(profile) != null;
-            
+
             if (!isBanned) {
                 sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
                 sb.append("<input type='hidden' name='action' value='ban'>");
                 sb.append("<input type='hidden' name='uuid' value='").append(uuid).append("'>");
                 sb.append("<input type='hidden' name='name' value='").append(escapeHtml(name)).append("'>");
-                sb.append("<button type='submit' class='danger' style='padding:6px 12px;font-size:0.8em;'>Ban</button>");
+                sb.append(
+                        "<button type='submit' class='danger' style='padding:6px 12px;font-size:0.8em;'>Ban</button>");
                 sb.append("</form>");
             } else {
                 sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
                 sb.append("<input type='hidden' name='action' value='unban'>");
                 sb.append("<input type='hidden' name='uuid' value='").append(uuid).append("'>");
-                sb.append("<button type='submit' class='success' style='padding:6px 12px;font-size:0.8em;'>Unban</button>");
+                sb.append(
+                        "<button type='submit' class='success' style='padding:6px 12px;font-size:0.8em;'>Unban</button>");
                 sb.append("</form>");
             }
-            
+
             if (linked) {
                 sb.append("<form method='POST' action='/api/action' style='display:inline;'>");
                 sb.append("<input type='hidden' name='action' value='unlink'>");
                 sb.append("<input type='hidden' name='uuid' value='").append(uuid).append("'>");
-                sb.append("<button type='submit' style='padding:6px 12px;font-size:0.8em;background:#5865F2;'>Unlink</button>");
+                sb.append(
+                        "<button type='submit' style='padding:6px 12px;font-size:0.8em;background:#5865F2;'>Unlink</button>");
                 sb.append("</form>");
             }
-            
+
             sb.append("</td></tr>");
         }
         sb.append("</tbody></table></div>");
-        
+
         return sb.toString();
     }
-    
+
     /**
      * Sestaví obsah Config tabu
+     * 
      * @return HTML string
      */
     private String buildConfigContent() {
         StringBuilder sb = new StringBuilder();
-        
+
         // =====================================================================
         // RESET LOCALE SEKCE
         // =====================================================================
-        sb.append("<div style='background:rgba(255,255,255,0.05);padding:15px;border-radius:8px;margin-bottom:20px;border:1px solid rgba(147,51,234,0.3);'>");
+        sb.append(
+                "<div style='background:rgba(255,255,255,0.05);padding:15px;border-radius:8px;margin-bottom:20px;border:1px solid rgba(147,51,234,0.3);'>");
         sb.append("<h3 style='margin:0 0 10px 0;color:#c084fc;'>🌐 ").append(t("locale_reset_title")).append("</h3>");
-        sb.append("<p style='margin:0 0 15px 0;opacity:0.8;font-size:0.9em;'>").append(t("locale_reset_description")).append("</p>");
+        sb.append("<p style='margin:0 0 15px 0;opacity:0.8;font-size:0.9em;'>").append(t("locale_reset_description"))
+                .append("</p>");
         sb.append("<div style='display:flex;gap:10px;'>");
-        sb.append("<button class='success' onclick='resetLocale(\"en\")' style='flex:1;padding:12px;'>🇬🇧 ").append(t("reset_to_english")).append("</button>");
-        sb.append("<button class='success' onclick='resetLocale(\"cz\")' style='flex:1;padding:12px;'>🇨🇿 ").append(t("reset_to_czech")).append("</button>");
+        sb.append("<button class='success' onclick='resetLocale(\"en\")' style='flex:1;padding:12px;'>🇬🇧 ")
+                .append(t("reset_to_english")).append("</button>");
+        sb.append("<button class='success' onclick='resetLocale(\"cz\")' style='flex:1;padding:12px;'>🇨🇿 ")
+                .append(t("reset_to_czech")).append("</button>");
         sb.append("</div>");
         sb.append("</div>");
-        
+
         // =====================================================================
         // CONFIG EDITOR (vyplní JavaScript)
         // =====================================================================
         sb.append("<div id='config-editor'>Loading configuration...</div>");
-        
+
         return sb.toString();
     }
-    
+
     /**
      * Sestaví JSON s konfigurací pro frontend
+     * 
      * @return JSON string
      */
     private String buildConfigJson() {
         StringBuilder json = new StringBuilder();
         json.append("{");
-        
+
         // =====================================================================
         // WEB CONFIG
         // =====================================================================
@@ -2797,7 +2920,7 @@ public class WebManager {
             json.append("\"port\":").append(WebConfig.getInstance().getPort());
             json.append("},");
         }
-        
+
         // =====================================================================
         // GENERAL CONFIG
         // =====================================================================
@@ -2817,7 +2940,7 @@ public class WebManager {
             json.append("\"skinCacheHours\":").append(gc.getSkinCacheHours());
             json.append("},");
         }
-        
+
         // =====================================================================
         // RESTART CONFIG
         // =====================================================================
@@ -2826,7 +2949,8 @@ public class WebManager {
             json.append("\"restart\":{");
             // Map FIXED_TIME to FIXED_TIMES for frontend compatibility
             String restartTypeOut = rc.getRestartType().name();
-            if ("FIXED_TIME".equals(restartTypeOut)) restartTypeOut = "FIXED_TIMES";
+            if ("FIXED_TIME".equals(restartTypeOut))
+                restartTypeOut = "FIXED_TIMES";
             json.append("\"restartType\":\"").append(restartTypeOut).append("\",");
             json.append("\"intervalHours\":").append(rc.getIntervalHours()).append(",");
             json.append("\"delayMinutes\":").append(rc.getDelayMinutes()).append(",");
@@ -2837,11 +2961,12 @@ public class WebManager {
             List<LocalTime> times = rc.getFixedRestartTimes();
             for (int i = 0; i < times.size(); i++) {
                 json.append("\"").append(times.get(i).toString()).append("\"");
-                if (i < times.size() - 1) json.append(",");
+                if (i < times.size() - 1)
+                    json.append(",");
             }
             json.append("]},");
         }
-        
+
         // =====================================================================
         // ANNOUNCEMENT CONFIG
         // =====================================================================
@@ -2854,11 +2979,12 @@ public class WebManager {
             List<String> anns = ac.getAnnouncements();
             for (int i = 0; i < anns.size(); i++) {
                 json.append("\"").append(escapeJson(anns.get(i))).append("\"");
-                if (i < anns.size() - 1) json.append(",");
+                if (i < anns.size() - 1)
+                    json.append(",");
             }
             json.append("]},");
         }
-        
+
         // =====================================================================
         // DISCORD CONFIG
         // =====================================================================
@@ -2883,11 +3009,14 @@ public class WebManager {
             json.append("\"syncBansDiscordToMc\":").append(dc.isSyncBansDiscordToMc()).append(",");
             json.append("\"syncBansMcToDiscord\":").append(dc.isSyncBansMcToDiscord()).append(",");
             json.append("\"enableChatBridge\":").append(dc.isEnableChatBridge()).append(",");
-            json.append("\"minecraftToDiscordFormat\":\"").append(escapeJson(dc.getMinecraftToDiscordFormat())).append("\",");
-            json.append("\"discordToMinecraftFormat\":\"").append(escapeJson(dc.getDiscordToMinecraftFormat())).append("\",");
+            json.append("\"minecraftToDiscordFormat\":\"").append(escapeJson(dc.getMinecraftToDiscordFormat()))
+                    .append("\",");
+            json.append("\"discordToMinecraftFormat\":\"").append(escapeJson(dc.getDiscordToMinecraftFormat()))
+                    .append("\",");
             json.append("\"translateEmojis\":").append(dc.isTranslateEmojis()).append(",");
             json.append("\"chatWebhookUrl\":\"").append(escapeJson(dc.getChatWebhookUrl())).append("\",");
-            json.append("\"enableConsoleLog\":").append(dc.isEnableConsoleLog()).append(",");
+            // json.append("\"enableConsoleLog\":").append(dc.isEnableConsoleLog()).append(",");
+            // // Removed
             json.append("\"enableStatusMessages\":").append(dc.isEnableStatusMessages()).append(",");
             json.append("\"statusMessageStarting\":\"").append(escapeJson(dc.getStatusMessageStarting())).append("\",");
             json.append("\"statusMessageStarted\":\"").append(escapeJson(dc.getStatusMessageStarted())).append("\",");
@@ -2898,17 +3027,20 @@ public class WebManager {
             json.append("\"uptimeFormat\":\"").append(escapeJson(dc.getUptimeFormat())).append("\",");
             json.append("\"invalidCodeMessage\":\"").append(escapeJson(dc.getInvalidCodeMessage())).append("\",");
             json.append("\"notLinkedMessage\":\"").append(escapeJson(dc.getNotLinkedMessage())).append("\",");
-            json.append("\"alreadyLinkedSingleMessage\":\"").append(escapeJson(dc.getAlreadyLinkedSingleMessage())).append("\",");
-            json.append("\"alreadyLinkedMultipleMessage\":\"").append(escapeJson(dc.getAlreadyLinkedMultipleMessage())).append("\",");
+            json.append("\"alreadyLinkedSingleMessage\":\"").append(escapeJson(dc.getAlreadyLinkedSingleMessage()))
+                    .append("\",");
+            json.append("\"alreadyLinkedMultipleMessage\":\"").append(escapeJson(dc.getAlreadyLinkedMultipleMessage()))
+                    .append("\",");
             json.append("\"unlinkSuccessMessage\":\"").append(escapeJson(dc.getUnlinkSuccessMessage())).append("\",");
             json.append("\"wrongGuildMessage\":\"").append(escapeJson(dc.getWrongGuildMessage())).append("\",");
             json.append("\"ticketCreatedMessage\":\"").append(escapeJson(dc.getTicketCreatedMessage())).append("\",");
             json.append("\"ticketClosingMessage\":\"").append(escapeJson(dc.getTicketClosingMessage())).append("\",");
-            json.append("\"textChannelOnlyMessage\":\"").append(escapeJson(dc.getTextChannelOnlyMessage())).append("\",");
+            json.append("\"textChannelOnlyMessage\":\"").append(escapeJson(dc.getTextChannelOnlyMessage()))
+                    .append("\",");
             json.append("\"rolePrefixes\":").append(GSON.toJson(dc.getRolePrefixes()));
             json.append("},");
         }
-        
+
         // =====================================================================
         // STATS CONFIG
         // =====================================================================
@@ -2924,7 +3056,7 @@ public class WebManager {
             json.append("\"reportFooter\":\"").append(escapeJson(sc.getReportFooter())).append("\"");
             json.append("},");
         }
-        
+
         // =====================================================================
         // ENTITY CLEANER CONFIG
         // =====================================================================
@@ -2937,7 +3069,8 @@ public class WebManager {
             List<Integer> wt = ec.getWarningTimes();
             for (int i = 0; i < wt.size(); i++) {
                 json.append(wt.get(i));
-                if (i < wt.size() - 1) json.append(",");
+                if (i < wt.size() - 1)
+                    json.append(",");
             }
             json.append("],");
             json.append("\"removeDroppedItems\":").append(ec.isRemoveDroppedItems()).append(",");
@@ -2951,21 +3084,23 @@ public class WebManager {
             List<String> ew = ec.getEntityWhitelist();
             for (int i = 0; i < ew.size(); i++) {
                 json.append("\"").append(escapeJson(ew.get(i))).append("\"");
-                if (i < ew.size() - 1) json.append(",");
+                if (i < ew.size() - 1)
+                    json.append(",");
             }
             json.append("],");
             json.append("\"itemWhitelist\":[");
             List<String> iw = ec.getItemWhitelist();
             for (int i = 0; i < iw.size(); i++) {
                 json.append("\"").append(escapeJson(iw.get(i))).append("\"");
-                if (i < iw.size() - 1) json.append(",");
+                if (i < iw.size() - 1)
+                    json.append(",");
             }
             json.append("],");
             json.append("\"warningMessage\":\"").append(escapeJson(ec.getWarningMessage())).append("\",");
             json.append("\"cleanupMessage\":\"").append(escapeJson(ec.getCleanupMessage())).append("\"");
             json.append("},");
         }
-        
+
         // =====================================================================
         // VOTE CONFIG
         // =====================================================================
@@ -2985,11 +3120,12 @@ public class WebManager {
             List<String> cmds = vc.getCommands();
             for (int i = 0; i < cmds.size(); i++) {
                 json.append("\"").append(escapeJson(cmds.get(i))).append("\"");
-                if (i < cmds.size() - 1) json.append(",");
+                if (i < cmds.size() - 1)
+                    json.append(",");
             }
             json.append("]},");
         }
-        
+
         // =====================================================================
         // RANKS CONFIG
         // =====================================================================
@@ -3002,7 +3138,7 @@ public class WebManager {
             json.append("\"ranks\":").append(GSON.toJson(rk.getRanks()));
             json.append("},");
         }
-        
+
         // =====================================================================
         // TICKETS CONFIG
         // =====================================================================
@@ -3018,19 +3154,26 @@ public class WebManager {
             json.append("\"ticketWelcomeMessage\":\"").append(escapeJson(tc.getTicketWelcomeMessage())).append("\",");
             json.append("\"ticketCloseMessage\":\"").append(escapeJson(tc.getTicketCloseMessage())).append("\",");
             json.append("\"noPermissionMessage\":\"").append(escapeJson(tc.getNoPermissionMessage())).append("\",");
-            json.append("\"ticketLimitReachedMessage\":\"").append(escapeJson(tc.getTicketLimitReachedMessage())).append("\",");
-            json.append("\"ticketAlreadyClosedMessage\":\"").append(escapeJson(tc.getTicketAlreadyClosedMessage())).append("\",");
+            json.append("\"ticketLimitReachedMessage\":\"").append(escapeJson(tc.getTicketLimitReachedMessage()))
+                    .append("\",");
+            json.append("\"ticketAlreadyClosedMessage\":\"").append(escapeJson(tc.getTicketAlreadyClosedMessage()))
+                    .append("\",");
             json.append("\"enableTranscript\":").append(tc.isEnableTranscript()).append(",");
             json.append("\"transcriptFormat\":\"").append(escapeJson(tc.getTranscriptFormat())).append("\",");
             json.append("\"transcriptFilename\":\"").append(escapeJson(tc.getTranscriptFilename())).append("\",");
-            json.append("\"mcBotNotConnectedMessage\":\"").append(escapeJson(tc.getMcBotNotConnectedMessage())).append("\",");
-            json.append("\"mcGuildNotFoundMessage\":\"").append(escapeJson(tc.getMcGuildNotFoundMessage())).append("\",");
-            json.append("\"mcCategoryNotFoundMessage\":\"").append(escapeJson(tc.getMcCategoryNotFoundMessage())).append("\",");
-            json.append("\"mcTicketCreatedMessage\":\"").append(escapeJson(tc.getMcTicketCreatedMessage())).append("\",");
-            json.append("\"mcDiscordNotFoundMessage\":\"").append(escapeJson(tc.getMcDiscordNotFoundMessage())).append("\"");
+            json.append("\"mcBotNotConnectedMessage\":\"").append(escapeJson(tc.getMcBotNotConnectedMessage()))
+                    .append("\",");
+            json.append("\"mcGuildNotFoundMessage\":\"").append(escapeJson(tc.getMcGuildNotFoundMessage()))
+                    .append("\",");
+            json.append("\"mcCategoryNotFoundMessage\":\"").append(escapeJson(tc.getMcCategoryNotFoundMessage()))
+                    .append("\",");
+            json.append("\"mcTicketCreatedMessage\":\"").append(escapeJson(tc.getMcTicketCreatedMessage()))
+                    .append("\",");
+            json.append("\"mcDiscordNotFoundMessage\":\"").append(escapeJson(tc.getMcDiscordNotFoundMessage()))
+                    .append("\"");
             json.append("},");
         }
-        
+
         // =====================================================================
         // PLAYERLIST CONFIG
         // =====================================================================
@@ -3052,33 +3195,34 @@ public class WebManager {
             json.append("\"updateIntervalSeconds\":").append(pl.getUpdateIntervalSeconds());
             json.append("}");
         }
-        
+
         // Odstranit trailing čárku pokud je
         String result = json.toString();
         if (result.endsWith(",")) {
             result = result.substring(0, result.length() - 1);
         }
         result += "}";
-        
+
         return result;
     }
-    
+
     // =========================================================================
     // JAVASCRIPT - HLAVNÍ SKRIPT PRO FRONTEND
     // =========================================================================
-    
+
     /**
      * Sestaví JavaScript pro konfigurační panel
      * Obsahuje: načítání konfigurace, renderování, ukládání, role editor, toast
+     * 
      * @param lang Jazyk (en/cz)
      * @return JavaScript kód
      */
     private String buildJavaScript(String lang) {
         StringBuilder js = new StringBuilder();
-        
+
         // Začátek script tagu
         js.append("<script>\n");
-        
+
         // =====================================================================
         // GLOBÁLNÍ PROMĚNNÉ A INICIALIZACE
         // =====================================================================
@@ -3086,49 +3230,51 @@ public class WebManager {
         js.append("// VOIDIUM WEB PANEL - JAVASCRIPT\n");
         js.append("// Generated by WebManager\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("let configData = null;\n");
         js.append("let currentLang = '").append(lang).append("';\n");
         js.append("let discordRoles = [];\n\n");
-        
+
         // =====================================================================
         // TRANSLATIONS OBJEKT
         // =====================================================================
         js.append("// Překlady pro JavaScript\n");
         js.append("const TRANSLATIONS = {\n");
-        
+
         // Export ALL translations to JavaScript (not just a subset)
         Map<String, String> langMap = LANG.getOrDefault(lang, LANG.get("en"));
         Map<String, String> enMap = LANG.get("en");
-        
+
         // Merge all keys from both current language and English fallback
         java.util.Set<String> allKeys = new java.util.HashSet<>();
         allKeys.addAll(langMap.keySet());
         allKeys.addAll(enMap.keySet());
-        
+
         int keyIndex = 0;
         int totalKeys = allKeys.size();
         for (String key : allKeys) {
             String value = langMap.getOrDefault(key, enMap.get(key));
-            if (value == null) value = key;
+            if (value == null)
+                value = key;
             js.append("    '").append(key).append("': '").append(escapeJs(value)).append("'");
-            if (keyIndex < totalKeys - 1) js.append(",");
+            if (keyIndex < totalKeys - 1)
+                js.append(",");
             js.append("\n");
             keyIndex++;
         }
         js.append("};\n\n");
-        
+
         // =====================================================================
         // UTILITY FUNKCE
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// UTILITY FUNKCE\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("function t(key) {\n");
         js.append("    return TRANSLATIONS[key] || key;\n");
         js.append("}\n\n");
-        
+
         // Toast notifikace
         js.append("function showToast(message, type = 'info') {\n");
         js.append("    const toast = document.createElement('div');\n");
@@ -3141,14 +3287,14 @@ public class WebManager {
         js.append("        setTimeout(() => toast.remove(), 300);\n");
         js.append("    }, 3000);\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // CONFIG LOADING
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// NAČÍTÁNÍ KONFIGURACE\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("async function loadConfig() {\n");
         js.append("    try {\n");
         js.append("        const response = await fetch('/api/config');\n");
@@ -3160,7 +3306,7 @@ public class WebManager {
         js.append("        showToast(t('config.load.error'), 'error');\n");
         js.append("    }\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // DISCORD ROLES LOADING
         // =====================================================================
@@ -3174,14 +3320,14 @@ public class WebManager {
         js.append("        console.warn('Could not load Discord roles:', e);\n");
         js.append("    }\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // CONFIG RENDERING
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// RENDEROVÁNÍ KONFIGURACE\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("function renderConfig() {\n");
         js.append("    const editor = document.getElementById('config-editor');\n");
         js.append("    if (!editor || !configData) return;\n");
@@ -3209,38 +3355,48 @@ public class WebManager {
         js.append("        html += '<div class=\\\"config-section\\\" id=\\\"section-restart\\\">';\n");
         js.append("        html += '<h3 class=\\\"section-title\\\">' + t('config.section.restart') + '</h3>';\n");
         js.append("        html += '<div class=\\\"section-content\\\">';\n");
-        js.append("        html += renderField('restart', {key: 'restartType', type: 'select', options: ['FIXED_TIMES', 'INTERVAL', 'DELAYED'], value: type});\n");
+        js.append(
+                "        html += renderField('restart', {key: 'restartType', type: 'select', options: ['FIXED_TIMES', 'INTERVAL', 'DELAYED'], value: type});\n");
         js.append("        if (type === 'FIXED_TIMES') {\n");
-        js.append("            html += renderField('restart', {key: 'fixedRestartTimes', type: 'timelist', value: configData.restart.fixedRestartTimes});\n");
+        js.append(
+                "            html += renderField('restart', {key: 'fixedRestartTimes', type: 'timelist', value: configData.restart.fixedRestartTimes});\n");
         js.append("        } else if (type === 'INTERVAL') {\n");
-        js.append("            html += renderField('restart', {key: 'intervalHours', type: 'number', min: 1, max: 168, value: configData.restart.intervalHours});\n");
+        js.append(
+                "            html += renderField('restart', {key: 'intervalHours', type: 'number', min: 1, max: 168, value: configData.restart.intervalHours});\n");
         js.append("        } else if (type === 'DELAYED') {\n");
-        js.append("            html += renderField('restart', {key: 'delayMinutes', type: 'number', min: 1, max: 1440, value: configData.restart.delayMinutes});\n");
+        js.append(
+                "            html += renderField('restart', {key: 'delayMinutes', type: 'number', min: 1, max: 1440, value: configData.restart.delayMinutes});\n");
         js.append("        }\n");
         js.append("        html += '<h4>Messages</h4>';\n");
-        js.append("        html += renderField('restart', {key: 'warningMessage', type: 'text', value: configData.restart.warningMessage});\n");
-        js.append("        html += renderField('restart', {key: 'restartingNowMessage', type: 'text', value: configData.restart.restartingNowMessage});\n");
-        js.append("        html += renderField('restart', {key: 'kickMessage', type: 'text', value: configData.restart.kickMessage});\n");
-        js.append("        html += '<button class=\\\"btn btn-save\\\" onclick=\\\"saveSection(\\'restart\\')\\\">' + t('btn.save') + '</button>';\n");
+        js.append(
+                "        html += renderField('restart', {key: 'warningMessage', type: 'text', value: configData.restart.warningMessage});\n");
+        js.append(
+                "        html += renderField('restart', {key: 'restartingNowMessage', type: 'text', value: configData.restart.restartingNowMessage});\n");
+        js.append(
+                "        html += renderField('restart', {key: 'kickMessage', type: 'text', value: configData.restart.kickMessage});\n");
+        js.append(
+                "        html += '<button class=\\\"btn btn-save\\\" onclick=\\\"saveSection(\\'restart\\')\\\">' + t('btn.save') + '</button>';\n");
         js.append("        html += '</div></div>';\n");
         js.append("    }\n");
-        
+
         js.append("    // Sekce: Announcement\n");
         js.append("    if (configData.announcement) {\n");
         js.append("        html += renderSection('announcement', t('config.section.announcement'), [\n");
         js.append("            {key: 'prefix', type: 'text', value: configData.announcement.prefix},\n");
-        js.append("            {key: 'announcementIntervalMinutes', type: 'number', min: 1, max: 1440, value: configData.announcement.announcementIntervalMinutes},\n");
-        js.append("            {key: 'announcements', type: 'stringlist', value: configData.announcement.announcements}\n");
+        js.append(
+                "            {key: 'announcementIntervalMinutes', type: 'number', min: 1, max: 1440, value: configData.announcement.announcementIntervalMinutes},\n");
+        js.append(
+                "            {key: 'announcements', type: 'stringlist', value: configData.announcement.announcements}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    // Sekce: Discord (zkráceno pro přehlednost, obsahuje všechna pole)\n");
         js.append("    if (configData.discord) {\n");
         js.append("        html += renderDiscordSection();\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    // Sekce: Stats\n");
         js.append("    if (configData.stats) {\n");
         js.append("        html += renderSection('stats', t('config.section.stats'), [\n");
@@ -3249,33 +3405,47 @@ public class WebManager {
         js.append("            {key: 'reportTime', type: 'time', value: configData.stats.reportTime},\n");
         js.append("            {key: 'reportTitle', type: 'text', value: configData.stats.reportTitle},\n");
         js.append("            {key: 'reportPeakLabel', type: 'text', value: configData.stats.reportPeakLabel},\n");
-        js.append("            {key: 'reportAverageLabel', type: 'text', value: configData.stats.reportAverageLabel},\n");
+        js.append(
+                "            {key: 'reportAverageLabel', type: 'text', value: configData.stats.reportAverageLabel},\n");
         js.append("            {key: 'reportFooter', type: 'text', value: configData.stats.reportFooter}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    // Sekce: Entity Cleaner\n");
         js.append("    if (configData.entitycleaner) {\n");
         js.append("        html += renderSection('entitycleaner', t('config.section.entitycleaner'), [\n");
         js.append("            {key: 'enabled', type: 'checkbox', value: configData.entitycleaner.enabled},\n");
-        js.append("            {key: 'cleanupIntervalSeconds', type: 'number', min: 60, max: 3600, value: configData.entitycleaner.cleanupIntervalSeconds},\n");
-        js.append("            {key: 'warningTimes', type: 'numberlist', value: configData.entitycleaner.warningTimes},\n");
-        js.append("            {key: 'removeDroppedItems', type: 'checkbox', value: configData.entitycleaner.removeDroppedItems},\n");
-        js.append("            {key: 'removePassiveMobs', type: 'checkbox', value: configData.entitycleaner.removePassiveMobs},\n");
-        js.append("            {key: 'removeHostileMobs', type: 'checkbox', value: configData.entitycleaner.removeHostileMobs},\n");
-        js.append("            {key: 'removeXpOrbs', type: 'checkbox', value: configData.entitycleaner.removeXpOrbs},\n");
-        js.append("            {key: 'removeArrows', type: 'checkbox', value: configData.entitycleaner.removeArrows},\n");
-        js.append("            {key: 'removeNamedEntities', type: 'checkbox', value: configData.entitycleaner.removeNamedEntities},\n");
-        js.append("            {key: 'removeTamedAnimals', type: 'checkbox', value: configData.entitycleaner.removeTamedAnimals},\n");
-        js.append("            {key: 'entityWhitelist', type: 'stringlist', value: configData.entitycleaner.entityWhitelist},\n");
-        js.append("            {key: 'itemWhitelist', type: 'stringlist', value: configData.entitycleaner.itemWhitelist},\n");
-        js.append("            {key: 'warningMessage', type: 'text', value: configData.entitycleaner.warningMessage},\n");
-        js.append("            {key: 'cleanupMessage', type: 'text', value: configData.entitycleaner.cleanupMessage}\n");
+        js.append(
+                "            {key: 'cleanupIntervalSeconds', type: 'number', min: 60, max: 3600, value: configData.entitycleaner.cleanupIntervalSeconds},\n");
+        js.append(
+                "            {key: 'warningTimes', type: 'numberlist', value: configData.entitycleaner.warningTimes},\n");
+        js.append(
+                "            {key: 'removeDroppedItems', type: 'checkbox', value: configData.entitycleaner.removeDroppedItems},\n");
+        js.append(
+                "            {key: 'removePassiveMobs', type: 'checkbox', value: configData.entitycleaner.removePassiveMobs},\n");
+        js.append(
+                "            {key: 'removeHostileMobs', type: 'checkbox', value: configData.entitycleaner.removeHostileMobs},\n");
+        js.append(
+                "            {key: 'removeXpOrbs', type: 'checkbox', value: configData.entitycleaner.removeXpOrbs},\n");
+        js.append(
+                "            {key: 'removeArrows', type: 'checkbox', value: configData.entitycleaner.removeArrows},\n");
+        js.append(
+                "            {key: 'removeNamedEntities', type: 'checkbox', value: configData.entitycleaner.removeNamedEntities},\n");
+        js.append(
+                "            {key: 'removeTamedAnimals', type: 'checkbox', value: configData.entitycleaner.removeTamedAnimals},\n");
+        js.append(
+                "            {key: 'entityWhitelist', type: 'stringlist', value: configData.entitycleaner.entityWhitelist},\n");
+        js.append(
+                "            {key: 'itemWhitelist', type: 'stringlist', value: configData.entitycleaner.itemWhitelist},\n");
+        js.append(
+                "            {key: 'warningMessage', type: 'text', value: configData.entitycleaner.warningMessage},\n");
+        js.append(
+                "            {key: 'cleanupMessage', type: 'text', value: configData.entitycleaner.cleanupMessage}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    // Sekce: Vote\n");
         js.append("    if (configData.vote) {\n");
         js.append("        html += renderSection('vote', t('config.section.vote'), [\n");
@@ -3286,81 +3456,105 @@ public class WebManager {
         js.append("            {key: 'rsaPublicKeyPath', type: 'text', value: configData.vote.rsaPublicKeyPath},\n");
         js.append("            {key: 'sharedSecret', type: 'text', value: configData.vote.sharedSecret},\n");
         js.append("            {key: 'announceVotes', type: 'checkbox', value: configData.vote.announceVotes},\n");
-        js.append("            {key: 'announcementMessage', type: 'text', value: configData.vote.announcementMessage},\n");
-        js.append("            {key: 'announcementCooldown', type: 'number', min: 0, max: 3600, value: configData.vote.announcementCooldown},\n");
+        js.append(
+                "            {key: 'announcementMessage', type: 'text', value: configData.vote.announcementMessage},\n");
+        js.append(
+                "            {key: 'announcementCooldown', type: 'number', min: 0, max: 3600, value: configData.vote.announcementCooldown},\n");
         js.append("            {key: 'commands', type: 'stringlist', value: configData.vote.commands}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    // Sekce: Ranks\n");
         js.append("    if (configData.ranks) {\n");
         js.append("        html += renderSection('ranks', t('config.section.ranks'), [\n");
         js.append("            {key: 'enableAutoRanks', type: 'checkbox', value: configData.ranks.enableAutoRanks},\n");
-        js.append("            {key: 'checkIntervalMinutes', type: 'number', min: 1, max: 1440, value: configData.ranks.checkIntervalMinutes},\n");
+        js.append(
+                "            {key: 'checkIntervalMinutes', type: 'number', min: 1, max: 1440, value: configData.ranks.checkIntervalMinutes},\n");
         js.append("            {key: 'promotionMessage', type: 'text', value: configData.ranks.promotionMessage},\n");
         js.append("            {key: 'ranks', type: 'playtimeranklist', value: configData.ranks.ranks}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    // Sekce: Tickets\n");
         js.append("    if (configData.tickets) {\n");
         js.append("        html += renderSection('tickets', t('config.section.tickets'), [\n");
         js.append("            {key: 'enableTickets', type: 'checkbox', value: configData.tickets.enableTickets},\n");
         js.append("            {key: 'ticketCategoryId', type: 'text', value: configData.tickets.ticketCategoryId},\n");
         js.append("            {key: 'supportRoleId', type: 'text', value: configData.tickets.supportRoleId},\n");
-        js.append("            {key: 'ticketChannelTopic', type: 'text', value: configData.tickets.ticketChannelTopic},\n");
-        js.append("            {key: 'maxTicketsPerUser', type: 'number', min: 1, max: 10, value: configData.tickets.maxTicketsPerUser},\n");
-        js.append("            {key: 'ticketCreatedMessage', type: 'textarea', value: configData.tickets.ticketCreatedMessage},\n");
-        js.append("            {key: 'ticketWelcomeMessage', type: 'textarea', value: configData.tickets.ticketWelcomeMessage},\n");
-        js.append("            {key: 'ticketCloseMessage', type: 'textarea', value: configData.tickets.ticketCloseMessage},\n");
-        js.append("            {key: 'noPermissionMessage', type: 'text', value: configData.tickets.noPermissionMessage},\n");
-        js.append("            {key: 'ticketLimitReachedMessage', type: 'text', value: configData.tickets.ticketLimitReachedMessage},\n");
-        js.append("            {key: 'ticketAlreadyClosedMessage', type: 'text', value: configData.tickets.ticketAlreadyClosedMessage},\n");
-        js.append("            {key: 'enableTranscript', type: 'checkbox', value: configData.tickets.enableTranscript},\n");
-        js.append("            {key: 'transcriptFormat', type: 'select', options: ['TXT', 'HTML', 'JSON'], value: configData.tickets.transcriptFormat},\n");
-        js.append("            {key: 'transcriptFilename', type: 'text', value: configData.tickets.transcriptFilename},\n");
-        js.append("            {key: 'mcBotNotConnectedMessage', type: 'text', value: configData.tickets.mcBotNotConnectedMessage},\n");
-        js.append("            {key: 'mcGuildNotFoundMessage', type: 'text', value: configData.tickets.mcGuildNotFoundMessage},\n");
-        js.append("            {key: 'mcCategoryNotFoundMessage', type: 'text', value: configData.tickets.mcCategoryNotFoundMessage},\n");
-        js.append("            {key: 'mcTicketCreatedMessage', type: 'text', value: configData.tickets.mcTicketCreatedMessage},\n");
-        js.append("            {key: 'mcDiscordNotFoundMessage', type: 'text', value: configData.tickets.mcDiscordNotFoundMessage}\n");
+        js.append(
+                "            {key: 'ticketChannelTopic', type: 'text', value: configData.tickets.ticketChannelTopic},\n");
+        js.append(
+                "            {key: 'maxTicketsPerUser', type: 'number', min: 1, max: 10, value: configData.tickets.maxTicketsPerUser},\n");
+        js.append(
+                "            {key: 'ticketCreatedMessage', type: 'textarea', value: configData.tickets.ticketCreatedMessage},\n");
+        js.append(
+                "            {key: 'ticketWelcomeMessage', type: 'textarea', value: configData.tickets.ticketWelcomeMessage},\n");
+        js.append(
+                "            {key: 'ticketCloseMessage', type: 'textarea', value: configData.tickets.ticketCloseMessage},\n");
+        js.append(
+                "            {key: 'noPermissionMessage', type: 'text', value: configData.tickets.noPermissionMessage},\n");
+        js.append(
+                "            {key: 'ticketLimitReachedMessage', type: 'text', value: configData.tickets.ticketLimitReachedMessage},\n");
+        js.append(
+                "            {key: 'ticketAlreadyClosedMessage', type: 'text', value: configData.tickets.ticketAlreadyClosedMessage},\n");
+        js.append(
+                "            {key: 'enableTranscript', type: 'checkbox', value: configData.tickets.enableTranscript},\n");
+        js.append(
+                "            {key: 'transcriptFormat', type: 'select', options: ['TXT', 'HTML', 'JSON'], value: configData.tickets.transcriptFormat},\n");
+        js.append(
+                "            {key: 'transcriptFilename', type: 'text', value: configData.tickets.transcriptFilename},\n");
+        js.append(
+                "            {key: 'mcBotNotConnectedMessage', type: 'text', value: configData.tickets.mcBotNotConnectedMessage},\n");
+        js.append(
+                "            {key: 'mcGuildNotFoundMessage', type: 'text', value: configData.tickets.mcGuildNotFoundMessage},\n");
+        js.append(
+                "            {key: 'mcCategoryNotFoundMessage', type: 'text', value: configData.tickets.mcCategoryNotFoundMessage},\n");
+        js.append(
+                "            {key: 'mcTicketCreatedMessage', type: 'text', value: configData.tickets.mcTicketCreatedMessage},\n");
+        js.append(
+                "            {key: 'mcDiscordNotFoundMessage', type: 'text', value: configData.tickets.mcDiscordNotFoundMessage}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    // Sekce: PlayerList\n");
         js.append("    if (configData.playerlist) {\n");
         js.append("        html += renderSection('playerlist', t('config.section.playerlist'), [\n");
-        js.append("            {key: 'enableCustomPlayerList', type: 'checkbox', value: configData.playerlist.enableCustomPlayerList},\n");
+        js.append(
+                "            {key: 'enableCustomPlayerList', type: 'checkbox', value: configData.playerlist.enableCustomPlayerList},\n");
         js.append("            {key: 'headerLine1', type: 'text', value: configData.playerlist.headerLine1},\n");
         js.append("            {key: 'headerLine2', type: 'text', value: configData.playerlist.headerLine2},\n");
         js.append("            {key: 'headerLine3', type: 'text', value: configData.playerlist.headerLine3},\n");
         js.append("            {key: 'footerLine1', type: 'text', value: configData.playerlist.footerLine1},\n");
         js.append("            {key: 'footerLine2', type: 'text', value: configData.playerlist.footerLine2},\n");
         js.append("            {key: 'footerLine3', type: 'text', value: configData.playerlist.footerLine3},\n");
-        js.append("            {key: 'enableCustomNames', type: 'checkbox', value: configData.playerlist.enableCustomNames},\n");
-        js.append("            {key: 'playerNameFormat', type: 'text', value: configData.playerlist.playerNameFormat},\n");
+        js.append(
+                "            {key: 'enableCustomNames', type: 'checkbox', value: configData.playerlist.enableCustomNames},\n");
+        js.append(
+                "            {key: 'playerNameFormat', type: 'text', value: configData.playerlist.playerNameFormat},\n");
         js.append("            {key: 'defaultPrefix', type: 'text', value: configData.playerlist.defaultPrefix},\n");
         js.append("            {key: 'defaultSuffix', type: 'text', value: configData.playerlist.defaultSuffix},\n");
-        js.append("            {key: 'combineMultipleRanks', type: 'checkbox', value: configData.playerlist.combineMultipleRanks},\n");
-        js.append("            {key: 'updateIntervalSeconds', type: 'number', min: 1, max: 300, value: configData.playerlist.updateIntervalSeconds}\n");
+        js.append(
+                "            {key: 'combineMultipleRanks', type: 'checkbox', value: configData.playerlist.combineMultipleRanks},\n");
+        js.append(
+                "            {key: 'updateIntervalSeconds', type: 'number', min: 1, max: 300, value: configData.playerlist.updateIntervalSeconds}\n");
         js.append("        ]);\n");
         js.append("    }\n");
         js.append("    \n");
-        
+
         js.append("    editor.innerHTML = html;\n");
         js.append("    attachEventListeners();\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // RENDER SECTION HELPER
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// RENDER SECTION HELPER\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("function renderSection(sectionId, title, fields) {\n");
         js.append("    let html = '<div class=\"config-section\" id=\"section-' + sectionId + '\">';\n");
         js.append("    html += '<h3 class=\"section-title\">' + title + '</h3>';\n");
@@ -3370,11 +3564,12 @@ public class WebManager {
         js.append("        html += renderField(sectionId, field);\n");
         js.append("    });\n");
         js.append("    \n");
-        js.append("    html += '<button class=\"btn btn-save\" onclick=\"saveSection(\\'' + sectionId + '\\')\">' + t('btn.save') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-save\" onclick=\"saveSection(\\'' + sectionId + '\\')\">' + t('btn.save') + '</button>';\n");
         js.append("    html += '</div></div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // RENDER FIELD HELPER
         // =====================================================================
@@ -3387,31 +3582,38 @@ public class WebManager {
         js.append("    \n");
         js.append("    switch (field.type) {\n");
         js.append("        case 'checkbox':\n");
-        js.append("            html += '<input type=\"checkbox\" id=\"' + id + '\" ' + (field.value ? 'checked' : '') + '>';\n");
+        js.append(
+                "            html += '<input type=\"checkbox\" id=\"' + id + '\" ' + (field.value ? 'checked' : '') + '>';\n");
         js.append("            break;\n");
         js.append("        case 'number':\n");
-        js.append("            html += '<input type=\"number\" id=\"' + id + '\" value=\"' + (field.value || 0) + '\"';\n");
+        js.append(
+                "            html += '<input type=\"number\" id=\"' + id + '\" value=\"' + (field.value || 0) + '\"';\n");
         js.append("            if (field.min !== undefined) html += ' min=\"' + field.min + '\"';\n");
         js.append("            if (field.max !== undefined) html += ' max=\"' + field.max + '\"';\n");
         js.append("            html += '>';\n");
         js.append("            break;\n");
         js.append("        case 'select':\n");
         js.append("            // Speciální handling pro restartType - při změně znovu vyrenderovat sekci\n");
-        js.append("            const onChange = (section === 'restart' && field.key === 'restartType') ? ' onchange=\\\"onRestartTypeChange()\\\"' : '';\n");
+        js.append(
+                "            const onChange = (section === 'restart' && field.key === 'restartType') ? ' onchange=\\\"onRestartTypeChange()\\\"' : '';\n");
         js.append("            html += '<select id=\"' + id + '\"' + onChange + '>';\n");
         js.append("            field.options.forEach(opt => {\n");
-        js.append("                html += '<option value=\"' + opt + '\"' + (field.value === opt ? ' selected' : '') + '>' + opt + '</option>';\n");
+        js.append(
+                "                html += '<option value=\"' + opt + '\"' + (field.value === opt ? ' selected' : '') + '>' + opt + '</option>';\n");
         js.append("            });\n");
         js.append("            html += '</select>';\n");
         js.append("            break;\n");
         js.append("        case 'textarea':\n");
-        js.append("            html += '<textarea id=\"' + id + '\" rows=\"3\">' + (field.value || '') + '</textarea>';\n");
+        js.append(
+                "            html += '<textarea id=\"' + id + '\" rows=\"3\">' + (field.value || '') + '</textarea>';\n");
         js.append("            break;\n");
         js.append("        case 'password':\n");
-        js.append("            html += '<input type=\"password\" id=\"' + id + '\" value=\"' + (field.value || '') + '\">';\n");
+        js.append(
+                "            html += '<input type=\"password\" id=\"' + id + '\" value=\"' + (field.value || '') + '\">';\n");
         js.append("            break;\n");
         js.append("        case 'time':\n");
-        js.append("            html += '<input type=\"time\" id=\"' + id + '\" value=\"' + (field.value || '00:00') + '\">';\n");
+        js.append(
+                "            html += '<input type=\"time\" id=\"' + id + '\" value=\"' + (field.value || '00:00') + '\">';\n");
         js.append("            break;\n");
         js.append("        case 'timelist':\n");
         js.append("            html += renderTimeList(id, field.value || []);\n");
@@ -3430,14 +3632,17 @@ public class WebManager {
         js.append("            break;\n");
         js.append("        case 'langbuttons':\n");
         js.append("            html += '<div class=\"lang-buttons\" id=\"' + id + '\">';\n");
-        js.append("            html += '<button type=\"button\" class=\"lang-btn' + (field.value === 'en' ? ' active' : '') + '\" data-lang=\"en\" onclick=\"setLanguage(\\'en\\')\">';\n");
+        js.append(
+                "            html += '<button type=\"button\" class=\"lang-btn' + (field.value === 'en' ? ' active' : '') + '\" data-lang=\"en\" onclick=\"setLanguage(\\'en\\')\">';\n");
         js.append("            html += '🇬🇧 EN</button>';\n");
-        js.append("            html += '<button type=\"button\" class=\"lang-btn' + (field.value === 'cz' ? ' active' : '') + '\" data-lang=\"cz\" onclick=\"setLanguage(\\'cz\\')\">';\n");
+        js.append(
+                "            html += '<button type=\"button\" class=\"lang-btn' + (field.value === 'cz' ? ' active' : '') + '\" data-lang=\"cz\" onclick=\"setLanguage(\\'cz\\')\">';\n");
         js.append("            html += '🇨🇿 CZ</button>';\n");
         js.append("            html += '</div>';\n");
         js.append("            break;\n");
         js.append("        default: // text\n");
-        js.append("            html += '<input type=\"text\" id=\"' + id + '\" value=\"' + (field.value || '') + '\">';\n");
+        js.append(
+                "            html += '<input type=\"text\" id=\"' + id + '\" value=\"' + (field.value || '') + '\">';\n");
         js.append("    }\n");
         js.append("    \n");
         js.append("    if (TRANSLATIONS[descKey]) {\n");
@@ -3446,110 +3651,137 @@ public class WebManager {
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // SPECIALIZED RENDER FUNCTIONS
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// SPECIÁLNÍ RENDER FUNKCE\n");
         js.append("// ============================================================\n\n");
-        
+
         // Time list
         js.append("function renderTimeList(id, times) {\n");
         js.append("    let html = '<div class=\"list-editor\" id=\"' + id + '-container\">';\n");
         js.append("    times.forEach((time, idx) => {\n");
         js.append("        html += '<div class=\"list-item\">';\n");
-        js.append("        html += '<input type=\"time\" data-list=\"' + id + '\" data-idx=\"' + idx + '\" value=\"' + time + '\">';\n");
-        js.append("        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + id + '\\', ' + idx + ')\">×</button>';\n");
+        js.append(
+                "        html += '<input type=\"time\" data-list=\"' + id + '\" data-idx=\"' + idx + '\" value=\"' + time + '\">';\n");
+        js.append(
+                "        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + id + '\\', ' + idx + ')\">×</button>';\n");
         js.append("        html += '</div>';\n");
         js.append("    });\n");
-        js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addTimeItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-small btn-add\" onclick=\"addTimeItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // String list
         js.append("function renderStringList(id, strings) {\n");
         js.append("    let html = '<div class=\"list-editor\" id=\"' + id + '-container\">';\n");
         js.append("    strings.forEach((str, idx) => {\n");
         js.append("        html += '<div class=\"list-item\">';\n");
-        js.append("        html += '<input type=\"text\" data-list=\"' + id + '\" data-idx=\"' + idx + '\" value=\"' + escapeHtml(str) + '\">';\n");
-        js.append("        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + id + '\\', ' + idx + ')\">×</button>';\n");
+        js.append(
+                "        html += '<input type=\"text\" data-list=\"' + id + '\" data-idx=\"' + idx + '\" value=\"' + escapeHtml(str) + '\">';\n");
+        js.append(
+                "        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + id + '\\', ' + idx + ')\">×</button>';\n");
         js.append("        html += '</div>';\n");
         js.append("    });\n");
-        js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addStringItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-small btn-add\" onclick=\"addStringItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // Number list (for arrays of integers like warningTimes)
         js.append("function renderNumberList(id, numbers) {\n");
         js.append("    let html = '<div class=\"list-editor number-list-editor\" id=\"' + id + '-container\">';\n");
         js.append("    numbers.forEach((num, idx) => {\n");
         js.append("        html += '<div class=\"list-item\">';\n");
-        js.append("        html += '<input type=\"number\" data-numberlist=\"' + id + '\" data-idx=\"' + idx + '\" value=\"' + num + '\" min=\"0\">';\n");
-        js.append("        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + id + '\\', ' + idx + ')\">×</button>';\n");
+        js.append(
+                "        html += '<input type=\"number\" data-numberlist=\"' + id + '\" data-idx=\"' + idx + '\" value=\"' + num + '\" min=\"0\">';\n");
+        js.append(
+                "        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + id + '\\', ' + idx + ')\">×</button>';\n");
         js.append("        html += '</div>';\n");
         js.append("    });\n");
-        js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addNumberItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-small btn-add\" onclick=\"addNumberItem(\\'' + id + '\\')\">' + t('btn.add') + '</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // Rank list (complex)
         js.append("function renderRankList(id, ranks) {\n");
         js.append("    let html = '<div class=\"rank-list-editor\" id=\"' + id + '-container\">';\n");
         js.append("    ranks.forEach((rank, idx) => {\n");
         js.append("        html += '<div class=\"rank-item\" data-idx=\"' + idx + '\">';\n");
-        js.append("        html += '<input type=\"text\" placeholder=\"Name\" value=\"' + (rank.name || '') + '\" data-field=\"name\">';\n");
-        js.append("        html += '<input type=\"number\" placeholder=\"Hours\" value=\"' + (rank.requiredPlaytimeHours || 0) + '\" data-field=\"requiredPlaytimeHours\">';\n");
-        js.append("        html += '<input type=\"text\" placeholder=\"Permission\" value=\"' + (rank.permission || '') + '\" data-field=\"permission\">';\n");
-        js.append("        html += '<input type=\"text\" placeholder=\"Command\" value=\"' + (rank.command || '') + '\" data-field=\"command\">';\n");
-        js.append("        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeRank(' + idx + ')\">×</button>';\n");
+        js.append(
+                "        html += '<input type=\"text\" placeholder=\"Name\" value=\"' + (rank.name || '') + '\" data-field=\"name\">';\n");
+        js.append(
+                "        html += '<input type=\"number\" placeholder=\"Hours\" value=\"' + (rank.requiredPlaytimeHours || 0) + '\" data-field=\"requiredPlaytimeHours\">';\n");
+        js.append(
+                "        html += '<input type=\"text\" placeholder=\"Permission\" value=\"' + (rank.permission || '') + '\" data-field=\"permission\">';\n");
+        js.append(
+                "        html += '<input type=\"text\" placeholder=\"Command\" value=\"' + (rank.command || '') + '\" data-field=\"command\">';\n");
+        js.append(
+                "        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeRank(' + idx + ')\">×</button>';\n");
         js.append("        html += '</div>';\n");
         js.append("    });\n");
-        js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addRank()\">' + t('btn.add') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-small btn-add\" onclick=\"addRank()\">' + t('btn.add') + '</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // Playtime Rank list - type (PREFIX/SUFFIX), value, hours
         js.append("function renderPlaytimeRankList(id, ranks) {\n");
         js.append("    let html = '<div class=\"playtime-rank-list-editor\" id=\"' + id + '-container\">';\n");
         js.append("    ranks.forEach((rank, idx) => {\n");
         js.append("        html += '<div class=\"playtime-rank-item\" data-idx=\"' + idx + '\">';\n");
         js.append("        html += '<select data-field=\"type\">';\n");
-        js.append("        html += '<option value=\"PREFIX\"' + (rank.type === 'PREFIX' ? ' selected' : '') + '>PREFIX</option>';\n");
-        js.append("        html += '<option value=\"SUFFIX\"' + (rank.type === 'SUFFIX' ? ' selected' : '') + '>SUFFIX</option>';\n");
+        js.append(
+                "        html += '<option value=\"PREFIX\"' + (rank.type === 'PREFIX' ? ' selected' : '') + '>PREFIX</option>';\n");
+        js.append(
+                "        html += '<option value=\"SUFFIX\"' + (rank.type === 'SUFFIX' ? ' selected' : '') + '>SUFFIX</option>';\n");
         js.append("        html += '</select>';\n");
-        js.append("        html += '<input type=\"text\" placeholder=\"' + t('ranks.value.placeholder') + '\" value=\"' + escapeHtml(rank.value || '') + '\" data-field=\"value\">';\n");
-        js.append("        html += '<input type=\"number\" placeholder=\"' + t('ranks.hours.placeholder') + '\" value=\"' + (rank.hours || 0) + '\" min=\"0\" data-field=\"hours\">';\n");
+        js.append(
+                "        html += '<input type=\"text\" placeholder=\"' + t('ranks.value.placeholder') + '\" value=\"' + escapeHtml(rank.value || '') + '\" data-field=\"value\">';\n");
+        js.append(
+                "        html += '<input type=\"number\" placeholder=\"' + t('ranks.hours.placeholder') + '\" value=\"' + (rank.hours || 0) + '\" min=\"0\" data-field=\"hours\">';\n");
         // --- Custom Conditions ---
         js.append("        html += '<div class=\"custom-conditions\">';\n");
-        js.append("        html += '<label style=\"color:#bb86fc;font-size:0.95em;\" title=\"' + t('ranks.conditions.desc') + '\">' + t('ranks.conditions.label') + '</label>';\n");
+        js.append(
+                "        html += '<label style=\"color:#bb86fc;font-size:0.95em;\" title=\"' + t('ranks.conditions.desc') + '\">' + t('ranks.conditions.label') + '</label>';\n");
         js.append("        (rank.customConditions || []).forEach((cond, cidx) => {\n");
         js.append("            html += '<div class=\"custom-condition-item\" data-cidx=\"' + cidx + '\">';\n");
-        js.append("            html += '<select data-ccfield=\"type\" title=\"' + t('ranks.condition.type') + '\">';\n");
+        js.append(
+                "            html += '<select data-ccfield=\"type\" title=\"' + t('ranks.condition.type') + '\">';\n");
         js.append("            ['KILL','VISIT','BREAK','PLACE'].forEach(opt => {\n");
-        js.append("                html += '<option value=\"' + opt + '\"' + (cond.type === opt ? ' selected' : '') + '>' + opt + '</option>';\n");
+        js.append(
+                "                html += '<option value=\"' + opt + '\"' + (cond.type === opt ? ' selected' : '') + '>' + opt + '</option>';\n");
         js.append("            });\n");
         js.append("            html += '</select>';\n");
 
-        js.append("            html += '<input type=\"number\" placeholder=\"' + t('ranks.condition.count') + '\" value=\"' + (cond.count || 0) + '\" min=\"1\" data-ccfield=\"count\">';\n");
-        js.append("            html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeCustomCondition(' + idx + ',' + cidx + ')\">×</button>';\n");
+        js.append(
+                "            html += '<input type=\"number\" placeholder=\"' + t('ranks.condition.count') + '\" value=\"' + (cond.count || 0) + '\" min=\"1\" data-ccfield=\"count\">';\n");
+        js.append(
+                "            html += '<button class=\"btn btn-small btn-danger\" onclick=\"removeCustomCondition(' + idx + ',' + cidx + ')\">×</button>';\n");
         js.append("            html += '</div>';\n");
         js.append("        });\n");
-        js.append("        html += '<button class=\"btn btn-small btn-add\" onclick=\"addCustomCondition(' + idx + ')\">+ ' + t('ranks.conditions.label') + '</button>';\n");
+        js.append(
+                "        html += '<button class=\"btn btn-small btn-add\" onclick=\"addCustomCondition(' + idx + ')\">+ ' + t('ranks.conditions.label') + '</button>';\n");
         js.append("        html += '</div>';\n");
         // --- End Custom Conditions ---
-        js.append("        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removePlaytimeRank(' + idx + ')\">×</button>';\n");
+        js.append(
+                "        html += '<button class=\"btn btn-small btn-danger\" onclick=\"removePlaytimeRank(' + idx + ')\">×</button>';\n");
         js.append("        html += '</div>';\n");
         js.append("    });\n");
-        js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addPlaytimeRank()\">' + t('btn.add') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-small btn-add\" onclick=\"addPlaytimeRank()\">' + t('btn.add') + '</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // Discord section (special)
         js.append("function renderDiscordSection() {\n");
         js.append("    const dc = configData.discord;\n");
@@ -3558,57 +3790,79 @@ public class WebManager {
         js.append("    html += '<div class=\"section-content\">';\n");
         js.append("    \n");
         js.append("    // Základní nastavení\n");
-        js.append("    html += renderField('discord', {key: 'enableDiscord', type: 'checkbox', value: dc.enableDiscord});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'enableDiscord', type: 'checkbox', value: dc.enableDiscord});\n");
         js.append("    html += renderField('discord', {key: 'botToken', type: 'text', value: dc.botToken});\n");
         js.append("    html += renderField('discord', {key: 'guildId', type: 'text', value: dc.guildId});\n");
-        js.append("    html += renderField('discord', {key: 'botActivityType', type: 'select', options: ['PLAYING', 'WATCHING', 'LISTENING', 'COMPETING'], value: dc.botActivityType});\n");
-        js.append("    html += renderField('discord', {key: 'botActivityText', type: 'text', value: dc.botActivityText});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'botActivityType', type: 'select', options: ['PLAYING', 'WATCHING', 'LISTENING', 'COMPETING'], value: dc.botActivityType});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'botActivityText', type: 'text', value: dc.botActivityText});\n");
         js.append("    \n");
         js.append("    // Whitelist\n");
         js.append("    html += '<h4>Whitelist</h4>';\n");
-        js.append("    html += renderField('discord', {key: 'enableWhitelist', type: 'checkbox', value: dc.enableWhitelist});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'enableWhitelist', type: 'checkbox', value: dc.enableWhitelist});\n");
         js.append("    html += renderField('discord', {key: 'kickMessage', type: 'text', value: dc.kickMessage});\n");
-        js.append("    html += renderField('discord', {key: 'maxAccountsPerDiscord', type: 'number', min: 1, max: 10, value: dc.maxAccountsPerDiscord});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'maxAccountsPerDiscord', type: 'number', min: 1, max: 10, value: dc.maxAccountsPerDiscord});\n");
         js.append("    \n");
         js.append("    // Channel IDs\n");
         js.append("    html += '<h4>Channels</h4>';\n");
-        js.append("    html += renderField('discord', {key: 'chatChannelId', type: 'text', value: dc.chatChannelId});\n");
-        js.append("    html += renderField('discord', {key: 'consoleChannelId', type: 'text', value: dc.consoleChannelId});\n");
-        js.append("    html += renderField('discord', {key: 'statusChannelId', type: 'text', value: dc.statusChannelId});\n");
-        js.append("    html += renderField('discord', {key: 'linkChannelId', type: 'text', value: dc.linkChannelId});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'chatChannelId', type: 'text', value: dc.chatChannelId});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'consoleChannelId', type: 'text', value: dc.consoleChannelId});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'statusChannelId', type: 'text', value: dc.statusChannelId});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'linkChannelId', type: 'text', value: dc.linkChannelId});\n");
         js.append("    html += renderField('discord', {key: 'linkedRoleId', type: 'text', value: dc.linkedRoleId});\n");
         js.append("    \n");
         js.append("    // Chat bridge\n");
         js.append("    html += '<h4>Chat Bridge</h4>';\n");
-        js.append("    html += renderField('discord', {key: 'enableChatBridge', type: 'checkbox', value: dc.enableChatBridge});\n");
-        js.append("    html += renderField('discord', {key: 'minecraftToDiscordFormat', type: 'text', value: dc.minecraftToDiscordFormat});\n");
-        js.append("    html += renderField('discord', {key: 'discordToMinecraftFormat', type: 'text', value: dc.discordToMinecraftFormat});\n");
-        js.append("    html += renderField('discord', {key: 'translateEmojis', type: 'checkbox', value: dc.translateEmojis});\n");
-        js.append("    html += renderField('discord', {key: 'chatWebhookUrl', type: 'text', value: dc.chatWebhookUrl});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'enableChatBridge', type: 'checkbox', value: dc.enableChatBridge});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'minecraftToDiscordFormat', type: 'text', value: dc.minecraftToDiscordFormat});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'discordToMinecraftFormat', type: 'text', value: dc.discordToMinecraftFormat});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'translateEmojis', type: 'checkbox', value: dc.translateEmojis});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'chatWebhookUrl', type: 'text', value: dc.chatWebhookUrl});\n");
         js.append("    \n");
         js.append("    // Status messages\n");
         js.append("    html += '<h4>Status Messages</h4>';\n");
-        js.append("    html += renderField('discord', {key: 'enableStatusMessages', type: 'checkbox', value: dc.enableStatusMessages});\n");
-        js.append("    html += renderField('discord', {key: 'statusMessageStarting', type: 'text', value: dc.statusMessageStarting});\n");
-        js.append("    html += renderField('discord', {key: 'statusMessageStarted', type: 'text', value: dc.statusMessageStarted});\n");
-        js.append("    html += renderField('discord', {key: 'statusMessageStopping', type: 'text', value: dc.statusMessageStopping});\n");
-        js.append("    html += renderField('discord', {key: 'statusMessageStopped', type: 'text', value: dc.statusMessageStopped});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'enableStatusMessages', type: 'checkbox', value: dc.enableStatusMessages});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'statusMessageStarting', type: 'text', value: dc.statusMessageStarting});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'statusMessageStarted', type: 'text', value: dc.statusMessageStarted});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'statusMessageStopping', type: 'text', value: dc.statusMessageStopping});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'statusMessageStopped', type: 'text', value: dc.statusMessageStopped});\n");
         js.append("    \n");
         js.append("    // Channel Topic Update\n");
         js.append("    html += '<h4>Channel Topic Update</h4>';\n");
-        js.append("    html += renderField('discord', {key: 'enableTopicUpdate', type: 'checkbox', value: dc.enableTopicUpdate});\n");
-        js.append("    html += renderField('discord', {key: 'channelTopicFormat', type: 'text', value: dc.channelTopicFormat});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'enableTopicUpdate', type: 'checkbox', value: dc.enableTopicUpdate});\n");
+        js.append(
+                "    html += renderField('discord', {key: 'channelTopicFormat', type: 'text', value: dc.channelTopicFormat});\n");
         js.append("    html += renderField('discord', {key: 'uptimeFormat', type: 'text', value: dc.uptimeFormat});\n");
         js.append("    \n");
         js.append("    // Role prefixes (special editor)\n");
         js.append("    html += '<h4>' + t('role.prefix.editor') + '</h4>';\n");
         js.append("    html += renderRolePrefixEditor(dc.rolePrefixes || {});\n");
         js.append("    \n");
-        js.append("    html += '<button class=\"btn btn-save\" onclick=\"saveSection(\\'discord\\')\">' + t('btn.save') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-save\" onclick=\"saveSection(\\'discord\\')\">' + t('btn.save') + '</button>';\n");
         js.append("    html += '</div></div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // Role prefix editor - VYLEPŠENÝ s color pickerem a auto-generací
         js.append("function renderRolePrefixEditor(prefixes) {\n");
         js.append("    let html = '<div class=\"role-prefix-editor\" id=\"role-prefix-container\">';\n");
@@ -3628,21 +3882,25 @@ public class WebManager {
         js.append("    });\n");
         js.append("    \n");
         js.append("    // Tlačítko přidat\n");
-        js.append("    html += '<button class=\"btn btn-small btn-add\" onclick=\"addRolePrefix()\">' + t('role.prefix.add') + '</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-small btn-add\" onclick=\"addRolePrefix()\">' + t('role.prefix.add') + '</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         js.append("function renderRolePrefixItem(roleId, roleName, roleColor, prefix, suffix, priority) {\n");
-        js.append("    let html = '<div class=\"role-prefix-item\" data-role=\"' + roleId + '\" data-priority=\"' + (priority || 0) + '\">';\n");
+        js.append(
+                "    let html = '<div class=\"role-prefix-item\" data-role=\"' + roleId + '\" data-priority=\"' + (priority || 0) + '\">';\n");
         js.append("    \n");
         js.append("    // Role select\n");
         js.append("    html += '<div class=\"role-select-wrapper\">';\n");
         js.append("    html += '<select class=\"role-select\" onchange=\"onRoleSelect(this)\">';\n");
-        js.append("    html += '<option value=\"' + roleId + '\" data-color=\"' + roleColor + '\">' + roleName + '</option>';\n");
+        js.append(
+                "    html += '<option value=\"' + roleId + '\" data-color=\"' + roleColor + '\">' + roleName + '</option>';\n");
         js.append("    discordRoles.forEach(role => {\n");
         js.append("        if (role.id !== roleId) {\n");
-        js.append("            html += '<option value=\"' + role.id + '\" data-color=\"' + role.color + '\">' + role.name + '</option>';\n");
+        js.append(
+                "            html += '<option value=\"' + role.id + '\" data-color=\"' + role.color + '\">' + role.name + '</option>';\n");
         js.append("        }\n");
         js.append("    });\n");
         js.append("    html += '</select>';\n");
@@ -3653,8 +3911,10 @@ public class WebManager {
         js.append("    html += '<div class=\"prefix-group\">';\n");
         js.append("    html += '<label>Prefix</label>';\n");
         js.append("    html += '<div class=\"input-with-color\">';\n");
-        js.append("    html += '<input type=\"color\" class=\"color-picker\" value=\"' + roleColor + '\" onchange=\"insertColorCode(this, \\'prefix\\')\" title=\"' + t('color.picker.title') + '\">';\n");
-        js.append("    html += '<input type=\"text\" class=\"prefix-input\" value=\"' + escapeHtml(prefix) + '\" placeholder=\"&c[Admin] \">';\n");
+        js.append(
+                "    html += '<input type=\"color\" class=\"color-picker\" value=\"' + roleColor + '\" onchange=\"insertColorCode(this, \\'prefix\\')\" title=\"' + t('color.picker.title') + '\">';\n");
+        js.append(
+                "    html += '<input type=\"text\" class=\"prefix-input\" value=\"' + escapeHtml(prefix) + '\" placeholder=\"&c[Admin] \">';\n");
         js.append("    html += '</div>';\n");
         js.append("    html += '</div>';\n");
         js.append("    \n");
@@ -3662,17 +3922,20 @@ public class WebManager {
         js.append("    html += '<div class=\"suffix-group\">';\n");
         js.append("    html += '<label>Suffix</label>';\n");
         js.append("    html += '<div class=\"input-with-color\">';\n");
-        js.append("    html += '<input type=\"color\" class=\"color-picker\" value=\"' + roleColor + '\" onchange=\"insertColorCode(this, \\'suffix\\')\" title=\"' + t('color.picker.title') + '\">';\n");
-        js.append("    html += '<input type=\"text\" class=\"suffix-input\" value=\"' + escapeHtml(suffix) + '\" placeholder=\" &c★\">';\n");
+        js.append(
+                "    html += '<input type=\"color\" class=\"color-picker\" value=\"' + roleColor + '\" onchange=\"insertColorCode(this, \\'suffix\\')\" title=\"' + t('color.picker.title') + '\">';\n");
+        js.append(
+                "    html += '<input type=\"text\" class=\"suffix-input\" value=\"' + escapeHtml(suffix) + '\" placeholder=\" &c★\">';\n");
         js.append("    html += '</div>';\n");
         js.append("    html += '</div>';\n");
         js.append("    \n");
         js.append("    // Remove button\n");
-        js.append("    html += '<button class=\"btn btn-small btn-danger\" onclick=\"this.closest(\\'.role-prefix-item\\').remove()\">×</button>';\n");
+        js.append(
+                "    html += '<button class=\"btn btn-small btn-danger\" onclick=\"this.closest(\\'.role-prefix-item\\').remove()\">×</button>';\n");
         js.append("    html += '</div>';\n");
         js.append("    return html;\n");
         js.append("}\n\n");
-        
+
         // Funkce pro výběr role - auto-generuje prefix
         js.append("function onRoleSelect(selectEl) {\n");
         js.append("    const item = selectEl.closest('.role-prefix-item');\n");
@@ -3708,7 +3971,7 @@ public class WebManager {
         js.append("        suffixInput.value = '';\n");
         js.append("    }\n");
         js.append("}\n\n");
-        
+
         // Převod hex na MC color code
         js.append("function hexToMcColor(hex) {\n");
         js.append("    if (!hex) return '&f';\n");
@@ -3740,7 +4003,7 @@ public class WebManager {
         js.append("    }\n");
         js.append("    return closest;\n");
         js.append("}\n\n");
-        
+
         // Vložení color kódu do inputu
         js.append("function insertColorCode(colorPicker, type) {\n");
         js.append("    const item = colorPicker.closest('.role-prefix-item');\n");
@@ -3753,17 +4016,18 @@ public class WebManager {
         js.append("    input.focus();\n");
         js.append("    input.setSelectionRange(pos + mcColor.length, pos + mcColor.length);\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // SAVE FUNCTIONS
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// UKLÁDÁNÍ KONFIGURACE\n");
         js.append("// ============================================================\n\n");
-        
+
         // Funkce pro uložení všech sekcí najednou (pro sticky save bar)
         js.append("async function saveConfig() {\n");
-        js.append("    const sections = ['web', 'general', 'restart', 'announcement', 'discord', 'stats', 'vote', 'ranks', 'tickets', 'playerlist', 'entitycleaner'];\n");
+        js.append(
+                "    const sections = ['web', 'general', 'restart', 'announcement', 'discord', 'stats', 'vote', 'ranks', 'tickets', 'playerlist', 'entitycleaner'];\n");
         js.append("    let success = true;\n");
         js.append("    \n");
         js.append("    for (const sectionId of sections) {\n");
@@ -3793,7 +4057,7 @@ public class WebManager {
         js.append("        showToast(t('config.save.error'), 'error');\n");
         js.append("    }\n");
         js.append("}\n\n");
-        
+
         js.append("async function saveSection(sectionId) {\n");
         js.append("    const data = collectSectionData(sectionId);\n");
         js.append("    \n");
@@ -3815,7 +4079,7 @@ public class WebManager {
         js.append("        showToast(t('config.save.error'), 'error');\n");
         js.append("    }\n");
         js.append("}\n\n");
-        
+
         js.append("function collectSectionData(sectionId) {\n");
         js.append("    const section = document.getElementById('section-' + sectionId);\n");
         js.append("    if (!section) return {};\n");
@@ -3898,7 +4162,8 @@ public class WebManager {
         js.append("            const colorPicker = item.querySelector('.color-picker');\n");
         js.append("            const color = colorPicker ? colorPicker.value : '';\n");
         js.append("            if (roleId) {\n");
-        js.append("                prefixes[roleId] = {prefix: prefix, suffix: suffix, color: color, priority: index};\n");
+        js.append(
+                "                prefixes[roleId] = {prefix: prefix, suffix: suffix, color: color, priority: index};\n");
         js.append("            }\n");
         js.append("        });\n");
         js.append("        data.rolePrefixes = prefixes;\n");
@@ -3910,13 +4175,15 @@ public class WebManager {
         js.append("        document.querySelectorAll('.playtime-rank-item').forEach(item => {\n");
         js.append("            const type = item.querySelector('select[data-field=\"type\"]').value;\n");
         js.append("            const value = item.querySelector('input[data-field=\"value\"]').value;\n");
-        js.append("            const hours = parseInt(item.querySelector('input[data-field=\"hours\"]').value) || 0;\n");
+        js.append(
+                "            const hours = parseInt(item.querySelector('input[data-field=\"hours\"]').value) || 0;\n");
         js.append("            \n");
         js.append("            // Collect custom conditions\n");
         js.append("            const customConditions = [];\n");
         js.append("            item.querySelectorAll('.custom-condition-item').forEach(condItem => {\n");
         js.append("                const condType = condItem.querySelector('select[data-ccfield=\"type\"]').value;\n");
-        js.append("                const count = parseInt(condItem.querySelector('input[data-ccfield=\"count\"]').value) || 1;\n");
+        js.append(
+                "                const count = parseInt(condItem.querySelector('input[data-ccfield=\"count\"]').value) || 1;\n");
         js.append("                customConditions.push({type: condType, count: count});\n");
         js.append("            });\n");
         js.append("            \n");
@@ -3929,14 +4196,14 @@ public class WebManager {
         js.append("    \n");
         js.append("    return data;\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // LIST MANIPULATION FUNCTIONS
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// MANIPULACE SE SEZNAMY\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("function onRestartTypeChange() {\n");
         js.append("    const select = document.getElementById('restart_restartType');\n");
         js.append("    if (!select) return;\n");
@@ -3944,46 +4211,52 @@ public class WebManager {
         js.append("    configData.restart.restartType = newType;\n");
         js.append("    renderConfig();\n");
         js.append("}\n\n");
-        
+
         js.append("function addTimeItem(listId) {\n");
         js.append("    const container = document.getElementById(listId + '-container');\n");
         js.append("    const items = container.querySelectorAll('.list-item');\n");
         js.append("    const newIdx = items.length;\n");
         js.append("    const div = document.createElement('div');\n");
         js.append("    div.className = 'list-item';\n");
-        js.append("    div.innerHTML = '<input type=\"time\" data-list=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"12:00\">' +\n");
-        js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
+        js.append(
+                "    div.innerHTML = '<input type=\"time\" data-list=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"12:00\">' +\n");
+        js.append(
+                "                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
         js.append("    container.insertBefore(div, container.lastElementChild);\n");
         js.append("}\n\n");
-        
+
         js.append("function addStringItem(listId) {\n");
         js.append("    const container = document.getElementById(listId + '-container');\n");
         js.append("    const items = container.querySelectorAll('.list-item');\n");
         js.append("    const newIdx = items.length;\n");
         js.append("    const div = document.createElement('div');\n");
         js.append("    div.className = 'list-item';\n");
-        js.append("    div.innerHTML = '<input type=\"text\" data-list=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"\">' +\n");
-        js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
+        js.append(
+                "    div.innerHTML = '<input type=\"text\" data-list=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"\">' +\n");
+        js.append(
+                "                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
         js.append("    container.insertBefore(div, container.lastElementChild);\n");
         js.append("}\n\n");
-        
+
         js.append("function addNumberItem(listId) {\n");
         js.append("    const container = document.getElementById(listId + '-container');\n");
         js.append("    const items = container.querySelectorAll('.list-item');\n");
         js.append("    const newIdx = items.length;\n");
         js.append("    const div = document.createElement('div');\n");
         js.append("    div.className = 'list-item';\n");
-        js.append("    div.innerHTML = '<input type=\"number\" data-numberlist=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"0\" min=\"0\">' +\n");
-        js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
+        js.append(
+                "    div.innerHTML = '<input type=\"number\" data-numberlist=\"' + listId + '\" data-idx=\"' + newIdx + '\" value=\"0\" min=\"0\">' +\n");
+        js.append(
+                "                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeListItem(\\'' + listId + '\\', ' + newIdx + ')\">×</button>';\n");
         js.append("    container.insertBefore(div, container.lastElementChild);\n");
         js.append("}\n\n");
-        
+
         js.append("function removeListItem(listId, idx) {\n");
         js.append("    const container = document.getElementById(listId + '-container');\n");
         js.append("    const items = container.querySelectorAll('.list-item');\n");
         js.append("    if (items[idx]) items[idx].remove();\n");
         js.append("}\n\n");
-        
+
         js.append("function addRolePrefix() {\n");
         js.append("    const container = document.getElementById('role-prefix-container');\n");
         js.append("    if (discordRoles.length === 0) {\n");
@@ -3992,19 +4265,23 @@ public class WebManager {
         js.append("    }\n");
         js.append("    \n");
         js.append("    // Najdi první roli která ještě není přidaná\n");
-        js.append("    const usedRoleIds = Array.from(container.querySelectorAll('.role-prefix-item')).map(el => el.dataset.role);\n");
-        js.append("    const availableRole = discordRoles.find(r => !usedRoleIds.includes(r.id)) || discordRoles[0];\n");
+        js.append(
+                "    const usedRoleIds = Array.from(container.querySelectorAll('.role-prefix-item')).map(el => el.dataset.role);\n");
+        js.append(
+                "    const availableRole = discordRoles.find(r => !usedRoleIds.includes(r.id)) || discordRoles[0];\n");
         js.append("    const newPriority = container.querySelectorAll('.role-prefix-item').length;\n");
         js.append("    \n");
         js.append("    const div = document.createElement('div');\n");
-        js.append("    div.innerHTML = renderRolePrefixItem(availableRole.id, availableRole.name, availableRole.color, '', '', newPriority);\n");
+        js.append(
+                "    div.innerHTML = renderRolePrefixItem(availableRole.id, availableRole.name, availableRole.color, '', '', newPriority);\n");
         js.append("    const newItem = div.firstElementChild;\n");
         js.append("    \n");
         js.append("    // Auto-generuj default prefix s hex barvou\n");
         js.append("    const prefixInput = newItem.querySelector('.prefix-input');\n");
         js.append("    if (prefixInput) {\n");
         js.append("        let colorCode = hexToMcColor(availableRole.color);\n");
-        js.append("        if (availableRole.color && availableRole.color !== '#000000' && availableRole.color !== '#99aab5') {\n");
+        js.append(
+                "        if (availableRole.color && availableRole.color !== '#000000' && availableRole.color !== '#99aab5') {\n");
         js.append("            colorCode = '&' + availableRole.color;\n");
         js.append("        }\n");
         js.append("        prefixInput.value = colorCode + '[' + availableRole.name + '] ';\n");
@@ -4012,7 +4289,7 @@ public class WebManager {
         js.append("    \n");
         js.append("    container.insertBefore(newItem, container.lastElementChild);\n");
         js.append("}\n\n");
-        
+
         // Playtime rank functions
         js.append("function addPlaytimeRank() {\n");
         js.append("    const container = document.getElementById('ranks_ranks-container');\n");
@@ -4021,25 +4298,32 @@ public class WebManager {
         js.append("    const div = document.createElement('div');\n");
         js.append("    div.className = 'playtime-rank-item';\n");
         js.append("    div.setAttribute('data-idx', newIdx);\n");
-        js.append("    div.innerHTML = '<select data-field=\"type\"><option value=\"PREFIX\" selected>PREFIX</option><option value=\"SUFFIX\">SUFFIX</option></select>' +\n");
-        js.append("                    '<input type=\"text\" placeholder=\"' + t('ranks.value.placeholder') + '\" value=\"\" data-field=\"value\">' +\n");
-        js.append("                    '<input type=\"number\" placeholder=\"' + t('ranks.hours.placeholder') + '\" value=\"0\" min=\"0\" data-field=\"hours\">' +\n");
+        js.append(
+                "    div.innerHTML = '<select data-field=\"type\"><option value=\"PREFIX\" selected>PREFIX</option><option value=\"SUFFIX\">SUFFIX</option></select>' +\n");
+        js.append(
+                "                    '<input type=\"text\" placeholder=\"' + t('ranks.value.placeholder') + '\" value=\"\" data-field=\"value\">' +\n");
+        js.append(
+                "                    '<input type=\"number\" placeholder=\"' + t('ranks.hours.placeholder') + '\" value=\"0\" min=\"0\" data-field=\"hours\">' +\n");
         js.append("                    '<div class=\"custom-conditions\">' +\n");
-        js.append("                    '<label style=\"color:#bb86fc;font-size:0.95em;\">Podmínky pro rank (volitelné):</label>' +\n");
-        js.append("                    '<button class=\"btn btn-small btn-add\" onclick=\"addCustomCondition(' + newIdx + ')\">+ Podmínka</button>' +\n");
+        js.append(
+                "                    '<label style=\"color:#bb86fc;font-size:0.95em;\">Podmínky pro rank (volitelné):</label>' +\n");
+        js.append(
+                "                    '<button class=\"btn btn-small btn-add\" onclick=\"addCustomCondition(' + newIdx + ')\">+ Podmínka</button>' +\n");
         js.append("                    '</div>' +\n");
-        js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removePlaytimeRank(' + newIdx + ')\">×</button>';\n");
+        js.append(
+                "                    '<button class=\"btn btn-small btn-danger\" onclick=\"removePlaytimeRank(' + newIdx + ')\">×</button>';\n");
         js.append("    container.insertBefore(div, container.lastElementChild);\n");
         js.append("}\n\n");
-        
+
         js.append("function removePlaytimeRank(idx) {\n");
         js.append("    const container = document.getElementById('ranks_ranks-container');\n");
         js.append("    const item = container.querySelector('.playtime-rank-item[data-idx=\"' + idx + '\"]');\n");
         js.append("    if (item) item.remove();\n");
         js.append("}\n\n");
-        
+
         js.append("function addCustomCondition(rankIdx) {\n");
-        js.append("    const rankItem = document.querySelector('.playtime-rank-item[data-idx=\"' + rankIdx + '\"]');\n");
+        js.append(
+                "    const rankItem = document.querySelector('.playtime-rank-item[data-idx=\"' + rankIdx + '\"]');\n");
         js.append("    if (!rankItem) return;\n");
         js.append("    const condContainer = rankItem.querySelector('.custom-conditions');\n");
         js.append("    if (!condContainer) return;\n");
@@ -4054,19 +4338,23 @@ public class WebManager {
         js.append("                    '<option value=\"BREAK\">BREAK</option>' +\n");
         js.append("                    '<option value=\"PLACE\">PLACE</option>' +\n");
         js.append("                    '</select>' +\n");
-        js.append("                    '<input type=\"number\" placeholder=\"Počet\" value=\"1\" min=\"1\" data-ccfield=\"count\">' +\n");
-        js.append("                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeCustomCondition(' + rankIdx + ',' + newCidx + ')\">×</button>';\n");
+        js.append(
+                "                    '<input type=\"number\" placeholder=\"Počet\" value=\"1\" min=\"1\" data-ccfield=\"count\">' +\n");
+        js.append(
+                "                    '<button class=\"btn btn-small btn-danger\" onclick=\"removeCustomCondition(' + rankIdx + ',' + newCidx + ')\">×</button>';\n");
         js.append("    const addBtn = condContainer.querySelector('.btn-add');\n");
         js.append("    condContainer.insertBefore(div, addBtn);\n");
         js.append("}\n\n");
-        
+
         js.append("function removeCustomCondition(rankIdx, condIdx) {\n");
-        js.append("    const rankItem = document.querySelector('.playtime-rank-item[data-idx=\"' + rankIdx + '\"]');\n");
+        js.append(
+                "    const rankItem = document.querySelector('.playtime-rank-item[data-idx=\"' + rankIdx + '\"]');\n");
         js.append("    if (!rankItem) return;\n");
-        js.append("    const condItem = rankItem.querySelector('.custom-condition-item[data-cidx=\"' + condIdx + '\"]');\n");
+        js.append(
+                "    const condItem = rankItem.querySelector('.custom-condition-item[data-cidx=\"' + condIdx + '\"]');\n");
         js.append("    if (condItem) condItem.remove();\n");
         js.append("}\n\n");
-        
+
         // Language and locale functions
         js.append("async function setLanguage(lang) {\n");
         js.append("    // Update UI buttons\n");
@@ -4093,7 +4381,7 @@ public class WebManager {
         js.append("        showToast(t('config.save.error'), 'error');\n");
         js.append("    }\n");
         js.append("}\n\n");
-        
+
         js.append("async function resetLocale(localeType) {\n");
         js.append("    if (!confirm(t('locale.reset.confirm'))) return;\n");
         js.append("    \n");
@@ -4115,19 +4403,20 @@ public class WebManager {
         js.append("        showToast(t('locale.reset.error'), 'error');\n");
         js.append("    }\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // UTILITY FUNCTIONS
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// UTILITY\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("function escapeHtml(str) {\n");
         js.append("    if (!str) return '';\n");
-        js.append("    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n");
+        js.append(
+                "    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n");
         js.append("}\n\n");
-        
+
         js.append("function attachEventListeners() {\n");
         js.append("    // Collapsible sections\n");
         js.append("    document.querySelectorAll('.section-title').forEach(title => {\n");
@@ -4136,32 +4425,34 @@ public class WebManager {
         js.append("        });\n");
         js.append("    });\n");
         js.append("}\n\n");
-        
+
         // =====================================================================
         // INITIALIZATION
         // =====================================================================
         js.append("// ============================================================\n");
         js.append("// INICIALIZACE\n");
         js.append("// ============================================================\n\n");
-        
+
         js.append("document.addEventListener('DOMContentLoaded', async () => {\n");
         js.append("    await loadDiscordRoles();\n");
         js.append("    await loadConfig();\n");
         js.append("});\n");
-        
+
         // Konec script tagu
         js.append("</script>\n");
-        
+
         return js.toString();
     }
-    
+
     /**
      * Escape JavaScript string
+     * 
      * @param s Input string
      * @return Escaped string
      */
     private String escapeJs(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return s.replace("\\", "\\\\")
                 .replace("'", "\\'")
                 .replace("\"", "\\\"")

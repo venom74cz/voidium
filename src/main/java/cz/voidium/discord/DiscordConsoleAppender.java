@@ -19,7 +19,8 @@ import java.io.Serializable;
 @Plugin(name = "DiscordConsoleAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class DiscordConsoleAppender extends AbstractAppender {
 
-    protected DiscordConsoleAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties) {
+    protected DiscordConsoleAppender(String name, Filter filter, Layout<? extends Serializable> layout,
+            boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
     }
 
@@ -28,7 +29,7 @@ public class DiscordConsoleAppender extends AbstractAppender {
             @PluginAttribute("name") String name,
             @PluginElement("Filter") Filter filter,
             @PluginElement("Layout") Layout<? extends Serializable> layout) {
-        
+
         if (name == null) {
             name = "DiscordConsole";
         }
@@ -40,16 +41,27 @@ public class DiscordConsoleAppender extends AbstractAppender {
 
     @Override
     public void append(LogEvent event) {
+        // Prevent infinite loops if somehow this appender logs something that triggers
+        // itself
+        // unlikely with the async queue but good practice
+
         DiscordConfig config = DiscordConfig.getInstance();
-        if (config == null || !config.isEnableConsoleLog()) {
+        if (config == null) {
             return;
         }
-        
+
+        String loggerName = event.getLoggerName();
+        if (loggerName != null) {
+            if (loggerName.startsWith("net.dv8tion.jda") || loggerName.startsWith("cz.voidium.discord")) {
+                return;
+            }
+        }
+
         String message = event.getMessage().getFormattedMessage();
-        // Basic filtering to avoid loops or spam
-        if (message == null || message.isEmpty()) return;
-        
+        if (message == null || message.isEmpty())
+            return;
+
         // Send to DiscordManager queue
-        DiscordManager.getInstance().queueConsoleMessage(message);
+        DiscordManager.getInstance().queueConsoleMessage(message, event.getLevel());
     }
 }
