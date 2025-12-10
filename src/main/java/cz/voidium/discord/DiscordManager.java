@@ -268,7 +268,8 @@ public class DiscordManager extends ListenerAdapter {
             return;
 
         String linkChannelId = DiscordConfig.getInstance().getLinkChannelId();
-        LOGGER.debug("Message received in channel {}, linkChannelId={}", event.getChannel().getId(), linkChannelId);
+        // LOGGER.debug("Message received in channel {}, linkChannelId={}",
+        // event.getChannel().getId(), linkChannelId);
 
         if (linkChannelId == null || linkChannelId.isEmpty()) {
             LOGGER.debug("Link channel ID is not configured, skipping message processing");
@@ -393,7 +394,8 @@ public class DiscordManager extends ListenerAdapter {
             }
         }
 
-        LOGGER.debug("Message in channel {} ignored (not link, chat, or ticket channel)", event.getChannel().getId());
+        // LOGGER.debug("Message in channel {} ignored (not link, chat, or ticket
+        // channel)", event.getChannel().getId());
     }
 
     @Override
@@ -596,7 +598,8 @@ public class DiscordManager extends ListenerAdapter {
             return;
 
         channel.getManager().setTopic(topic).queue(
-                success -> LOGGER.debug("Channel topic updated: {}", topic),
+                success -> {
+                }, // LOGGER.debug("Channel topic updated: {}", topic),
                 error -> LOGGER.error("Failed to update channel topic: {}", error.getMessage()));
     }
 
