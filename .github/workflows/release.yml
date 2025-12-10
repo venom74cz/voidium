@@ -82,7 +82,7 @@ jobs:
           
           # Construct JSON payload using jq
           jq -n \
-            --slurpfile body release_body.txt \
+            --rawfile body release_body.txt \
             --arg version "v${{ env.VERSION }}" \
             --arg avatar "https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png" \
             --arg content "||@everyone||" \
@@ -93,7 +93,7 @@ jobs:
               content: $content,
               embeds: [{
                 title: $version,
-                description: ($body[0] // "No release notes"),
+                description: ($body // "No release notes"),
                 color: 2105893,
                 footer: { text: $footer }
               }]
