@@ -1,0 +1,131 @@
+[11Dec2025 12:00:36.201] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeserver, --fml.neoForgeVersion, 21.1.216, --fml.fmlVersion, 4.0.42, --fml.mcVersion, 1.21.1, --fml.neoFormVersion, 20240808.144430]
+[11Dec2025 12:00:36.204] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: JVM identified as Eclipse Adoptium OpenJDK 64-Bit Server VM 21.0.9+10-LTS
+[11Dec2025 12:00:36.205] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher 11.0.5+main.901c6ea8 starting: java version 21.0.9 by Eclipse Adoptium; OS Linux arch amd64 version 6.8.0-87-generic
+[11Dec2025 12:00:36.321] [main/INFO] [net.neoforged.fml.loading.ImmediateWindowHandler/]: ImmediateWindowProvider not loading because launch target is forgeserver
+[11Dec2025 12:00:36.376] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=union:/home/container/libraries/net/fabricmc/sponge-mixin/0.15.2+mixin.0.8.7/sponge-mixin-0.15.2+mixin.0.8.7.jar%2373!/ Service=ModLauncher Env=SERVER
+[11Dec2025 12:00:36.675] [main/INFO] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "server-1.21.1-20240808.144430-srg.jar" [locator: production server provider +net.neoforged:neoforge:21.1.216:server]
+[11Dec2025 12:00:36.707] [main/INFO] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "neoforge-21.1.216-universal.jar" [locator: PathBasedLocator[name=neoforge, paths=[libraries/net/neoforged/neoforge/21.1.216/neoforge-21.1.216-universal.jar]], reader: mod manifest]
+[11Dec2025 12:00:36.718] [main/INFO] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "voidium-2.1.5.jar" [locator: {mods folder locator at /home/container/mods}, reader: mod manifest]
+[11Dec2025 12:00:36.815] [main/INFO] [net.neoforged.fml.loading.moddiscovery.locators.JarInJarDependencyLocator/]: Found 2 dependencies adding them to mods collection
+[11Dec2025 12:00:36.815] [main/INFO] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Found gamelibrary file "mixinextras-neoforge-0.5.0.jar" [parent: neoforge-21.1.216-universal.jar, locator: jarinjar, reader: mod manifest]
+[11Dec2025 12:00:36.815] [main/INFO] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Found library file "net.neoforged.neoforge-coremods-21.1.216.jar" [parent: neoforge-21.1.216-universal.jar, locator: jarinjar, reader: mod manifest]
+[11Dec2025 12:00:36.816] [main/INFO] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/]: 
+     Mod List:
+		Name Version (Mod Id)
+
+		Minecraft 1.21.1 (minecraft)
+		NeoForge 21.1.216 (neoforge)
+		VOIDIUM 2.1.5 (voidium)
+[11Dec2025 12:00:37.295] [main/INFO] [mixin/]: Compatibility level set to JAVA_21
+[11Dec2025 12:00:37.306] [main/INFO] [cpw.mods.modlauncher.LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeserver' with arguments []
+[11Dec2025 12:00:38.080] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0).
+[11Dec2025 12:00:42.718] [modloading-worker-0/INFO] [voidium/]: VOIDIUM - INTELLIGENT SERVER CONTROL is loading...
+[11Dec2025 12:00:42.721] [modloading-worker-0/INFO] [Voidium-Storage/]: Storage directory initialized: /home/container/config/voidium/storage
+[11Dec2025 12:00:42.737] [modloading-worker-0/INFO] [net.neoforged.neoforge.common.NeoForgeMod/NEOFORGE-MOD]: NeoForge mod loading, version 21.1.216, for MC 1.21.1
+[11Dec2025 12:00:42.769] [modloading-worker-0/INFO] [voidium/]: Voidium configuration loaded successfully!
+[11Dec2025 12:00:42.770] [modloading-worker-0/INFO] [voidium/]: SkinCache TTL set to 24 hours
+[11Dec2025 12:00:43.084] [main/INFO] [com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService/]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[11Dec2025 12:00:43.178] [main/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/home/container/libraries/net/minecraft/server/1.21.1-20240808.144430/server-1.21.1-20240808.144430-srg.jar%23118!/assets/.mcassetsroot' uses unexpected schema
+[11Dec2025 12:00:43.179] [main/WARN] [net.minecraft.server.packs.VanillaPackResourcesBuilder/]: Assets URL 'union:/home/container/libraries/net/minecraft/server/1.21.1-20240808.144430/server-1.21.1-20240808.144430-srg.jar%23118!/data/.mcassetsroot' uses unexpected schema
+[11Dec2025 12:00:44.811] [main/INFO] [net.minecraft.world.item.crafting.RecipeManager/]: Loaded 1290 recipes
+[11Dec2025 12:00:45.001] [main/INFO] [net.minecraft.advancements.AdvancementTree/]: Loaded 1399 advancements
+[11Dec2025 12:00:45.825] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Starting minecraft server version 1.21.1
+[11Dec2025 12:00:45.825] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Loading properties
+[11Dec2025 12:00:45.825] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Default game type: SURVIVAL
+[11Dec2025 12:00:45.825] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Generating keypair
+[11Dec2025 12:00:45.917] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Starting Minecraft server on 0.0.0.0:25600
+[11Dec2025 12:00:45.971] [Server thread/INFO] [net.minecraft.server.network.ServerConnectionListener/]: Using epoll channel type
+[11Dec2025 12:00:46.054] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Preparing level "world"
+[11Dec2025 12:00:47.909] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Preparing start region for dimension minecraft:overworld
+[11Dec2025 12:00:48.320] [Worker-Main-8/INFO] [net.minecraft.server.level.progress.LoggerChunkProgressListener/]: Preparing spawn area: 0%
+[11Dec2025 12:00:48.410] [Worker-Main-11/INFO] [net.minecraft.server.level.progress.LoggerChunkProgressListener/]: Preparing spawn area: 51%
+[11Dec2025 12:00:48.470] [Server thread/INFO] [net.minecraft.server.level.progress.LoggerChunkProgressListener/]: Time elapsed: 560 ms
+[11Dec2025 12:00:48.470] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Done (2.446s)! For help, type "help"
+[11Dec2025 12:00:48.470] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Starting remote control listener
+[11Dec2025 12:00:48.472] [Server thread/WARN] [net.minecraft.server.rcon.thread.RconThread/]: No rcon password set in server.properties, rcon disabled!
+[11Dec2025 12:00:48.509] [Server thread/INFO] [net.neoforged.neoforge.server.permission.PermissionAPI/]: Successfully initialized permission handler neoforge:default_handler
+[11Dec2025 12:00:49.469] [Server thread/INFO] [net.dv8tion.jda.api.JDA/]: Login Successful!
+[11Dec2025 12:00:49.742] [JDA MainWS-ReadThread/INFO] [net.dv8tion.jda.internal.requests.WebSocketClient/]: Connected to WebSocket
+[11Dec2025 12:00:50.227] [JDA MainWS-ReadThread/INFO] [net.dv8tion.jda.api.JDA/]: Finished Loading!
+[11Dec2025 12:00:50.229] [Server thread/INFO] [Voidium-Discord/]: Discord bot started as VOID-CRAFT STATECH INDUSTRY#4171
+[11Dec2025 12:00:50.262] [Server thread/INFO] [Voidium-Discord/]: Discord Console Logging enabled for channel 1368592825842798633
+[11Dec2025 12:00:50.266] [Server thread/INFO] [Voidium-Discord/]: Discord Console Appender attached successfully.
+[11Dec2025 12:00:50.284] [Server thread/INFO] [voidium/]: Starting Voidium managers...
+[11Dec2025 12:00:50.293] [Server thread/INFO] [voidium-votes/]: Pending vote queue initialized: 0 vote(s) waiting
+[11Dec2025 12:00:50.297] [Server thread/INFO] [voidium-votes/]: Vote RSA private key loaded from /home/container/config/voidium/votifier_rsa.pem
+[11Dec2025 12:00:50.297] [Server thread/INFO] [voidium-votes/]: Public key ready at /home/container/config/voidium/votifier_rsa_public.pem
+[11Dec2025 12:00:50.297] [Server thread/INFO] [voidium-votes/]: Vote listener will validate NuVotifier v2 tokens alongside legacy RSA payloads
+[11Dec2025 12:00:50.299] [Server thread/INFO] [voidium-votes/]: Vote listener bound to 0.0.0.0:8192
+[11Dec2025 12:00:50.300] [Server thread/INFO] [voidium-votes/]: Vote listener started
+[11Dec2025 12:00:50.320] [Server thread/INFO] [Voidium-Web/]: Web Control Panel started on port 25599
+[11Dec2025 12:00:50.321] [Server thread/INFO] [Voidium-Web/]: Access URL: http://192.168.1.109:25599/?token=f5ef6080-5d1a-41c1-bfa3-b94ca5c5c330
+[11Dec2025 12:00:50.324] [Server thread/INFO] [Voidium-Stats/]: Stats Manager started.
+[11Dec2025 12:00:50.327] [Server thread/INFO] [Voidium-Ranks/]: Rank Manager started. Checking every 5 minutes.
+[11Dec2025 12:00:50.329] [Server thread/INFO] [voidium-playerlist/]: Player list manager started (update interval: 5s)
+[11Dec2025 12:00:50.330] [Server thread/INFO] [voidium/]: Offline mode? false
+[11Dec2025 12:00:50.330] [Server thread/INFO] [voidium/]: SkinRestorer enabled in config? true
+[11Dec2025 12:00:50.330] [Server thread/INFO] [voidium/]: Server in online mode -> SkinRestorer skipped.
+[11Dec2025 12:00:50.334] [Server thread/INFO] [voidium/]: Voidium managers started successfully!
+[11Dec2025 15:13:04.645] [JDA MainWS-ReadThread/INFO] [Voidium-Discord/]: Unlinked accounts for user idepatooo#0000 because they left the guild.
+[11Dec2025 18:00:55.345] [Server thread/INFO] [Voidium-Progress/]: Player progress loaded.
+[11Dec2025 18:00:55.346] [Server thread/INFO] [Voidium-Progress/]: Player progress saved.
+[11Dec2025 18:00:55.347] [Server thread/INFO] [Voidium-Web/]: Web Control Panel stopped
+[11Dec2025 18:00:55.351] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Stopping server
+[11Dec2025 18:00:55.352] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving players
+[11Dec2025 18:00:55.352] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving worlds
+[11Dec2025 18:00:55.424] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[11Dec2025 18:00:55.480] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[11Dec2025 18:00:55.482] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[11Dec2025 18:00:55.488] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[11Dec2025 18:00:55.488] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[11Dec2025 18:00:55.488] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[11Dec2025 18:00:55.488] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage: All dimensions are saved
+[11Dec2025 18:00:57.505] [Server thread/INFO] [Voidium-Discord/]: Discord bot stopped.
+[11Dec2025 18:00:57.510] [JDA RateLimit-Elastic-Worker 2/ERROR] [net.dv8tion.jda.internal.requests.Requester/]: There was an I/O error while executing a REST request: null
+[11Dec2025 18:00:57.518] [ForkJoinPool.commonPool-worker-116/ERROR] [net.dv8tion.jda.api.requests.RestAction/]: RestAction queue returned failure
+net.dv8tion.jda.api.exceptions.ErrorResponseException: -1: java.io.InterruptedIOException
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.exceptions.ErrorResponseException.create(ErrorResponseException.java:185) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.requests.Request.createErrorResponseException(Request.java:157) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.RestActionImpl.handleResponse(RestActionImpl.java:290) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.requests.Request.handleResponse(Request.java:304) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.Requester$WorkTask.handleResponse(Requester.java:429) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.Requester$WorkTask.access$400(Requester.java:359) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.Requester.execute(Requester.java:266) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.Requester.execute(Requester.java:145) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.Requester.execute(Requester.java:128) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.Requester$WorkTask.execute(Requester.java:387) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.requests.SequentialRestRateLimiter$Bucket.execute(SequentialRestRateLimiter.java:477) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.requests.SequentialRestRateLimiter$Bucket.run(SequentialRestRateLimiter.java:517) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: java.io.InterruptedIOException
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http2.Http2Stream.waitForIo$okhttp(Http2Stream.kt:660) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http2.Http2Stream.takeHeaders(Http2Stream.kt:140) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http2.Http2ExchangeCodec.readResponseHeaders(Http2ExchangeCodec.kt:97) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.connection.Exchange.readResponseHeaders(Exchange.kt:110) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:93) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.kt:34) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.kt:95) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.kt:83) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.kt:76) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/voidium.shadow.okhttp3.internal.connection.RealCall.execute(RealCall.kt:154) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.Requester.execute(Requester.java:190) ~[?:?]
+	... 8 more
+Caused by: net.dv8tion.jda.api.exceptions.ContextException
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.exceptions.ContextException.here(ContextException.java:54) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.requests.Request.<init>(Request.java:77) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.internal.requests.RestActionImpl.queue(RestActionImpl.java:203) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.requests.RestAction.queue(RestAction.java:573) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/net.dv8tion.jda.api.requests.RestAction.queue(RestAction.java:539) ~[?:?]
+	at TRANSFORMER/voidium@2.1.5/cz.voidium.discord.DiscordManager.processConsoleQueue(DiscordManager.java:750) ~[?:?]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572) ~[?:?]
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java:358) ~[?:?]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305) ~[?:?]
+	... 3 more

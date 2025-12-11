@@ -257,8 +257,12 @@ public class DiscordManager extends ListenerAdapter {
         if (event.getGuild().getId().equals(configuredGuildId)) {
             long discordId = event.getUser().getIdLong();
             LinkManager linkManager = LinkManager.getInstance();
-            linkManager.unlinkDiscordId(discordId);
-            LOGGER.info("Unlinked accounts for user {} because they left the guild.", event.getUser().getAsTag());
+
+            // Check if user is actually linked before logging
+            if (!linkManager.getUuids(discordId).isEmpty()) {
+                linkManager.unlinkDiscordId(discordId);
+                LOGGER.info("Unlinked accounts for user {} because they left the guild.", event.getUser().getAsTag());
+            }
         }
     }
 
@@ -627,6 +631,9 @@ public class DiscordManager extends ListenerAdapter {
 
     // New overload for specific level
     public void queueConsoleMessage(String message, org.apache.logging.log4j.Level level) {
+        if (message.contains("Gathered mod list to write to world save")) {
+            return;
+        }
         consoleQueue.offer(new LogQueueItem(message, level));
     }
 
@@ -716,6 +723,20 @@ public class DiscordManager extends ListenerAdapter {
         if (channel == null)
             return;
 
+        java.util.function.Consumer<Throwable> errorHandler = error -> {
+            if (error instanceof java.util.concurrent.CancellationException
+                    || error instanceof java.io.InterruptedIOException) {
+                return;
+            }
+            if (error instanceof net.dv8tion.jda.api.exceptions.ErrorResponseException) {
+                if (error.getCause() instanceof java.io.InterruptedIOException) {
+                    return;
+                }
+            }
+            // Only log real errors
+            // LOGGER.warn("Failed to send console log: {}", error.getMessage());
+        };
+
         StringBuilder batch = new StringBuilder();
         while (!consoleQueue.isEmpty()) {
             LogQueueItem item = consoleQueue.poll();
@@ -740,14 +761,14 @@ public class DiscordManager extends ListenerAdapter {
 
             if (batch.length() + formattedLine.length() + 1 > 1900) {
                 // Send current batch
-                channel.sendMessage("```ansi\n" + batch.toString() + "```").queue();
+                channel.sendMessage("```ansi\n" + batch.toString() + "```").queue(null, errorHandler);
                 batch.setLength(0);
             }
             batch.append(formattedLine).append("\n");
         }
 
         if (batch.length() > 0) {
-            channel.sendMessage("```ansi\n" + batch.toString() + "```").queue();
+            channel.sendMessage("```ansi\n" + batch.toString() + "```").queue(null, errorHandler);
         }
     }
 

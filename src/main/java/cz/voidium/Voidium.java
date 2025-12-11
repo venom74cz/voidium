@@ -217,7 +217,7 @@ public class Voidium {
             // Oznámení pro OPs
             if (announcementManager != null) {
                 announcementManager.broadcastToOps("&aVOIDIUM - INTELLIGENT SERVER CONTROL loaded and running!");
-                announcementManager.broadcastToOps("&eVersion: 2.1.4");
+                announcementManager.broadcastToOps("&eVersion: 2.1.6");
                 announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
             }
         } catch (Exception e) {
