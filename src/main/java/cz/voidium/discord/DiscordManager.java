@@ -135,6 +135,7 @@ public class DiscordManager extends ListenerAdapter {
 
             startConsoleLogger();
             startTopicUpdater();
+            startStatusUpdater();
 
         } catch (InvalidTokenException e) {
             LOGGER.error("Invalid Discord Bot Token! Please check your configuration in config/voidium/discord.json.");
@@ -147,6 +148,7 @@ public class DiscordManager extends ListenerAdapter {
     public void stop() {
         stopConsoleLogger();
         stopTopicUpdater();
+        stopStatusUpdater();
         if (jda != null) {
             // Use shutdownNow for immediate shutdown without blocking
             jda.shutdownNow();
@@ -523,6 +525,15 @@ public class DiscordManager extends ListenerAdapter {
 
     private void sendWebhookMessage(String url, String username, UUID uuid, String message) {
         try {
+            // Attempt to resolve valid UUID from SkinCache (handles offline mode & restored
+            // skins)
+            if (username != null) {
+                cz.voidium.skin.SkinCache.CachedEntry entry = cz.voidium.skin.SkinCache.get(username);
+                if (entry != null) {
+                    uuid = entry.uuid();
+                }
+            }
+
             // Simple JSON construction
             String avatarUrl;
             if (uuid != null) {
@@ -568,6 +579,76 @@ public class DiscordManager extends ListenerAdapter {
             topicExecutor.shutdownNow();
             topicExecutor = null;
         }
+    }
+
+    private ScheduledExecutorService statusExecutor;
+
+    private void startStatusUpdater() {
+        if (statusExecutor != null)
+            return;
+
+        // Check if we even have placeholders to update
+        String text = DiscordConfig.getInstance().getBotActivityText();
+        if (text == null || (!text.contains("%online%") && !text.contains("%max%") && !text.contains("%uptime%")
+                && !text.contains("%tps%"))) {
+            return;
+        }
+
+        statusExecutor = Executors.newSingleThreadScheduledExecutor();
+        statusExecutor.scheduleAtFixedRate(this::updateBotStatus, 10, 30, TimeUnit.SECONDS);
+    }
+
+    private void stopStatusUpdater() {
+        if (statusExecutor != null) {
+            statusExecutor.shutdownNow();
+            statusExecutor = null;
+        }
+    }
+
+    private void updateBotStatus() {
+        if (jda == null || server == null)
+            return;
+
+        DiscordConfig config = DiscordConfig.getInstance();
+        String type = config.getBotActivityType();
+        String text = config.getBotActivityText();
+
+        if (text == null || text.isEmpty())
+            return;
+
+        int online = server.getPlayerCount();
+        int max = server.getMaxPlayers();
+        long uptimeMillis = System.currentTimeMillis() - serverStartTime;
+        String uptime = formatDuration(uptimeMillis);
+        double tps = 20.0; // Placeholder until we get real TPS
+
+        String formattedText = text
+                .replace("%online%", String.valueOf(online))
+                .replace("%max%", String.valueOf(max))
+                .replace("%tps%", String.format("%.1f", tps))
+                .replace("%uptime%", uptime);
+
+        Activity activity;
+        if (type != null) {
+            switch (type.toUpperCase()) {
+                case "WATCHING":
+                    activity = Activity.watching(formattedText);
+                    break;
+                case "LISTENING":
+                    activity = Activity.listening(formattedText);
+                    break;
+                case "COMPETING":
+                    activity = Activity.competing(formattedText);
+                    break;
+                default:
+                    activity = Activity.playing(formattedText);
+                    break;
+            }
+        } else {
+            activity = Activity.playing(formattedText);
+        }
+
+        jda.getPresence().setActivity(activity);
     }
 
     private void updateChannelTopic() {
