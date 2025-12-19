@@ -36,6 +36,10 @@ public class Voidium {
 
     public Voidium() {
         instance = this;
+        
+        // Register Network (Common)
+        net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus().addListener(this::onRegisterPayloadHandlers);
+
         if (FMLEnvironment.dist.isDedicatedServer()) {
             LOGGER.info("VOIDIUM - INTELLIGENT SERVER CONTROL is loading...");
 
@@ -75,9 +79,13 @@ public class Voidium {
             NeoForge.EVENT_BUS.addListener(this::onServerStarted);
             NeoForge.EVENT_BUS.addListener(this::onServerStopping);
             NeoForge.EVENT_BUS.addListener(this::onServerStopped);
+            NeoForge.EVENT_BUS.addListener(this::onServerStopped);
             NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+            
+            
             NeoForge.EVENT_BUS.register(new cz.voidium.discord.DiscordWhitelist());
             NeoForge.EVENT_BUS.register(new cz.voidium.ranks.ProgressEventListener());
+            NeoForge.EVENT_BUS.register(new cz.voidium.server.chat.ChatListener());
 
             LOGGER.info("Voidium configuration loaded successfully!");
             // Init persistent skin cache directory + apply TTL from general config once it
@@ -228,6 +236,11 @@ public class Voidium {
     private void onRegisterCommands(RegisterCommandsEvent event) {
         VoidiumCommand.register(event.getDispatcher());
         cz.voidium.commands.TicketCommand.register(event.getDispatcher());
+        cz.voidium.commands.ReplyCommand.register(event.getDispatcher());
+    }
+    
+    private void onRegisterPayloadHandlers(net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent event) {
+        cz.voidium.network.NetworkHandler.register(event);
     }
 
     private void onServerStopping(ServerStoppingEvent event) {

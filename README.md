@@ -5,6 +5,16 @@
 
 _Next-generation server management made with AI_
 
+## 🎨 Modern In-Game Chat (Client-Side Optional)
+
+> Install Voidium on the client to unlock the **Modern Chat Interface**:
+
+*   **Discord-Style UI**: sleek glassmorphism design with channel tabs
+*   **Private Ticket Channels**: Tickets open in a dedicated tab, separating support history from global chat
+*   **Direct Messaging**: Create private DMs or Group Chats with a simple Wizard interface
+*   **Emoji Rendering**: See Discord emojis directly in Minecraft chat
+
+
 ---
 
 ## 🔄 Restart System
@@ -59,7 +69,8 @@ _Next-generation server management made with AI_
 *   **Whitelist System**: Require players to link their Discord account to join (configurable max accounts per Discord)
 *   **Account Linking**: Secure code-based verification with automatic role assignment
 *   **Smart Link Channel**: Responds to any message with link status, automatically processes verification codes
-*   **Chat Bridge**: Two-way chat synchronization with emoji translation and markdown formatting
+*   **Chat Bridge**: Two-way chat synchronization with emoji translation (:smile: -> 😄) and markdown formatting
+*   **Smart Avatars**: Webhooks automatically resolve and display the correct player skin (even for offline-mode/restored skins)
 *   **Console Streaming**: Stream server console logs directly to a Discord channel (batched for performance)
 *   **Status Messages**: Automated server lifecycle announcements (Starting, Online, Stopping, Offline) with debug logging
 *   **Channel Topic Updater**: Automatically updates channel topic with live stats (Online/Max players, Uptime)
@@ -72,7 +83,8 @@ _Next-generation server management made with AI_
 
 *   **Discord Ticket Creation**: Players can create support tickets from Discord or in-game
 *   **Private Channels**: Each ticket gets a private channel visible only to the creator and support team
-*   **Two-Way Communication**: Messages in ticket channels are relayed to the linked player in-game
+*   **Secure Routing**: Messages from Discord ticket channels are routed **only** to the ticket creator (via private tab if client-mod installed, or chat if vanilla)
+*   **Two-Way Communication**: Seamless conversation between Discord and In-Game
 *   **Smart Command**: `/ticket <reason> <message>` - Creates ticket with initial message
 *   **Automatic Notifications**: Pings user when ticket is created
 *   **Support Role Integration**: Configurable support role with automatic channel access
@@ -136,7 +148,7 @@ _Next-generation server management made with AI_
 
 *   **Minecraft**: 1.21.1-1.21.10
 *   **Loader**: NeoForge 21.1.208+ (Java 21)
-*   **Server-only**: Clients do not need the mod
+*   **Architecture**: Hybrid (Server-side core, Client-side optional for UI)
 *   **License**: MIT
 *   **Lightweight & modular**
 

@@ -39,6 +39,34 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Detected version: $VERSION"
 
+      - name: Get Release Notes
+        id: get_release_notes
+        run: |
+          # Extract the changes for the specific version from CHANGELOG.md
+          VERSION="${{ env.VERSION }}"
+          # Get the content between the current version header and the next version header (or end of file)
+          # Assumes headers are like "## [2.2] ..."
+          awk -v ver="\\\\[$VERSION\\\\]" '
+            /^## / { 
+              if (p) exit; 
+              if ($0 ~ ver) { 
+                p=1; next 
+              } 
+            } 
+            p
+          ' CHANGELOG.md > release_notes.md
+          
+          # Trim leading/trailing whitespace
+          sed -i -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' release_notes.md
+          
+          # If empty, provide a default
+          if [ ! -s release_notes.md ]; then
+            echo "No specific release notes found for version $VERSION." > release_notes.md
+          fi
+          
+          echo "Extracted Release Notes:"
+          cat release_notes.md
+
       - name: Check if tag exists
         id: check_tag
         run: |
@@ -69,7 +97,7 @@ jobs:
           tag_name: v${{ env.VERSION }}
           name: v${{ env.VERSION }}
           files: build/libs/*.jar
-          generate_release_notes: true
+          body_path: release_notes.md
 
       - name: Notify Discord
         if: steps.check_tag.outputs.exists == 'false'
@@ -77,8 +105,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DISCORD_WEBHOOK: ${{ secrets.WEBHOOK_URL }}
         run: |
-          # Fetch release body using GitHub CLI
-          gh release view "v${{ env.VERSION }}" --json body --jq .body > release_body.txt
+          # Use the extracted release notes directly
+          # gh release view "v${{ env.VERSION }}" --json body --jq .body > release_body.txt
+          cp release_notes.md release_body.txt
           
           # Construct JSON payload using jq
           jq -n \

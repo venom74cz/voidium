@@ -395,7 +395,7 @@ public class DiscordManager extends ListenerAdapter {
                         textChannel.getName(), textChannel.getId(), user, playerName);
 
                 // Send to player in Minecraft
-                ChatBridge.getInstance().sendTicketMessageToPlayer(playerName, user, message);
+                ChatBridge.getInstance().sendTicketMessageToPlayer(playerName, user, message, textChannel.getId());
                 return;
             }
         }

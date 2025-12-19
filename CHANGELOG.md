@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2] - 2025-12-19
+
+### Highlights
+- Major update to version 2.2!
+
+### General
+- Updated mod version to **2.2**.
+- Various bug fixes and improvements.
+
 ## [2.1.9] - 2025-12-13
 
 ### Discord Integration

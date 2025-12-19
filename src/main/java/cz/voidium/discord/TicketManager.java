@@ -256,14 +256,14 @@ public class TicketManager {
                 return;
             }
             
-            createTicketWithMessage(member, reason, initialMessage, playerName);
+            createTicketWithMessage(member, reason, initialMessage, player);
             player.sendSystemMessage(cz.voidium.config.VoidiumConfig.formatMessage(config.getMcTicketCreatedMessage()));
         }, error -> {
             player.sendSystemMessage(cz.voidium.config.VoidiumConfig.formatMessage(TicketConfig.getInstance().getMcDiscordNotFoundMessage()));
         });
     }
     
-    private void createTicketWithMessage(Member member, String reason, String initialMessage, String playerName) {
+    private void createTicketWithMessage(Member member, String reason, String initialMessage, net.minecraft.server.level.ServerPlayer player) {
         TicketConfig config = TicketConfig.getInstance();
         if (!config.isEnableTickets()) return;
 
@@ -294,8 +294,14 @@ public class TicketManager {
                     }
 
                     // Store mapping: channel ID -> player name
+                    String playerName = player.getName().getString();
                     ticketToPlayer.put(channel.getId(), playerName);
                     LOGGER.info("Created ticket channel {} for player {}", channel.getName(), playerName);
+                    
+                    // Send Packet to Client
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, 
+                        new cz.voidium.network.PacketTicketCreated("ticket-" + channel.getId(), "Ticket #" + channel.getName().replace("ticket-", ""))
+                    );
                     
                     // Send welcome message with ping
                     EmbedBuilder embed = new EmbedBuilder();
@@ -318,5 +324,39 @@ public class TicketManager {
                             .replace("%user%", member.getUser().getAsTag())
                             .replace("%reason%", reason)).queue();
                 });
+    }
+
+    public void replyToTicket(net.minecraft.server.level.ServerPlayer player, String message) {
+        String channelId = getOpenTicketChannel(player);
+        if (channelId == null) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cYou do not have an open ticket to reply to."));
+            return;
+        }
+
+        JDA jda = DiscordManager.getInstance().getJda();
+        if (jda == null) return;
+        
+        TextChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) {
+            // Cleanup invalid entry
+            ticketToPlayer.remove(channelId);
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cTicket channel not found."));
+            return;
+        }
+
+        String playerName = player.getName().getString();
+        channel.sendMessage("**" + playerName + "**: " + message).queue(
+            success -> player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§aReply sent!")),
+            error -> player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cFailed to send reply: " + error.getMessage()))
+        );
+    }
+    
+    public String getOpenTicketChannel(net.minecraft.server.level.ServerPlayer player) {
+        String playerName = player.getName().getString();
+        return ticketToPlayer.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(playerName))
+                .map(java.util.Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
     }
 }

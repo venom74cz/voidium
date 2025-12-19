@@ -17,13 +17,20 @@ public class ChatBridge {
     // Simple Emoji Map (Discord -> MC)
     private static final Map<String, String> EMOJI_MAP = new HashMap<>();
     static {
-        EMOJI_MAP.put(":smile:", "☺");
-        EMOJI_MAP.put(":heart:", "❤");
-        EMOJI_MAP.put(":skull:", "☠");
-        EMOJI_MAP.put(":star:", "★");
-        EMOJI_MAP.put(":check:", "✔");
-        EMOJI_MAP.put(":cross:", "✖");
-        // Add more as needed
+        // Prevent legacy replacement, but we might want to map Unicode -> Shortcode for client rendering
+        // E.g. 😄 -> :smile:
+    }
+    
+    // Map Unicode to Shortcode so client can render them
+    private static final Map<String, String> UNICODE_TO_ALIAS = new HashMap<>();
+    static {
+        UNICODE_TO_ALIAS.put("😄", ":smile:");
+        UNICODE_TO_ALIAS.put("😃", ":smiley:");
+        UNICODE_TO_ALIAS.put("♥", ":heart:");
+        UNICODE_TO_ALIAS.put("💀", ":skull:");
+        UNICODE_TO_ALIAS.put("⭐", ":star:");
+        UNICODE_TO_ALIAS.put("👀", ":eyes:");
+        // Add more common ones as needed
     }
 
     private ChatBridge() {}
@@ -87,12 +94,22 @@ public class ChatBridge {
         String format = config.getDiscordToMinecraftFormat();
         
         // Translate Emojis
+        /* 
+        // Disabled legacy emoji translation - we want to keep :codes: for the client to render
         if (config.isTranslateEmojis()) {
             for (Map.Entry<String, String> entry : EMOJI_MAP.entrySet()) {
                 message = message.replace(entry.getKey(), entry.getValue());
             }
         }
+        */
         
+        // Map Unicode emojis to shortcodes (so client can render them)
+        for (Map.Entry<String, String> entry : UNICODE_TO_ALIAS.entrySet()) {
+            if (message.contains(entry.getKey())) {
+                message = message.replace(entry.getKey(), entry.getValue());
+            }
+        }
+
         // Translate formatting (Basic Markdown to Legacy Colors)
         // **bold** -> &l
         // *italic* -> &o
@@ -117,7 +134,7 @@ public class ChatBridge {
         server.getPlayerList().broadcastSystemMessage(Component.literal(finalMessage), false);
     }
     
-    public void sendTicketMessageToPlayer(String playerName, String discordUser, String message) {
+    public void sendTicketMessageToPlayer(String playerName, String discordUser, String message, String channelId) {
         if (server == null) {
             System.out.println("[Voidium-Ticket] Cannot send message - server is null");
             return;
@@ -156,7 +173,20 @@ public class ChatBridge {
         message = message.replaceAll("~~(.+?)~~", "§m$1§r");
         message = message.replaceAll("(https?://\\S+)", "§9$1§r");
         
-        String finalMessage = "§d[Ticket] §b" + discordUser + "§f: " + message;
-        player.sendSystemMessage(Component.literal(finalMessage));
+        // Send packet instead of system message
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, 
+            new cz.voidium.network.PacketTicketMessage("ticket-" + channelId, discordUser, message)
+        );
+        // Fallback for vanilla chat? Maybe not needed if using modern chat overlay exclusively.
+        // If needed, we can keep the system message but client will duplicate it unless filtered.
+        // For now, let's assume Modern Chat users want it in the tab only.
+        // But to be safe for users without the client mod (if any), we might still want a chat msg?
+        // Wait, this is a hybrid mod. If client has mod, it handles packet.
+        // Let's send system message ONLY if packet fails? hard to know.
+        // Actually, the user asked for it to NOT appear in global.
+        // So we remove the system message.
     }
+    
+    // Helper to find the channel ID. Wait, sendTicketMessageToPlayer doesn't have the channel ID passed to it.
+    // I need to update the method signature of sendTicketMessageToPlayer to accept channelId.
 }
