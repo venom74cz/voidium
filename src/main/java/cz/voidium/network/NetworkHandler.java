@@ -7,30 +7,26 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public class NetworkHandler {
     public static void register(RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar(Voidium.MOD_ID);
-        
+        final PayloadRegistrar registrar = event.registrar(Voidium.MOD_ID).optional();
+
         registrar.playToClient(
-            PacketSyncChatHistory.TYPE,
-            PacketSyncChatHistory.STREAM_CODEC,
-            PacketSyncChatHistory::handle
-        );
-        
+                PacketSyncChatHistory.TYPE,
+                PacketSyncChatHistory.STREAM_CODEC,
+                PacketSyncChatHistory::handle);
+
         registrar.playToClient(
-            PacketSyncEmojis.TYPE,
-            PacketSyncEmojis.STREAM_CODEC,
-            PacketSyncEmojis::handle
-        );
-        
+                PacketSyncEmojis.TYPE,
+                PacketSyncEmojis.STREAM_CODEC,
+                PacketSyncEmojis::handle);
+
         registrar.playToClient(
-            PacketTicketCreated.TYPE,
-            PacketTicketCreated.STREAM_CODEC,
-            PacketTicketCreated::handle
-        );
-        
+                PacketTicketCreated.TYPE,
+                PacketTicketCreated.STREAM_CODEC,
+                PacketTicketCreated::handle);
+
         registrar.playToClient(
-            PacketTicketMessage.TYPE,
-            PacketTicketMessage.STREAM_CODEC,
-            PacketTicketMessage::handle
-        );
+                PacketTicketMessage.TYPE,
+                PacketTicketMessage.STREAM_CODEC,
+                PacketTicketMessage::handle);
     }
 }

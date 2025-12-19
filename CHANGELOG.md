@@ -1,13 +1,25 @@
 # Changelog
 
+## [2.2.1] - 2025-12-19
+
+### Post-Release Fixes
+- **Vanilla Client Support**: Fixed `voidium:sync_chat_history` channel missing error, allowing vanilla clients to connect.
+
+### Features (from 2.2)
+- **Discord Ticket System**: 
+    - Implemented a bi-directional ticket system.
+    - Players use `/ticket` to contact staff.
+    - Staff replies from Discord ticket channels are routed privately to the player.
+- **Commands**: Added `/ticket` and `/reply`.
+
 ## [2.2] - 2025-12-19
 
-### Highlights
-- Major update to version 2.2!
-
-### General
-- Updated mod version to **2.2**.
-- Various bug fixes and improvements.
+### Features
+- **Discord Ticket System**: 
+    - Implemented a bi-directional ticket system.
+    - Players use `/ticket` to contact staff.
+    - Staff replies from Discord ticket channels are routed privately to the player.
+- **Commands**: Added `/ticket` and `/reply`.
 
 ## [2.1.9] - 2025-12-13
 
