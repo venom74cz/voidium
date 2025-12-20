@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.2.3] - 2025-12-20
+
+### Bug Fixes
+- **Ticket System Fix**: Fixed ticket creation showing "success" message before actually creating the ticket on Discord. Now properly waits for Discord API response and shows error if creation fails.
+- **Chat Text Wrapping**: Fixed long messages not wrapping in chat overlay and chat screen. Messages now properly wrap to multiple lines based on screen width.
+
+### Improvements
+- Added detailed error handling and logging for ticket creation
+- Added scissor clipping in chat screen to prevent text overflow
+
 ## [2.2.2] - 2025-12-19
 
 ### Bug Fixes
