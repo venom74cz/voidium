@@ -115,6 +115,7 @@ shadowJar {
     relocate 'okhttp3', 'voidium.shadow.okhttp3'
     relocate 'okio', 'voidium.shadow.okio'
     relocate 'gnu.trove', 'voidium.shadow.trove'
+    relocate 'org.apache.commons.collections4', 'voidium.shadow.collections4'
     
     // Exclude module-info files to prevent Java module system errors
     exclude 'module-info.class'

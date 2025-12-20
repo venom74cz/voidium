@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.2] - 2025-12-19
+
+### Bug Fixes
+- **Module Conflict Fix**: Relocated `org.apache.commons.collections4` to `voidium.shadow.collections4` to prevent Java module resolution conflict with `glsl.transformer` mod.
+
 ## [2.2.1] - 2025-12-19
 
 ### Post-Release Fixes
