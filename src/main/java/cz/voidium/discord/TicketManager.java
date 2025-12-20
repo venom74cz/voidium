@@ -367,9 +367,13 @@ public class TicketManager {
                     LOGGER.info("Created ticket channel {} for player {}", channel.getName(), playerName);
 
                     // Send Packet to Client
-                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
-                            new cz.voidium.network.PacketTicketCreated("ticket-" + channel.getId(),
-                                    "Ticket #" + channel.getName().replace("ticket-", "")));
+                    try {
+                        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                                new cz.voidium.network.PacketTicketCreated("ticket-" + channel.getId(),
+                                        "Ticket #" + channel.getName().replace("ticket-", "")));
+                    } catch (UnsupportedOperationException e) {
+                        // Client doesn't have Voidium mod installed, ignore
+                    }
 
                     // Send welcome message with ping
                     EmbedBuilder embed = new EmbedBuilder();
