@@ -36,9 +36,10 @@ public class Voidium {
 
     public Voidium() {
         instance = this;
-        
+
         // Register Network (Common)
-        net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus().addListener(this::onRegisterPayloadHandlers);
+        net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus()
+                .addListener(this::onRegisterPayloadHandlers);
 
         if (FMLEnvironment.dist.isDedicatedServer()) {
             LOGGER.info("VOIDIUM - INTELLIGENT SERVER CONTROL is loading...");
@@ -81,8 +82,7 @@ public class Voidium {
             NeoForge.EVENT_BUS.addListener(this::onServerStopped);
             NeoForge.EVENT_BUS.addListener(this::onServerStopped);
             NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
-            
-            
+
             NeoForge.EVENT_BUS.register(new cz.voidium.discord.DiscordWhitelist());
             NeoForge.EVENT_BUS.register(new cz.voidium.ranks.ProgressEventListener());
             NeoForge.EVENT_BUS.register(new cz.voidium.server.chat.ChatListener());
@@ -225,7 +225,7 @@ public class Voidium {
             // Oznámení pro OPs
             if (announcementManager != null) {
                 announcementManager.broadcastToOps("&aVOIDIUM - INTELLIGENT SERVER CONTROL loaded and running!");
-                announcementManager.broadcastToOps("&eVersion: 2.1.6");
+                announcementManager.broadcastToOps("&eVersion: 2.2.4");
                 announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
             }
         } catch (Exception e) {
@@ -238,7 +238,7 @@ public class Voidium {
         cz.voidium.commands.TicketCommand.register(event.getDispatcher());
         cz.voidium.commands.ReplyCommand.register(event.getDispatcher());
     }
-    
+
     private void onRegisterPayloadHandlers(net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent event) {
         cz.voidium.network.NetworkHandler.register(event);
     }

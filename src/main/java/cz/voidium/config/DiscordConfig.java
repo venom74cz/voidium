@@ -22,6 +22,7 @@ public class DiscordConfig {
     // Whitelist settings
     private boolean enableWhitelist = true;
     private String kickMessage = "&cYou are not whitelisted!\\n&7To join, you must verify on our Discord.\\n&7Your verification code: &b%code%";
+    private String verificationHintMessage = "&7&o(Use the code on Discord with /link %code%)";
     private String linkSuccessMessage = "Successfully linked account **%player%**!";
     private String alreadyLinkedMessage = "This Discord account is already linked to the maximum number of accounts (%max%).";
     private int maxAccountsPerDiscord = 1;
@@ -150,6 +151,11 @@ public class DiscordConfig {
 
     public String getKickMessage() {
         return kickMessage;
+    }
+
+    public String getVerificationHintMessage() {
+        return verificationHintMessage != null ? verificationHintMessage
+                : "&7&o(Use the code on Discord with /link %code%)";
     }
 
     public String getLinkSuccessMessage() {

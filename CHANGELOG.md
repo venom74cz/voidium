@@ -1,49 +1,53 @@
-# Changelog
+# Voidium Changelog
+
+## [2.2.4] - 2025-12-21
+
+### 🔄 Account Linking Rework
+- **Freeze Instead of Kick**: Players who haven't linked their Discord account are now **frozen in place** instead of being kicked
+- Players can join the server normally but cannot move until they complete the verification
+- Verification code is displayed directly in chat with periodic reminders (every 10 seconds)
+- Automatic unfreeze when account is successfully linked via Discord
+- Clean player experience - no more disconnect screens
+
+### ⚙️ New Configuration Options
+- Added `verificationHintMessage` - customizable hint text shown after the verification code
+- Both verification messages are now fully configurable via Web Manager
+- Variables: `%code%` for the verification code
+
+### 🔧 Restart Module Fix
+- **Hot Reload**: Changing restart times via Web Manager now **immediately reschedules** the RestartManager
+- No server restart required when adding/changing restart times
+- Automatic log message confirms reload: `"RestartManager reloaded with new configuration"`
+
+### 🛠️ Technical Improvements
+- Fixed ConcurrentModificationException in PlayerListManager
+- Added detailed logging for Votifier V1 RSA decryption diagnostics
+- Better error messages for vote payload debugging
+
+---
 
 ## [2.2.3] - 2025-12-20
 
-### Bug Fixes
-- **Ticket System Fix**: Fixed ticket creation showing "success" message before actually creating the ticket on Discord. Now properly waits for Discord API response and shows error if creation fails.
-- **Chat Text Wrapping**: Fixed long messages not wrapping in chat overlay and chat screen. Messages now properly wrap to multiple lines based on screen width.
+### 🎫 Ticket System Improvements
+- Async ticket creation with proper Discord API handling
+- Added cooldown mechanism for rate limit prevention
 
-### Improvements
-- Added detailed error handling and logging for ticket creation
-- Added scissor clipping in chat screen to prevent text overflow
+### 💬 Chat Improvements
+- Implemented text wrapping for long messages in Modern Chat overlay
+
+---
 
 ## [2.2.2] - 2025-12-19
 
-### Bug Fixes
-- **Module Conflict Fix**: Relocated `org.apache.commons.collections4` to `voidium.shadow.collections4` to prevent Java module resolution conflict with `glsl.transformer` mod.
+### 🔧 Compatibility
+- Fixed client compatibility for players without Voidium mod
+- Fallback to vanilla chat for non-Voidium clients
 
-## [2.2.1] - 2025-12-19
+### 🏗️ Build System
+- Added multi-platform build support (Windows EXE, Linux AppImage)
+- Configurable advanced JVM flags toggle
 
-### Post-Release Fixes
-- **Vanilla Client Support**: Fixed `voidium:sync_chat_history` channel missing error, allowing vanilla clients to connect.
+---
 
-### Features (from 2.2)
-- **Discord Ticket System**: 
-    - Implemented a bi-directional ticket system.
-    - Players use `/ticket` to contact staff.
-    - Staff replies from Discord ticket channels are routed privately to the player.
-- **Commands**: Added `/ticket` and `/reply`.
-
-## [2.2] - 2025-12-19
-
-### Features
-- **Discord Ticket System**: 
-    - Implemented a bi-directional ticket system.
-    - Players use `/ticket` to contact staff.
-    - Staff replies from Discord ticket channels are routed privately to the player.
-- **Commands**: Added `/ticket` and `/reply`.
-
-## [2.1.9] - 2025-12-13
-
-### Discord Integration
-- **Fixed Webhook Avatars**: Webhooks now correctly resolve player skins using the texture cache, ensuring the correct avatar is displayed even for offline-mode players or when using SkinRestorer.
-- **Dynamic Bot Status**: Fixed placeholders (`%online%`, `%max%`, `%tps%`) in the bot's status message. The status now updates dynamically every 30 seconds.
-- **Whitelist Verification Flow**: 
-    - Implemented "Kick on Movement" logic. Unverified players are now kicked only after they verify world load by moving or after a safety timeout (5 seconds). This fixes the issue where players would see a generic "Disconnected" message instead of the verification code.
-    - Fixed newline (`\n`) formatting in the kick message config.
-
-### General
-- Updated mod version to **2.1.9**.
+## Previous Versions
+See GitHub releases for full history.

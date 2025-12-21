@@ -42,7 +42,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class VoteListener implements AutoCloseable {
     private static final int MAX_PACKET_SIZE = 4096;
     private static final int MAX_RSA_PAYLOAD_LENGTH = 392;
-    private static final DateTimeFormatter LOG_TIME = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter LOG_TIME = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+            .withZone(ZoneId.systemDefault());
     private static final SecureRandom CHALLENGE_RANDOM = new SecureRandom();
     private static final short V2_MAGIC = (short) 0x733A;
 
@@ -58,8 +59,8 @@ public class VoteListener implements AutoCloseable {
     private ServerSocket serverSocket;
     private ExecutorService acceptExecutor;
 
-    public VoteListener(MinecraftServer server, VoteConfig config, PrivateKey privateKey, String sharedSecret, 
-                        PendingVoteQueue pendingQueue, Logger logger) {
+    public VoteListener(MinecraftServer server, VoteConfig config, PrivateKey privateKey, String sharedSecret,
+            PendingVoteQueue pendingQueue, Logger logger) {
         this.server = server;
         this.config = config;
         this.privateKey = privateKey;
@@ -98,7 +99,7 @@ public class VoteListener implements AutoCloseable {
         V2ParseResult v2Result = V2ParseResult.notAttempted();
         String challenge = sharedSecret.isBlank() ? "" : generateChallenge();
         OutputStream out = null;
-    try (socket) {
+        try (socket) {
             InputStream in = socket.getInputStream();
             out = socket.getOutputStream();
             if (logger.isDebugEnabled()) {
@@ -122,7 +123,7 @@ public class VoteListener implements AutoCloseable {
                 message = new String(payload, StandardCharsets.UTF_8).trim();
                 event = parseLegacyOrFallback(message, payload);
             }
-            
+
             if (event == null) {
                 logger.warn("Ignored invalid/unrecognized vote payload from {}", socket.getRemoteSocketAddress());
                 return;
@@ -257,12 +258,34 @@ public class VoteListener implements AutoCloseable {
         if (payload == null || payload.length == 0) {
             return null;
         }
+        if (privateKey == null) {
+            logger.debug("Votifier V1: No private key available for RSA decryption");
+            return null;
+        }
+
+        // Votifier V1 payloads are typically 256 bytes (2048-bit RSA)
+        if (payload.length == 256) {
+            logger.debug("Votifier V1: Attempting RSA decryption of {} byte payload", payload.length);
+        }
+
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             String decrypted = new String(cipher.doFinal(payload), StandardCharsets.UTF_8).trim();
+            logger.info("Votifier V1: Successfully decrypted payload: {}",
+                    decrypted.replace("\n", "\\n").replace("\r", "\\r"));
             return parseLegacyVote(decrypted);
-        } catch (Exception ignored) {
+        } catch (javax.crypto.BadPaddingException e) {
+            if (payload.length == 256) {
+                logger.warn("Votifier V1: RSA decryption failed - wrong public key configured on vote site? Error: {}",
+                        e.getMessage());
+            }
+            return null;
+        } catch (Exception e) {
+            if (payload.length == 256) {
+                logger.debug("Votifier V1: RSA decryption failed: {} - {}", e.getClass().getSimpleName(),
+                        e.getMessage());
+            }
             return null;
         }
     }
@@ -272,7 +295,8 @@ public class VoteListener implements AutoCloseable {
             return null;
         }
         if (message.length() > MAX_RSA_PAYLOAD_LENGTH) {
-            logger.warn("Legacy vote payload exceeds {} characters ({}). Ignoring for safety.", MAX_RSA_PAYLOAD_LENGTH, message.length());
+            logger.warn("Legacy vote payload exceeds {} characters ({}). Ignoring for safety.", MAX_RSA_PAYLOAD_LENGTH,
+                    message.length());
             return null;
         }
         try {
@@ -320,7 +344,8 @@ public class VoteListener implements AutoCloseable {
     }
 
     private void processVote(VoteEvent event) {
-        if (event == null) return;
+        if (event == null)
+            return;
         logVote(event);
 
         // Vždy proveď /say nebo broadcast příkaz (oznámení), i když hráč není online
@@ -351,8 +376,8 @@ public class VoteListener implements AutoCloseable {
         long cooldownMillis = config.getAnnouncementCooldown() * 1000L;
 
         if (now - lastTime < cooldownMillis) {
-            logger.info("Skipping vote announcement for {} due to cooldown ({}s remaining)", 
-                event.username(), (cooldownMillis - (now - lastTime)) / 1000);
+            logger.info("Skipping vote announcement for {} due to cooldown ({}s remaining)",
+                    event.username(), (cooldownMillis - (now - lastTime)) / 1000);
             return;
         }
 
@@ -402,8 +427,8 @@ public class VoteListener implements AutoCloseable {
                     event.serviceName(),
                     event.username(),
                     event.address());
-        Files.writeString(path, line, StandardCharsets.UTF_8,
-            java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+            Files.writeString(path, line, StandardCharsets.UTF_8,
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
         } catch (IOException e) {
             logger.warn("Failed to write vote log", e);
         }
@@ -413,7 +438,7 @@ public class VoteListener implements AutoCloseable {
         if (!config.getLogging().isArchiveJson()) {
             return;
         }
-    Path path = config.getResolvedArchivePath();
+        Path path = config.getResolvedArchivePath();
         JsonObject json = new JsonObject();
         json.addProperty("timestamp", event.timestamp());
         json.addProperty("service", event.serviceName());
@@ -434,7 +459,8 @@ public class VoteListener implements AutoCloseable {
         }
     }
 
-    // původní executeCommands odstraněna, logika je nyní rozdělena do executeAnnounceCommands a executeRewardCommands
+    // původní executeCommands odstraněna, logika je nyní rozdělena do
+    // executeAnnounceCommands a executeRewardCommands
 
     private void notifyOps(String message) {
         if (!config.getLogging().isNotifyOpsOnError()) {
@@ -453,7 +479,8 @@ public class VoteListener implements AutoCloseable {
         if (serverSocket != null) {
             try {
                 serverSocket.close();
-            } catch (IOException ignore) {}
+            } catch (IOException ignore) {
+            }
         }
         if (acceptExecutor != null) {
             acceptExecutor.shutdownNow();
