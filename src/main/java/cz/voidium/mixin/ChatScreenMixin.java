@@ -114,6 +114,7 @@ public abstract class ChatScreenMixin {
 
         // Escape = close suggestions
         if (keyCode == 256) { // Escape
+            voidium$suppressedQuery = voidium$currentQuery;
             voidium$closeSuggestions();
             voidium$suppressed = true;
             cir.setReturnValue(true);
@@ -138,6 +139,9 @@ public abstract class ChatScreenMixin {
     /**
      * Update suggestions when input changes.
      */
+    @Unique
+    private String voidium$suppressedQuery = "";
+
     @Inject(method = "tick", at = @At("TAIL"))
     private void voidium$onTick(CallbackInfo ci) {
         if (input == null)
@@ -147,12 +151,23 @@ public abstract class ChatScreenMixin {
         String query = voidium$extractEmojiQuery(text, input.getCursorPosition());
 
         if (query != null && query.length() >= 1) {
+            // Check if suppressed for this exact query (ESC was pressed)
+            if (voidium$suppressed && query.equals(voidium$suppressedQuery)) {
+                // Stay suppressed, don't show suggestions
+                return;
+            }
+
+            // Query changed from suppressed one - reset suppression
+            if (voidium$suppressed && !query.equals(voidium$suppressedQuery)) {
+                voidium$suppressed = false;
+                voidium$suppressedQuery = "";
+            }
+
             // Only update if query changed, enabling navigation
             if (!query.equals(voidium$currentQuery)) {
-                voidium$suppressed = false; // Reset suppression on new query
                 voidium$updateSuggestions(query);
-            } else if (!voidium$suppressed && !voidium$showingSuggestions) {
-                // If not suppressed and not showing (but valid query), try showing (rare case,
+            } else if (!voidium$showingSuggestions) {
+                // If not showing (but valid query), try showing (rare case,
                 // maybe after returning from menu)
                 voidium$updateSuggestions(query);
             }
@@ -160,6 +175,7 @@ public abstract class ChatScreenMixin {
             // Invalid query, reset everything
             voidium$closeSuggestions();
             voidium$suppressed = false;
+            voidium$suppressedQuery = "";
         }
     }
 
