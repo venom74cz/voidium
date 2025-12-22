@@ -63,32 +63,19 @@ jobs:
           game_endpoint: minecraft
           file_path: ${{ steps.find_jar.outputs.JAR_FILE }}
           display_name: "voidium-${{ steps.get_version.outputs.VERSION }}"
-          game_versions: |
-            1.21.1
-            1.21.2
-            1.21.3
-            1.21.4
-            1.21.5
-            1.21.6
-            1.21.7
-            1.21.8
-            1.21.9
-            1.21.10
-            1.21.11
-            Java 21
-            NeoForge
-            Server
+          game_versions: "1.21.1,1.21.2,1.21.3,1.21.4,1.21.5,1.21.6,1.21.7,1.21.8,1.21.9,1.21.10,1.21.11,Java 21,NeoForge,Server"
           release_type: release
-          relations: |
+          relations: ""
           changelog: ${{ steps.changelog.outputs.CHANGELOG }}
           changelog_type: markdown
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
         with:
           files: ${{ steps.find_jar.outputs.JAR_FILE }}
           body_path: CHANGELOG.md
           name: "Voidium ${{ steps.get_version.outputs.VERSION }}"
+          tag_name: "v${{ steps.get_version.outputs.VERSION }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
