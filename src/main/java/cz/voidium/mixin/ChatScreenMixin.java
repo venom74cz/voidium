@@ -47,6 +47,9 @@ public abstract class ChatScreenMixin {
     @Unique
     private static final int SUGGESTION_PADDING = 2;
 
+    @Unique
+    private boolean voidium$suppressed = false;
+
     /**
      * Called after rendering to draw emoji suggestions popup.
      */
@@ -112,6 +115,7 @@ public abstract class ChatScreenMixin {
         // Escape = close suggestions
         if (keyCode == 256) { // Escape
             voidium$closeSuggestions();
+            voidium$suppressed = true;
             cir.setReturnValue(true);
             return;
         }
@@ -143,9 +147,19 @@ public abstract class ChatScreenMixin {
         String query = voidium$extractEmojiQuery(text, input.getCursorPosition());
 
         if (query != null && query.length() >= 1) {
-            voidium$updateSuggestions(query);
+            // Only update if query changed, enabling navigation
+            if (!query.equals(voidium$currentQuery)) {
+                voidium$suppressed = false; // Reset suppression on new query
+                voidium$updateSuggestions(query);
+            } else if (!voidium$suppressed && !voidium$showingSuggestions) {
+                // If not suppressed and not showing (but valid query), try showing (rare case,
+                // maybe after returning from menu)
+                voidium$updateSuggestions(query);
+            }
         } else {
+            // Invalid query, reset everything
             voidium$closeSuggestions();
+            voidium$suppressed = false;
         }
     }
 
@@ -253,6 +267,7 @@ public abstract class ChatScreenMixin {
         input.setCursorPosition(colonIndex + selected.length() + 2); // Position after closing ':'
 
         voidium$closeSuggestions();
+        voidium$suppressed = false;
     }
 
     /**

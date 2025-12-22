@@ -1,5 +1,26 @@
 # Voidium Changelog
 
+## [2.3.1] - 2025-12-22
+
+### 💬 Chat Improvements
+- **Start Emoji Navigation**: Fixed arrow key navigation in the emoji suggestion popup (previously required restarting selection).
+- **Better ESC Handling**: Pressing ESC now correctly closes the suggestion popup without blocking the chat close action.
+
+### 📦 Build & Release
+- **CurseForge Environments**: Added `Client` and `Server` tags to release artifacts.
+- **Version Compatibility**: Verified and expanded support for Minecraft versions 1.21.1 through 1.21.11.
+
+## [2.3.0] - 2025-12-22
+
+### 📊 Tablist & Monitoring
+- **Fixed TPS Display**: The server TPS in the tablist now displays correct values (previously stuck at 20) thanks to a new `TpsTracker` implementation
+
+### 📦 Build & Release
+- **CurseForge Integration**: Fixed the automated release workflow to correctly name artifacts (e.g., `voidium-2.3.0.jar`) and apply proper metadata for Minecraft 1.21.1/NeoForge
+
+### 🐛 Bug Fixes
+- **General Stability**: Various improvements to chat stability and client compatibility
+
 ## [2.2.4] - 2025-12-21
 
 ### 🔄 Account Linking Rework

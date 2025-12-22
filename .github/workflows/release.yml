@@ -64,8 +64,6 @@ jobs:
           file_path: ${{ steps.find_jar.outputs.JAR_FILE }}
           display_name: "voidium-${{ steps.get_version.outputs.VERSION }}"
           game_versions: |
-            NeoForge
-            Java 21
             1.21.1
             1.21.2
             1.21.3
@@ -77,6 +75,9 @@ jobs:
             1.21.9
             1.21.10
             1.21.11
+            Java 21
+            NeoForge
+            Server
           release_type: release
           relations: |
           changelog: ${{ steps.changelog.outputs.CHANGELOG }}
