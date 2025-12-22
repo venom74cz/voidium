@@ -6,7 +6,11 @@
   "mixins": [
     "PlayerListMixin"
   ],
-  "client": [],
+  "client": [
+    "ChatComponentMixin",
+    "ChatScreenMixin",
+    "EmojiRenderMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

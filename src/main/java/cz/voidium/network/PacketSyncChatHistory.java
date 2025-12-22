@@ -11,13 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record PacketSyncChatHistory(List<String> messages) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<PacketSyncChatHistory> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(Voidium.MOD_ID, "sync_chat_history"));
+    public static final CustomPacketPayload.Type<PacketSyncChatHistory> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(Voidium.MOD_ID, "sync_chat_history"));
 
     public static final StreamCodec<FriendlyByteBuf, PacketSyncChatHistory> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()),
-        PacketSyncChatHistory::messages,
-        PacketSyncChatHistory::new
-    );
+            ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()),
+            PacketSyncChatHistory::messages,
+            PacketSyncChatHistory::new);
 
     @Override
     public CustomPacketPayload.Type<PacketSyncChatHistory> type() {
@@ -26,8 +26,17 @@ public record PacketSyncChatHistory(List<String> messages) implements CustomPack
 
     public static void handle(PacketSyncChatHistory payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            // Client-side handling
-            cz.voidium.client.chat.ChatChannelManager.getInstance().receiveHistory(payload.messages());
+            // Client-side handling - send history to vanilla chat
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc.player != null) {
+                for (String msg : payload.messages()) {
+                    // Parse through ChatColorParser for RGB support
+                    net.minecraft.network.chat.Component component = cz.voidium.client.chat.ChatColorParser
+                            .parseMessage(
+                                    net.minecraft.network.chat.Component.literal(msg));
+                    mc.player.displayClientMessage(component, false);
+                }
+            }
         });
     }
 }

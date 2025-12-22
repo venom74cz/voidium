@@ -3,7 +3,11 @@ name: Build and Release to CurseForge
 on:
   push:
     tags:
-      - 'v*'  # Spustí se při tagu jako v2.2.0, v2.2.1 atd.
+      - 'v*'
+    branches:
+      - main
+    paths:
+      - 'gradle.properties'
   workflow_dispatch:  # Možnost manuálního spuštění
 
 jobs:
@@ -29,21 +33,17 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test
       
-      - name: Get version from tag
+      - name: Get version from gradle.properties
         id: get_version
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-          else
-            VERSION=$(date +%Y%m%d%H%M%S)
-          fi
+          VERSION=$(grep "mod_version=" gradle.properties | cut -d'=' -f2)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
       
       - name: Find JAR file
         id: find_jar
         run: |
-          JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -1)
+          JAR_FILE=$(find build/libs -name "voidium-*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -1)
           echo "JAR_FILE=$JAR_FILE" >> $GITHUB_OUTPUT
           echo "Found JAR: $JAR_FILE"
       
@@ -62,9 +62,10 @@ jobs:
           project_id: 1342197
           game_endpoint: minecraft
           file_path: ${{ steps.find_jar.outputs.JAR_FILE }}
-          display_name: "Voidium ${{ steps.get_version.outputs.VERSION }}"
+          display_name: "voidium-${{ steps.get_version.outputs.VERSION }}"
           game_versions: |
             NeoForge
+            Java 21
             1.21.1
             1.21.2
             1.21.3
@@ -76,7 +77,6 @@ jobs:
             1.21.9
             1.21.10
             1.21.11
-            Java 21
           release_type: release
           relations: |
           changelog: ${{ steps.changelog.outputs.CHANGELOG }}
@@ -88,5 +88,6 @@ jobs:
         with:
           files: ${{ steps.find_jar.outputs.JAR_FILE }}
           body_path: CHANGELOG.md
+          name: "Voidium ${{ steps.get_version.outputs.VERSION }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -409,32 +409,7 @@ public class PlayerListManager {
     }
 
     private double getCurrentTPS() {
-        if (server == null)
-            return 20.0;
-
-        try {
-            // Get average tick time from server using reflection
-            java.lang.reflect.Field tickTimesField = server.getClass().getDeclaredField("tickTimes");
-            tickTimesField.setAccessible(true);
-            long[] tickTimes = (long[]) tickTimesField.get(server);
-
-            if (tickTimes == null || tickTimes.length == 0)
-                return 20.0;
-
-            long sum = 0;
-            for (long time : tickTimes) {
-                sum += time;
-            }
-            double avgTickNanos = (double) sum / tickTimes.length;
-            double avgTickMillis = avgTickNanos * 1.0E-6D;
-
-            // TPS = 1000ms / avg tick time (capped at 20)
-            double tps = Math.min(1000.0 / avgTickMillis, 20.0);
-            return Math.max(0.0, tps); // Ensure non-negative
-        } catch (Exception e) {
-            // Field might not exist in this version, return perfect TPS
-            return 20.0;
-        }
+        return cz.voidium.util.TpsTracker.getInstance().getTPS();
     }
 
     public void onPlayerJoin(ServerPlayer player) {

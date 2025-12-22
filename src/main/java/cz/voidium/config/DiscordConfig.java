@@ -45,6 +45,9 @@ public class DiscordConfig {
     private String linkedRoleId = "";
     private java.util.Map<String, RoleStyle> rolePrefixes = new java.util.HashMap<>(); // Discord Role ID ->
                                                                                        // Prefix/Suffix/Color
+    // Color format: true = Hex codes (&#RRGGBB) for Voidium clients, false = MC
+    // codes (&c) for vanilla clients
+    private boolean useHexColors = true;
 
     public static class RoleStyle {
         public String prefix = "";
@@ -192,6 +195,10 @@ public class DiscordConfig {
 
     public java.util.Map<String, RoleStyle> getRolePrefixes() {
         return rolePrefixes;
+    }
+
+    public boolean isUseHexColors() {
+        return useHexColors;
     }
 
     public boolean isSyncBansDiscordToMc() {

@@ -607,6 +607,9 @@ public class WebManager {
                 en.put("config.discord.statusChannelId.desc", "Channel ID for server status messages");
                 en.put("config.discord.linkChannelId.desc", "Channel ID where players enter link codes");
                 en.put("config.discord.linkedRoleId.desc", "Role ID assigned to linked users");
+                en.put("config.discord.useHexColors", "Use Hex Colors (Voidium)");
+                en.put("config.discord.useHexColors.desc",
+                                "ON = &#RRGGBB format for Voidium clients, OFF = &c format for vanilla clients");
                 en.put("config.discord.rolePrefixes.desc", "Configure name prefixes/suffixes for Discord roles");
                 en.put("config.discord.syncBansDiscordToMc.desc", "Ban MC player when banned from Discord");
                 en.put("config.discord.syncBansMcToDiscord.desc", "Ban Discord user when banned in MC");
@@ -4019,6 +4022,12 @@ public class WebManager {
                 js.append("    \n");
                 js.append("    // Role prefixes (special editor)\n");
                 js.append("    html += '<h4>' + t('role.prefix.editor') + '</h4>';\n");
+                js.append("    // Toggle pro hex vs MC kódy\n");
+                js.append("    html += '<div class=\"form-group hex-toggle\">';\n");
+                js.append("    html += '<label for=\"discord_useHexColors\">' + t('config.discord.useHexColors') + '</label>';\n");
+                js.append("    html += '<input type=\"checkbox\" id=\"discord_useHexColors\" ' + (dc.useHexColors !== false ? 'checked' : '') + '>';\n");
+                js.append("    html += '<small class=\"field-desc\">' + t('config.discord.useHexColors.desc') + '</small>';\n");
+                js.append("    html += '</div>';\n");
                 js.append("    html += renderRolePrefixEditor(dc.rolePrefixes || {});\n");
                 js.append("    \n");
                 js.append(
@@ -4071,25 +4080,27 @@ public class WebManager {
                 js.append("    html += '<span class=\"role-color-preview\" style=\"background:' + roleColor + '\"></span>';\n");
                 js.append("    html += '</div>';\n");
                 js.append("    \n");
-                js.append("    // Prefix input s color picker\n");
+                js.append("    // Prefix input s color picker a preview\n");
                 js.append("    html += '<div class=\"prefix-group\">';\n");
                 js.append("    html += '<label>Prefix</label>';\n");
                 js.append("    html += '<div class=\"input-with-color\">';\n");
                 js.append(
                                 "    html += '<input type=\"color\" class=\"color-picker\" value=\"' + roleColor + '\" onchange=\"insertColorCode(this, \\'prefix\\')\" title=\"' + t('color.picker.title') + '\">';\n");
                 js.append(
-                                "    html += '<input type=\"text\" class=\"prefix-input\" value=\"' + escapeHtml(prefix) + '\" placeholder=\"&c[Admin] \">';\n");
+                                "    html += '<input type=\"text\" class=\"prefix-input\" value=\"' + escapeHtml(prefix) + '\" placeholder=\"&#FF0000[Admin] \" onfocus=\"showPreview(this)\" oninput=\"updatePreview(this)\" onblur=\"hidePreview(this)\">';\n");
+                js.append("    html += '<div class=\"color-preview\" style=\"display:none;\"></div>';\n");
                 js.append("    html += '</div>';\n");
                 js.append("    html += '</div>';\n");
                 js.append("    \n");
-                js.append("    // Suffix input s color picker\n");
+                js.append("    // Suffix input s color picker a preview\n");
                 js.append("    html += '<div class=\"suffix-group\">';\n");
                 js.append("    html += '<label>Suffix</label>';\n");
                 js.append("    html += '<div class=\"input-with-color\">';\n");
                 js.append(
                                 "    html += '<input type=\"color\" class=\"color-picker\" value=\"' + roleColor + '\" onchange=\"insertColorCode(this, \\'suffix\\')\" title=\"' + t('color.picker.title') + '\">';\n");
                 js.append(
-                                "    html += '<input type=\"text\" class=\"suffix-input\" value=\"' + escapeHtml(suffix) + '\" placeholder=\" &c★\">';\n");
+                                "    html += '<input type=\"text\" class=\"suffix-input\" value=\"' + escapeHtml(suffix) + '\" placeholder=\" &#00FF00★\" onfocus=\"showPreview(this)\" oninput=\"updatePreview(this)\" onblur=\"hidePreview(this)\">';\n");
+                js.append("    html += '<div class=\"color-preview\" style=\"display:none;\"></div>';\n");
                 js.append("    html += '</div>';\n");
                 js.append("    html += '</div>';\n");
                 js.append("    \n");
@@ -4168,17 +4179,76 @@ public class WebManager {
                 js.append("    return closest;\n");
                 js.append("}\n\n");
 
-                // Vložení color kódu do inputu
+                // Vložení color kódu do inputu - podporuje hex i MC kódy dle nastavení
                 js.append("function insertColorCode(colorPicker, type) {\n");
                 js.append("    const item = colorPicker.closest('.role-prefix-item');\n");
                 js.append("    const input = item.querySelector('.' + type + '-input');\n");
                 js.append("    if (!input) return;\n");
                 js.append("    \n");
-                js.append("    const mcColor = hexToMcColor(colorPicker.value);\n");
+                js.append("    // Zjisti zda použít hex nebo MC kódy z konfigurace\n");
+                js.append("    const useHex = configData.discord?.useHexColors !== false;\n");
+                js.append("    let colorCode;\n");
+                js.append("    if (useHex) {\n");
+                js.append("        // Hex formát pro Voidium klienty: &#RRGGBB\n");
+                js.append("        colorCode = '&#' + colorPicker.value.replace('#', '');\n");
+                js.append("    } else {\n");
+                js.append("        // MC formát pro vanilla klienty: &c\n");
+                js.append("        colorCode = hexToMcColor(colorPicker.value);\n");
+                js.append("    }\n");
                 js.append("    const pos = input.selectionStart || input.value.length;\n");
-                js.append("    input.value = input.value.slice(0, pos) + mcColor + input.value.slice(pos);\n");
+                js.append("    input.value = input.value.slice(0, pos) + colorCode + input.value.slice(pos);\n");
                 js.append("    input.focus();\n");
-                js.append("    input.setSelectionRange(pos + mcColor.length, pos + mcColor.length);\n");
+                js.append("    input.setSelectionRange(pos + colorCode.length, pos + colorCode.length);\n");
+                js.append("    updatePreview(input);\n");
+                js.append("}\n\n");
+
+                // Preview funkce pro zobrazení formátovaného textu
+                js.append("// Preview funkce - parsuje barvy do HTML\n");
+                js.append("function updatePreview(input) {\n");
+                js.append("    const previewEl = input.parentElement.querySelector('.color-preview');\n");
+                js.append("    if (!previewEl) return;\n");
+                js.append("    previewEl.innerHTML = parseColorsToHtml(input.value);\n");
+                js.append("}\n\n");
+
+                js.append("function parseColorsToHtml(text) {\n");
+                js.append("    if (!text) return '';\n");
+                js.append("    // Nahradit &#RRGGBB formát HTML span\n");
+                js.append("    text = text.replace(/&#([0-9a-fA-F]{6})/g, '</span><span style=\"color:#$1\">');\n");
+                js.append("    // Nahradit &X MC kódy HTML span\n");
+                js.append("    const mcColors = {\n");
+                js.append("        '0': '#000000', '1': '#0000aa', '2': '#00aa00', '3': '#00aaaa',\n");
+                js.append("        '4': '#aa0000', '5': '#aa00aa', '6': '#ffaa00', '7': '#aaaaaa',\n");
+                js.append("        '8': '#555555', '9': '#5555ff', 'a': '#55ff55', 'b': '#55ffff',\n");
+                js.append("        'c': '#ff5555', 'd': '#ff55ff', 'e': '#ffff55', 'f': '#ffffff'\n");
+                js.append("    };\n");
+                js.append("    text = text.replace(/&([0-9a-f])/gi, (match, code) => {\n");
+                js.append("        const color = mcColors[code.toLowerCase()] || '#ffffff';\n");
+                js.append("        return '</span><span style=\"color:' + color + '\">';\n");
+                js.append("    });\n");
+                js.append("    // Formátování\n");
+                js.append("    text = text.replace(/&l/gi, '</span><span style=\"font-weight:bold\">');\n");
+                js.append("    text = text.replace(/&o/gi, '</span><span style=\"font-style:italic\">');\n");
+                js.append("    text = text.replace(/&n/gi, '</span><span style=\"text-decoration:underline\">');\n");
+                js.append("    text = text.replace(/&m/gi, '</span><span style=\"text-decoration:line-through\">');\n");
+                js.append("    text = text.replace(/&r/gi, '</span><span>');\n");
+                js.append("    return '<span>' + text + '</span>';\n");
+                js.append("}\n\n");
+
+                // Show/hide preview funkce
+                js.append("function showPreview(input) {\n");
+                js.append("    const previewEl = input.parentElement.querySelector('.color-preview');\n");
+                js.append("    if (previewEl) {\n");
+                js.append("        previewEl.style.display = 'block';\n");
+                js.append("        previewEl.innerHTML = parseColorsToHtml(input.value);\n");
+                js.append("    }\n");
+                js.append("}\n\n");
+
+                js.append("function hidePreview(input) {\n");
+                js.append("    const previewEl = input.parentElement.querySelector('.color-preview');\n");
+                js.append("    if (previewEl) {\n");
+                js.append("        // Delay hide to allow clicking on preview\n");
+                js.append("        setTimeout(() => previewEl.style.display = 'none', 200);\n");
+                js.append("    }\n");
                 js.append("}\n\n");
 
                 // =====================================================================
