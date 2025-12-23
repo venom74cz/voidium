@@ -1,11 +1,13 @@
 package cz.voidium.mixin;
 
 import cz.voidium.client.media.EmojiManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -18,8 +20,7 @@ import java.util.regex.Pattern;
 
 /**
  * Mixin into GuiGraphics to render Discord emojis as textures inline with text.
- * This intercepts drawString calls and renders emoji textures where
- * :emoji_name: patterns are found.
+ * Covers drawString for String, Component and FormattedCharSequence.
  */
 @Mixin(GuiGraphics.class)
 public abstract class EmojiRenderMixin {
@@ -37,40 +38,71 @@ public abstract class EmojiRenderMixin {
     @Unique
     private static final ThreadLocal<Boolean> voidium$isRendering = ThreadLocal.withInitial(() -> false);
 
-    /**
-     * Intercept drawString to render emojis as textures.
-     */
+    // 1. String Target (INT coordinates)
     @Inject(method = "drawString(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)I", at = @At("HEAD"), cancellable = true)
-    private void voidium$onDrawString(Font font, String text, int x, int y, int color, boolean dropShadow,
+    public void drawStringString(Font font, String text, int x, int y, int color, boolean dropShadow,
             CallbackInfoReturnable<Integer> cir) {
-        // Check if text contains emoji patterns
-        if (text == null || !text.contains(":") || voidium$isRendering.get()) {
-            return;
+        if (!voidium$tryRender(font, text, x, y, color, dropShadow, cir)) {
+            // Let original run if render failed or no emoji
+        }
+    }
+
+    // 2. Component Target (INT coordinates)
+    @Inject(method = "drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)I", at = @At("HEAD"), cancellable = true)
+    public void drawStringComponent(Font font, Component text, int x, int y, int color, boolean dropShadow,
+            CallbackInfoReturnable<Integer> cir) {
+        if (text != null) {
+            // Note: getString() removes style, so emojis in chat might lose color
+            // formatting on the same line.
+            // This is a trade-off to get emojis working without complex FontRenderer
+            // hooking.
+            if (!voidium$tryRender(font, text.getString(), x, y, color, dropShadow, cir)) {
+
+            }
+        }
+    }
+
+    // 3. FormattedCharSequence Target (INT coordinates) - Used by Chat History
+    @Inject(method = "drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/util/FormattedCharSequence;IIIZ)I", at = @At("HEAD"), cancellable = true)
+    public void drawStringSequence(Font font, FormattedCharSequence text, int x, int y, int color, boolean dropShadow,
+            CallbackInfoReturnable<Integer> cir) {
+        if (text != null) {
+            String extracted = voidium$extractText(text);
+            if (!voidium$tryRender(font, extracted, x, y, color, dropShadow, cir)) {
+
+            }
+        }
+    }
+
+    @Unique
+    private boolean voidium$tryRender(Font font, String text, int x, int y, int color, boolean dropShadow,
+            CallbackInfoReturnable<Integer> cir) {
+        if (voidium$isRendering.get() || text == null || text.isEmpty()) {
+            return false;
         }
 
         Matcher matcher = EMOJI_PATTERN.matcher(text);
         if (!matcher.find()) {
-            return;
+            return false;
         }
 
-        // Reset matcher to start
-        matcher.reset();
+        // Prevent recursion
+        voidium$isRendering.set(true);
 
         try {
-            voidium$isRendering.set(true);
-
             GuiGraphics gfx = (GuiGraphics) (Object) this;
             int currentX = x;
             int lastEnd = 0;
-            int fontHeight = font.lineHeight;
-            int emojiSize = fontHeight; // Match emoji size to font height
+            int emojiSize = EmojiManager.getInstance().getEmojiSize();
+
+            // Reset matcher to start
+            matcher.reset();
 
             while (matcher.find()) {
                 // Render text before emoji
                 String beforeText = text.substring(lastEnd, matcher.start());
                 if (!beforeText.isEmpty()) {
-                    int width = gfx.drawString(font, beforeText, currentX, y, color, dropShadow);
-                    currentX = width;
+                    currentX = gfx.drawString(font, beforeText, currentX, y, color, dropShadow);
                 }
 
                 String emojiName = matcher.group(1);
@@ -78,109 +110,51 @@ public abstract class EmojiRenderMixin {
 
                 if (emojiTexture != null) {
                     // Render emoji texture
+                    RenderSystem.enableBlend();
                     pose().pushPose();
-                    blit(emojiTexture, currentX, y - 1, 0, 0, 0, emojiSize, emojiSize, emojiSize, emojiSize);
+
+                    // Scale 72x72 texture down to emojiSize (9px)
+                    // Translate to position first
+                    pose().translate(currentX, y - 1, 0); // y-1 for slight centering
+                    float scale = (float) emojiSize / 72.0f;
+                    pose().scale(scale, scale, 1.0f);
+
+                    // Draw full 72x72 texture at (0,0) relative to translated/scaled origin
+                    // blit(texture, x, y, blitOffset, u, v, width, height, texW, texH)
+                    blit(emojiTexture, 0, 0, 0, 0, 0, 72, 72, 72, 72);
+
                     pose().popPose();
+                    RenderSystem.disableBlend();
                     currentX += emojiSize + 1;
                 } else {
                     // Emoji not loaded, render as text
                     String emojiText = ":" + emojiName + ":";
-                    int width = gfx.drawString(font, emojiText, currentX, y, color, dropShadow);
-                    currentX = width;
+                    currentX = gfx.drawString(font, emojiText, currentX, y, color, dropShadow);
                 }
 
                 lastEnd = matcher.end();
             }
 
-            // Render remaining text after last emoji
+            // Render remaining text
             if (lastEnd < text.length()) {
-                String afterText = text.substring(lastEnd);
-                currentX = gfx.drawString(font, afterText, currentX, y, color, dropShadow);
+                String remaining = text.substring(lastEnd);
+                currentX = gfx.drawString(font, remaining, currentX, y, color, dropShadow);
             }
 
             cir.setReturnValue(currentX);
+            return true;
         } finally {
             voidium$isRendering.set(false);
         }
     }
 
-    /**
-     * Also handle Component-based drawString for formatted text.
-     */
-    @Inject(method = "drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)I", at = @At("HEAD"), cancellable = true)
-    private void voidium$onDrawStringComponent(Font font, Component component, int x, int y, int color,
-            boolean dropShadow, CallbackInfoReturnable<Integer> cir) {
-        String text = component.getString();
-
-        // Quick check - if no emoji pattern, let vanilla handle it
-        if (text == null || !text.contains(":") || voidium$isRendering.get()) {
-            return;
-        }
-
-        if (!EMOJI_PATTERN.matcher(text).find()) {
-            return;
-        }
-
-        // For components with emojis, we need special handling
-        // The color parsing is already done by ChatComponentMixin, so we just need
-        // emoji rendering
-        try {
-            voidium$isRendering.set(true);
-
-            GuiGraphics gfx = (GuiGraphics) (Object) this;
-            int result = voidium$renderComponentWithEmojis(gfx, font, component, x, y, color, dropShadow);
-            cir.setReturnValue(result);
-        } finally {
-            voidium$isRendering.set(false);
-        }
-    }
-
-    /**
-     * Render a component with inline emoji textures.
-     */
     @Unique
-    private int voidium$renderComponentWithEmojis(GuiGraphics gfx, Font font, Component component, int x, int y,
-            int color, boolean dropShadow) {
-        String text = component.getString();
-        Matcher matcher = EMOJI_PATTERN.matcher(text);
-
-        int currentX = x;
-        int lastEnd = 0;
-        int fontHeight = font.lineHeight;
-        int emojiSize = fontHeight;
-
-        while (matcher.find()) {
-            // Render text before emoji using vanilla rendering for proper styling
-            String beforeText = text.substring(lastEnd, matcher.start());
-            if (!beforeText.isEmpty()) {
-                // Use basic color for now - styled components already have color applied
-                int width = gfx.drawString(font, beforeText, currentX, y, color, dropShadow);
-                currentX = width;
-            }
-
-            String emojiName = matcher.group(1);
-            ResourceLocation emojiTexture = EmojiManager.getInstance().getEmojiTexture(emojiName);
-
-            if (emojiTexture != null) {
-                pose().pushPose();
-                blit(emojiTexture, currentX, y - 1, 0, 0, 0, emojiSize, emojiSize, emojiSize, emojiSize);
-                pose().popPose();
-                currentX += emojiSize + 1;
-            } else {
-                String emojiText = ":" + emojiName + ":";
-                int width = gfx.drawString(font, emojiText, currentX, y, color, dropShadow);
-                currentX = width;
-            }
-
-            lastEnd = matcher.end();
-        }
-
-        // Render remaining text
-        if (lastEnd < text.length()) {
-            String afterText = text.substring(lastEnd);
-            currentX = gfx.drawString(font, afterText, currentX, y, color, dropShadow);
-        }
-
-        return currentX;
+    private String voidium$extractText(FormattedCharSequence seq) {
+        StringBuilder sb = new StringBuilder();
+        seq.accept((index, style, codePoint) -> {
+            sb.appendCodePoint(codePoint);
+            return true;
+        });
+        return sb.toString();
     }
 }

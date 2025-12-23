@@ -68,7 +68,7 @@ public abstract class ChatScreenMixin {
         int popupHeight = Math.min(voidium$suggestions.size(), MAX_SUGGESTIONS) * SUGGESTION_HEIGHT
                 + SUGGESTION_PADDING * 2;
         int popupX = inputX + getColonPosition() * 6; // Approximate char width
-        int popupY = inputY - popupHeight - 2;
+        int popupY = inputY - popupHeight - 12; // Move higher above input
 
         // Draw background
         guiGraphics.fill(popupX, popupY, popupX + popupWidth, popupY + popupHeight, 0xDD000000);
@@ -150,7 +150,7 @@ public abstract class ChatScreenMixin {
         String text = input.getValue();
         String query = voidium$extractEmojiQuery(text, input.getCursorPosition());
 
-        if (query != null && query.length() >= 1) {
+        if (query != null && query.length() >= 2) {
             // Check if suppressed for this exact query (ESC was pressed)
             if (voidium$suppressed && query.equals(voidium$suppressedQuery)) {
                 // Stay suppressed, don't show suggestions

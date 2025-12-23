@@ -2041,7 +2041,6 @@ public class WebManager {
                 css.append("  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);");
                 css.append("  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);");
                 css.append("  position: relative;");
-                css.append("  overflow: hidden;");
                 css.append("}");
                 css.append(".card::before {");
                 css.append("  content: '';");
@@ -2186,6 +2185,29 @@ public class WebManager {
                 css.append("  color: #e0e0e0;");
                 css.append("  font-weight: 600;");
                 css.append("  font-size: 0.95em;");
+                css.append("}");
+
+                // =====================================================================
+                // GLOBAL PREVIEW (FIX CLIPPING)
+                // =====================================================================
+                css.append("#global-color-preview {");
+                css.append("  position: absolute;");
+                css.append("  z-index: 99999;");
+                css.append("  background: rgba(20, 20, 35, 0.95);");
+                css.append("  border: 1px solid #bb86fc;");
+                css.append("  padding: 10px;");
+                css.append("  border-radius: 8px;");
+                css.append("  box-shadow: 0 5px 20px rgba(0,0,0,0.5);");
+                css.append("  pointer-events: none;"); /*
+                                                        * Allow clicking through if needed, but usually we want to see
+                                                        * it
+                                                        */
+                css.append("  display: none;");
+                css.append("  backdrop-filter: blur(5px);");
+                css.append("  color: #fff;");
+                css.append("  font-family: monospace;");
+                css.append("  max-width: 300px;");
+                css.append("  word-wrap: break-word;");
                 css.append("}");
 
                 // =====================================================================
@@ -4234,20 +4256,36 @@ public class WebManager {
                 js.append("    return '<span>' + text + '</span>';\n");
                 js.append("}\n\n");
 
-                // Show/hide preview funkce
+                // Show/hide preview funkce (GLOBAL PREVIEW PORTAL)
                 js.append("function showPreview(input) {\n");
-                js.append("    const previewEl = input.parentElement.querySelector('.color-preview');\n");
-                js.append("    if (previewEl) {\n");
-                js.append("        previewEl.style.display = 'block';\n");
-                js.append("        previewEl.innerHTML = parseColorsToHtml(input.value);\n");
+                js.append("    let previewEl = document.getElementById('global-color-preview');\n");
+                js.append("    if (!previewEl) {\n");
+                js.append("        previewEl = document.createElement('div');\n");
+                js.append("        previewEl.id = 'global-color-preview';\n");
+                js.append("        document.body.appendChild(previewEl);\n");
+                js.append("    }\n");
+                js.append("    \n");
+                js.append("    previewEl.style.display = 'block';\n");
+                js.append("    previewEl.innerHTML = parseColorsToHtml(input.value);\n");
+                js.append("    \n");
+                js.append("    const rect = input.getBoundingClientRect();\n");
+                js.append("    const scrollTop = window.scrollY || document.documentElement.scrollTop;\n");
+                js.append("    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;\n");
+                js.append("    \n");
+                js.append("    // Default positioning (above)\n");
+                js.append("    previewEl.style.top = (rect.top + scrollTop - previewEl.offsetHeight - 10) + 'px';\n");
+                js.append("    previewEl.style.left = (rect.left + scrollLeft) + 'px';\n");
+                js.append("    \n");
+                js.append("    // Flip if offscreen\n");
+                js.append("    if (rect.top - previewEl.offsetHeight - 10 < 0) {\n");
+                js.append("        previewEl.style.top = (rect.bottom + scrollTop + 10) + 'px';\n");
                 js.append("    }\n");
                 js.append("}\n\n");
 
                 js.append("function hidePreview(input) {\n");
-                js.append("    const previewEl = input.parentElement.querySelector('.color-preview');\n");
+                js.append("    const previewEl = document.getElementById('global-color-preview');\n");
                 js.append("    if (previewEl) {\n");
-                js.append("        // Delay hide to allow clicking on preview\n");
-                js.append("        setTimeout(() => previewEl.style.display = 'none', 200);\n");
+                js.append("        setTimeout(() => previewEl.style.display = 'none', 100);\n");
                 js.append("    }\n");
                 js.append("}\n\n");
 
