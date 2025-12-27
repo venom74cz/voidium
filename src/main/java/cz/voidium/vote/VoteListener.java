@@ -100,6 +100,7 @@ public class VoteListener implements AutoCloseable {
         String challenge = sharedSecret.isBlank() ? "" : generateChallenge();
         OutputStream out = null;
         try (socket) {
+            socket.setSoTimeout(5000); // 5 seconds read timeout
             InputStream in = socket.getInputStream();
             out = socket.getOutputStream();
             if (logger.isDebugEnabled()) {
@@ -109,11 +110,15 @@ public class VoteListener implements AutoCloseable {
                 out.write(("VOTIFIER 2 " + challenge + "\n").getBytes(StandardCharsets.UTF_8));
                 out.flush();
             }
+            
             byte[] payload = readPayload(in);
             logPayload(payload);
+            
             if (payload.length == 0) {
-                throw new IllegalArgumentException("Empty vote payload");
+                // Connection closed immediately or empty
+                return; 
             }
+            
             v2Result = tryParseV2Vote(payload, challenge);
             VoteEvent event;
             if (v2Result.event() != null) {
@@ -209,13 +214,39 @@ public class VoteListener implements AutoCloseable {
 
     private byte[] readPayload(InputStream in) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[512];
+        byte[] buffer = new byte[256]; 
+        
         int read;
         while ((read = in.read(buffer)) != -1) {
-            if (read == 0) {
-                break;
-            }
             out.write(buffer, 0, read);
+            
+            byte[] data = out.toByteArray();
+            
+            // Detection Logic
+            if (data.length >= 2) {
+                ByteBuffer bb = ByteBuffer.wrap(data).order(ByteOrder.BIG_ENDIAN);
+                short magic = bb.getShort();
+                
+                if (magic == V2_MAGIC) {
+                    // It IS NuVotifier V2
+                    if (data.length >= 4) {
+                        int length = bb.getShort() & 0xFFFF;
+                        int expectedTotal = 4 + length;
+                        if (out.size() >= expectedTotal) {
+                            break; // Received full V2 packet
+                        }
+                    }
+                    // If V2 but not enough data yet, continue reading
+                } else {
+                    // It is NOT V2 (magic mismatch) -> Assume V1 or Legacy
+                    if (out.size() >= 256) {
+                        // V1 is typically 256 bytes.
+                        // Since it's definitely not V2, we stop here to avoid blocking.
+                        break;
+                    }
+                }
+            }
+            
             if (out.size() >= MAX_PACKET_SIZE) {
                 break;
             }
@@ -346,6 +377,30 @@ public class VoteListener implements AutoCloseable {
     private void processVote(VoteEvent event) {
         if (event == null)
             return;
+
+        long now = System.currentTimeMillis();
+        long voteAgeMillis = now - event.timestamp();
+        long maxAgeMillis = config.getMaxVoteAgeHours() * 3600L * 1000L;
+
+        // 1. Check if vote is too old
+        if (voteAgeMillis > maxAgeMillis) {
+            long hoursOld = voteAgeMillis / (3600 * 1000);
+            logger.warn("Ignored stale vote from {} (service: {}). Timestamp: {}, Age: ~{}h. Limit: {}h",
+                    event.username(), event.serviceName(),
+                    LOG_TIME.format(Instant.ofEpochMilli(event.timestamp())),
+                    hoursOld, config.getMaxVoteAgeHours());
+            return;
+        }
+
+        // 2. Check if vote is from future (clock skew tolerance: 1 hour)
+        if (voteAgeMillis < -3600000L) {
+             logger.warn("Ignored future vote from {} (service: {}). Timestamp: {}. Server time: {}",
+                    event.username(), event.serviceName(),
+                    LOG_TIME.format(Instant.ofEpochMilli(event.timestamp())),
+                    LOG_TIME.format(Instant.ofEpochMilli(now)));
+            return;
+        }
+
         logVote(event);
 
         // Vždy proveď /say nebo broadcast příkaz (oznámení), i když hráč není online

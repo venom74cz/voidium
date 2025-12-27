@@ -29,6 +29,7 @@ public class VoteConfig {
     private boolean announceVotes = true;
     private String announcementMessage = "&b%PLAYER% &7hlasoval pro server a získal odměnu!";
     private int announcementCooldown = 300; // seconds
+    private int maxVoteAgeHours = 24;
     private List<String> commands = new ArrayList<>(List.of(
             "tellraw %PLAYER% {\"text\":\"Děkujeme za hlasování!\",\"color\":\"green\"}",
             "give %PLAYER% diamond 1"
@@ -127,6 +128,7 @@ public class VoteConfig {
     public boolean isAnnounceVotes() { return announceVotes; }
     public String getAnnouncementMessage() { return announcementMessage; }
     public int getAnnouncementCooldown() { return announcementCooldown; }
+    public int getMaxVoteAgeHours() { return maxVoteAgeHours; }
     public List<String> getCommands() { return commands; }
     public Logging getLogging() { return logging; }
 

@@ -1,5 +1,20 @@
 # Voidium Changelog
 
+## [2.3.3] - 2025-12-27
+
+### 🗳️ Vote System Hardening
+- **Vote Age Limit**: Added protection against "vote spam" caused by delayed delivery from voting sites.
+  - New config option `maxVoteAgeHours` (default: 24h).
+  - Votes older than this limit are safely ignored instead of flooding the chat.
+- **Connectivity Fix**: Solved "Unable to read server response (1941)" error on minecraft-list.cz.
+  - Implemented smart packet reading (no more blocking).
+  - Added 5-second socket timeout to prevent stalled connections.
+- **V1 Compatibility**: Enhanced detection logic to ensure 100% reliable handling of legacy V1 votes involved in edge cases.
+
+## [2.3.2] - 2025-12-26
+
+(See released version)
+
 ## [2.3.1] - 2025-12-22
 
 ### 💬 Chat Improvements
