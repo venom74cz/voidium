@@ -1,5 +1,13 @@
 # Voidium Changelog
 
+## [2.3.4] - 2025-12-28
+
+### 🗳️ Vote System
+- **Legacy Timestamp Support**: Removed the 24h age limit check for votes. This fixes compatibility with voting sites that send invalid timestamps (e.g., 1970).
+
+### 📦 Build & Release
+- **Discord Notification**: Updated release announcements to ping a specific role instead of `@everyone`.
+
 ## [2.3.3] - 2025-12-27
 
 ### 🗳️ Vote System Hardening

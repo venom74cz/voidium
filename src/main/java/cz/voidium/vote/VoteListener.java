@@ -110,15 +110,15 @@ public class VoteListener implements AutoCloseable {
                 out.write(("VOTIFIER 2 " + challenge + "\n").getBytes(StandardCharsets.UTF_8));
                 out.flush();
             }
-            
+
             byte[] payload = readPayload(in);
             logPayload(payload);
-            
+
             if (payload.length == 0) {
                 // Connection closed immediately or empty
-                return; 
+                return;
             }
-            
+
             v2Result = tryParseV2Vote(payload, challenge);
             VoteEvent event;
             if (v2Result.event() != null) {
@@ -214,19 +214,19 @@ public class VoteListener implements AutoCloseable {
 
     private byte[] readPayload(InputStream in) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[256]; 
-        
+        byte[] buffer = new byte[256];
+
         int read;
         while ((read = in.read(buffer)) != -1) {
             out.write(buffer, 0, read);
-            
+
             byte[] data = out.toByteArray();
-            
+
             // Detection Logic
             if (data.length >= 2) {
                 ByteBuffer bb = ByteBuffer.wrap(data).order(ByteOrder.BIG_ENDIAN);
                 short magic = bb.getShort();
-                
+
                 if (magic == V2_MAGIC) {
                     // It IS NuVotifier V2
                     if (data.length >= 4) {
@@ -246,7 +246,7 @@ public class VoteListener implements AutoCloseable {
                     }
                 }
             }
-            
+
             if (out.size() >= MAX_PACKET_SIZE) {
                 break;
             }
@@ -380,21 +380,12 @@ public class VoteListener implements AutoCloseable {
 
         long now = System.currentTimeMillis();
         long voteAgeMillis = now - event.timestamp();
-        long maxAgeMillis = config.getMaxVoteAgeHours() * 3600L * 1000L;
 
         // 1. Check if vote is too old
-        if (voteAgeMillis > maxAgeMillis) {
-            long hoursOld = voteAgeMillis / (3600 * 1000);
-            logger.warn("Ignored stale vote from {} (service: {}). Timestamp: {}, Age: ~{}h. Limit: {}h",
-                    event.username(), event.serviceName(),
-                    LOG_TIME.format(Instant.ofEpochMilli(event.timestamp())),
-                    hoursOld, config.getMaxVoteAgeHours());
-            return;
-        }
 
         // 2. Check if vote is from future (clock skew tolerance: 1 hour)
         if (voteAgeMillis < -3600000L) {
-             logger.warn("Ignored future vote from {} (service: {}). Timestamp: {}. Server time: {}",
+            logger.warn("Ignored future vote from {} (service: {}). Timestamp: {}. Server time: {}",
                     event.username(), event.serviceName(),
                     LOG_TIME.format(Instant.ofEpochMilli(event.timestamp())),
                     LOG_TIME.format(Instant.ofEpochMilli(now)));

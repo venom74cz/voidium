@@ -12,7 +12,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Simple persistent skin cache: maps lowercase player name -> CachedEntry (uuid, value, signature, timestamp).
+ * Simple persistent skin cache: maps lowercase player name -> CachedEntry
+ * (uuid, value, signature, timestamp).
  * Stored as JSON at config/voidium/storage/skin-cache.json.
  */
 public final class SkinCache {
@@ -22,7 +23,8 @@ public final class SkinCache {
     private static long maxAgeSeconds = 86400; // 24h default
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger("voidium-skincache");
 
-    private SkinCache() {}
+    private SkinCache() {
+    }
 
     public static void init(Path configDir) {
         try {
@@ -34,11 +36,14 @@ public final class SkinCache {
         }
     }
 
-    public static void setMaxAgeSeconds(long seconds) { maxAgeSeconds = seconds; }
+    public static void setMaxAgeSeconds(long seconds) {
+        maxAgeSeconds = seconds;
+    }
 
     public static CachedEntry get(String name) {
         CachedEntry ce = CACHE.get(name.toLowerCase());
-        if (ce == null) return null;
+        if (ce == null)
+            return null;
         if (Instant.now().getEpochSecond() - ce.cachedAt > maxAgeSeconds) {
             CACHE.remove(name.toLowerCase());
             return null;
@@ -52,10 +57,12 @@ public final class SkinCache {
     }
 
     private static void load() {
-        if (filePath == null || !Files.exists(filePath)) return;
+        if (filePath == null || !Files.exists(filePath))
+            return;
         try (Reader r = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
             JsonElement root = JsonParser.parseReader(r);
-            if (!root.isJsonObject()) return;
+            if (!root.isJsonObject())
+                return;
             JsonObject obj = root.getAsJsonObject();
             for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
                 try {
@@ -65,7 +72,8 @@ public final class SkinCache {
                     String sig = ce.get("signature").getAsString();
                     long ts = ce.get("cachedAt").getAsLong();
                     CACHE.put(e.getKey().toLowerCase(), new CachedEntry(uuid, value, sig, ts));
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
             }
             LOGGER.info("SkinCache loaded entries={}", CACHE.size());
         } catch (Exception ex) {
@@ -79,7 +87,8 @@ public final class SkinCache {
     }
 
     private static synchronized void save() {
-        if (filePath == null) return;
+        if (filePath == null)
+            return;
         JsonObject root = new JsonObject();
         for (Map.Entry<String, CachedEntry> e : CACHE.entrySet()) {
             CachedEntry ce = e.getValue();
@@ -97,5 +106,6 @@ public final class SkinCache {
         }
     }
 
-    public record CachedEntry(UUID uuid, String value, String signature, long cachedAt) {}
+    public record CachedEntry(UUID uuid, String value, String signature, long cachedAt) {
+    }
 }

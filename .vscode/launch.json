@@ -12,13 +12,13 @@
       "projectName": "voidium",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/clientRunProgramArgs.txt"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\clientRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/clientRunVmArgs.txt",
-        "-Dfml.modFolders\u003dvoidium%%/home/voidivide/Dokumenty/GitHub/voidium/bin/main"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dvoidium%%C:\\Users\\adamj\\Documents\\GitHub\\voidium\\bin\\main"
       ],
-      "cwd": "${workspaceFolder}/run",
+      "cwd": "${workspaceFolder}\\run",
       "env": {},
       "console": "internalConsole",
       "shortenCommandLine": "none"
@@ -34,13 +34,13 @@
       "projectName": "voidium",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/dataRunProgramArgs.txt"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\dataRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/dataRunVmArgs.txt",
-        "-Dfml.modFolders\u003dvoidium%%/home/voidivide/Dokumenty/GitHub/voidium/bin/main"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\dataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dvoidium%%C:\\Users\\adamj\\Documents\\GitHub\\voidium\\bin\\main"
       ],
-      "cwd": "${workspaceFolder}/run",
+      "cwd": "${workspaceFolder}\\run",
       "env": {},
       "console": "internalConsole",
       "shortenCommandLine": "none"
@@ -56,13 +56,13 @@
       "projectName": "voidium",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/gameTestServerRunProgramArgs.txt"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\gameTestServerRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/gameTestServerRunVmArgs.txt",
-        "-Dfml.modFolders\u003dvoidium%%/home/voidivide/Dokumenty/GitHub/voidium/bin/main"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dvoidium%%C:\\Users\\adamj\\Documents\\GitHub\\voidium\\bin\\main"
       ],
-      "cwd": "${workspaceFolder}/run",
+      "cwd": "${workspaceFolder}\\run",
       "env": {},
       "console": "internalConsole",
       "shortenCommandLine": "none"
@@ -78,13 +78,13 @@
       "projectName": "voidium",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/serverRunProgramArgs.txt"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\serverRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/home/voidivide/Dokumenty/GitHub/voidium/build/moddev/serverRunVmArgs.txt",
-        "-Dfml.modFolders\u003dvoidium%%/home/voidivide/Dokumenty/GitHub/voidium/bin/main"
+        "@C:\\Users\\adamj\\Documents\\GitHub\\voidium\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dvoidium%%C:\\Users\\adamj\\Documents\\GitHub\\voidium\\bin\\main"
       ],
-      "cwd": "${workspaceFolder}/run",
+      "cwd": "${workspaceFolder}\\run",
       "env": {},
       "console": "internalConsole",
       "shortenCommandLine": "none"
