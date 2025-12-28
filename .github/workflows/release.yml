@@ -104,6 +104,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DISCORD_WEBHOOK: ${{ secrets.WEBHOOK_URL }}
+          DISCORD_WEBHOOK2: ${{ secrets.WEBHOOK_URL2 }}
         run: |
           # Use the extracted release notes directly
           # gh release view "v${{ env.VERSION }}" --json body --jq .body > release_body.txt
@@ -130,3 +131,4 @@ jobs:
             
           # Send to Discord
           curl -H "Content-Type: application/json" -d @payload.json "$DISCORD_WEBHOOK"
+          curl -H "Content-Type: application/json" -d @payload.json "$DISCORD_WEBHOOK2"
