@@ -144,14 +144,17 @@ hr {
   padding: 16px;
   text-decoration: none;
   color: var(--text);
+  display: block;
+  transition: all 0.2s ease;
 }
-  width: 18px;
-  height: 18px;
+
+.card-title {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 700;
   margin-bottom: 6px;
+  font-size: 1.05rem;
 }
 
 .card-icon {
@@ -195,16 +198,22 @@ hr {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
+  display: block;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s ease;
 }
 
-.section-card a {
-  color: var(--text);
-  text-decoration: none;
+.section-card:hover {
+  border-color: rgba(76, 195, 255, 0.5);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
 }
 
 .section-card .title {
   font-weight: 700;
   margin-bottom: 6px;
+  color: var(--text);
 }
 
 .badge {

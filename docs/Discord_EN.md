@@ -8,10 +8,22 @@ title: Discord Integration (EN)
 <div class="hero">
    <p><strong>Discord module</strong> connects the server to Discord: whitelist/linking, chat bridge, logs, status, topic and tickets.</p>
    <div class="section-grid">
-      <div class="section-card"><div class="title"><a href="#1-feature-overview">Feature overview</a></div><div class="card-desc">What this module does</div></div>
-      <div class="section-card"><div class="title"><a href="#4-configuration-discordjson">Configuration</a></div><div class="card-desc">All keys and meanings</div></div>
-      <div class="section-card"><div class="title"><a href="#6-account-linking--how-it-works">Link workflow</a></div><div class="card-desc">Codes, whitelist, roles</div></div>
-      <div class="section-card"><div class="title"><a href="#12-ticket-system-discord--mc">Tickets</a></div><div class="card-desc">Discord + in‑game</div></div>
+      <a href="#1-feature-overview" class="section-card">
+         <div class="title">Feature overview</div>
+         <div class="card-desc">What this module does</div>
+      </a>
+      <a href="#4-configuration-discordjson" class="section-card">
+         <div class="title">Configuration</div>
+         <div class="card-desc">All keys and meanings</div>
+      </a>
+      <a href="#6-account-linking--how-it-works" class="section-card">
+         <div class="title">Link workflow</div>
+         <div class="card-desc">Codes, whitelist, roles</div>
+      </a>
+      <a href="#12-ticket-system-discord--mc" class="section-card">
+         <div class="title">Tickets</div>
+         <div class="card-desc">Discord + in‑game</div>
+      </a>
    </div>
 </div>
 
