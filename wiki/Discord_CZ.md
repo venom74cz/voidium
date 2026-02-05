@@ -1,3 +1,8 @@
+---
+layout: default
+title: Discord integrace (CZ)
+---
+
 # Discord integrace – Voidium WIKI (CZ)
 
 ## 1) Rychlý přehled funkcí

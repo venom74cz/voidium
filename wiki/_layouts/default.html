@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ page.title }} · {{ site.title }}</title>
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <div class="container">
+          <div class="brand">Voidium Docs</div>
+          <nav class="nav">
+            <a href="{{ '/' | relative_url }}">Home</a>
+            <a href="{{ '/INDEX_CZ.md' | relative_url }}">CZ</a>
+            <a href="{{ '/INDEX_EN.md' | relative_url }}">EN</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="container">
+        {{ content }}
+      </main>
+
+      <footer class="site-footer">
+        <div class="container">
+          <span>Voidium Documentation</span>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

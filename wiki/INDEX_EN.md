@@ -1,3 +1,8 @@
+---
+layout: default
+title: Voidium Wiki (EN)
+---
+
 # Voidium Wiki (EN)
 
 ## Modules

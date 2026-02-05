@@ -1,0 +1,142 @@
+:root {
+  --bg: #0b0f1a;
+  --surface: #0f1629;
+  --text: #e6e9f2;
+  --muted: #9aa3b2;
+  --accent: #4cc3ff;
+  --accent-2: #7b61ff;
+  --border: #1f2a44;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+  color: var(--text);
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(76, 195, 255, 0.15), transparent 60%),
+              radial-gradient(900px 400px at 80% -10%, rgba(123, 97, 255, 0.18), transparent 55%),
+              var(--bg);
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(12px);
+  background: rgba(11, 15, 26, 0.65);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nav a {
+  color: var(--text);
+  text-decoration: none;
+  margin-left: 16px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.nav a:hover {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+main {
+  flex: 1;
+  padding: 36px 0 56px;
+}
+
+h1, h2, h3 {
+  letter-spacing: 0.3px;
+}
+
+h1 {
+  font-size: 2.3rem;
+  margin-bottom: 12px;
+}
+
+h2 {
+  margin-top: 32px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 18px 0 28px;
+  color: var(--muted);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.card:hover {
+  border-color: rgba(76, 195, 255, 0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.hero {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(76,195,255,0.08), rgba(123,97,255,0.08));
+}
+
+.hero p {
+  color: var(--muted);
+}

@@ -1,3 +1,8 @@
+---
+layout: default
+title: Discord Integration (EN)
+---
+
 # Discord Integration – Voidium WIKI (EN)
 
 ## 1) Feature overview
