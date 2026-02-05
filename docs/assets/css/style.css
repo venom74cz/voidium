@@ -72,6 +72,10 @@ main {
   padding: 36px 0 56px;
 }
 
+main p, main li {
+  line-height: 1.7;
+}
+
 h1, h2, h3 {
   letter-spacing: 0.3px;
 }
@@ -123,6 +127,31 @@ hr {
   padding: 16px;
   text-decoration: none;
   color: var(--text);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.card-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-icon img {
+  width: 20px;
+  height: 20px;
+}
+
+.card-desc {
+  color: var(--muted);
 }
 
 .card:hover {
