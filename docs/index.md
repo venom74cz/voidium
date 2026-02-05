@@ -1,8 +1,26 @@
+---
+layout: default
+title: Voidium Documentation
+---
+
 # Voidium Documentation
 
-Choose language / Vyber jazyk:
-- [CZ](wiki/INDEX_CZ.md)
-- [EN](wiki/INDEX_EN.md)
+<div class="hero">
+  <p>Choose your language / Vyber si jazyk:</p>
+  <div class="card-grid">
+    <a class="card" href="INDEX_CZ.md">
+      <strong>Čeština</strong>
+      <div>Kompletní CZ dokumentace</div>
+    </a>
+    <a class="card" href="INDEX_EN.md">
+      <strong>English</strong>
+      <div>Full EN documentation</div>
+    </a>
+  </div>
+</div>
 
-If you prefer the combined index:
-- [All languages](wiki/INDEX.md)
+---
+
+## Quick links
+- [CZ index](INDEX_CZ.md)
+- [EN index](INDEX_EN.md)
