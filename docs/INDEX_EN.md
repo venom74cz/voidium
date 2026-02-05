@@ -106,6 +106,3 @@ title: Voidium Wiki (EN)
 </div>
 
 ---
-
-## Other sections
-- (soon)

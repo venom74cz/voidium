@@ -110,6 +110,14 @@ code {
   border-radius: 6px;
 }
 
+pre {
+  background: rgba(255,255,255,0.06);
+  padding: 12px 14px;
+  border-radius: 10px;
+  overflow: auto;
+  border: 1px solid var(--border);
+}
+
 hr {
   border: none;
   border-top: 1px solid var(--border);
@@ -173,6 +181,48 @@ hr {
   border: 1px solid var(--border);
   border-radius: 18px;
   background: linear-gradient(135deg, rgba(76,195,255,0.08), rgba(123,97,255,0.08));
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 12px 0 22px;
+}
+
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.section-card a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.section-card .title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+.note {
+  background: rgba(76,195,255,0.08);
+  border: 1px solid rgba(76,195,255,0.25);
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 10px 0 18px;
 }
 
 .hero p {

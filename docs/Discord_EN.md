@@ -5,6 +5,20 @@ title: Discord Integration (EN)
 
 # Discord Integration – Voidium WIKI (EN)
 
+<div class="hero">
+   <p><strong>Discord module</strong> connects the server to Discord: whitelist/linking, chat bridge, logs, status, topic and tickets.</p>
+   <div class="section-grid">
+      <div class="section-card"><div class="title"><a href="#1-feature-overview">Feature overview</a></div><div class="card-desc">What this module does</div></div>
+      <div class="section-card"><div class="title"><a href="#4-configuration-discordjson">Configuration</a></div><div class="card-desc">All keys and meanings</div></div>
+      <div class="section-card"><div class="title"><a href="#6-account-linking--how-it-works">Link workflow</a></div><div class="card-desc">Codes, whitelist, roles</div></div>
+      <div class="section-card"><div class="title"><a href="#12-ticket-system-discord--mc">Tickets</a></div><div class="card-desc">Discord + in‑game</div></div>
+   </div>
+</div>
+
+<div class="note">
+Tip: Make sure bot intents are enabled (<code>GUILD_MEMBERS</code>, <code>MESSAGE_CONTENT</code>).
+</div>
+
 ## 1) Feature overview
 - **Whitelist + Account Linking** (Discord ↔ Minecraft)
 - **Chat Bridge** (MC → Discord and Discord → MC)

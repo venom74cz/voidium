@@ -5,6 +5,20 @@ title: Discord integrace (CZ)
 
 # Discord integrace – Voidium WIKI (CZ)
 
+<div class="hero">
+   <p><strong>Modul Discord</strong> propojuje server s Discordem: whitelist/linkování, chat bridge, logy, statusy, topic a tickety.</p>
+   <div class="section-grid">
+      <div class="section-card"><div class="title"><a href="#1-rychly-prehled-funkci">Přehled funkcí</a></div><div class="card-desc">Co modul umí</div></div>
+      <div class="section-card"><div class="title"><a href="#4-konfigurace-discordjson">Konfigurace</a></div><div class="card-desc">Všechny klíče a význam</div></div>
+      <div class="section-card"><div class="title"><a href="#6-linkovani-uctu--jak-to-funguje">Link workflow</a></div><div class="card-desc">Kódy, whitelist, role</div></div>
+      <div class="section-card"><div class="title"><a href="#12-ticket-system-discord--mc">Tickety</a></div><div class="card-desc">Discord + in‑game</div></div>
+   </div>
+</div>
+
+<div class="note">
+Tip: Nezapomeň povolit bot intents (<code>GUILD_MEMBERS</code>, <code>MESSAGE_CONTENT</code>).
+</div>
+
 ## 1) Rychlý přehled funkcí
 - **Whitelist + Linkování účtů** (Discord ↔ Minecraft)
 - **Chat Bridge** (MC → Discord a Discord → MC)
