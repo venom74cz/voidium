@@ -35,7 +35,7 @@ title: Voidium Wiki (EN)
 	<h2>Modules</h2>
 	<div class="card-grid">
 		<a class="card" href="Discord_EN.html">
-			<div class="card-title"><span class="card-icon"><img src="assets/img/discord.svg" alt="Discord"></span>Discord Integration</div>
+			<div class="card-title"><span class="card-icon"><img src="assets/img/discord.svg" alt="Discord" width="18" height="18"></span>Discord Integration</div>
 			<div class="card-desc">Bot, linking, chat bridge, logs, tickets</div>
 		</a>
 		<a class="card" href="Tickets_EN.html">

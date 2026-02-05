@@ -35,7 +35,7 @@ title: Voidium Wiki (CZ)
 	<h2>Moduly</h2>
 	<div class="card-grid">
 		<a class="card" href="Discord_CZ.html">
-			<div class="card-title"><span class="card-icon"><img src="assets/img/discord.svg" alt="Discord"></span>Discord integrace</div>
+			<div class="card-title"><span class="card-icon"><img src="assets/img/discord.svg" alt="Discord" width="18" height="18"></span>Discord integrace</div>
 			<div class="card-desc">Bot, linkování, chat bridge, logy, tickety</div>
 		</a>
 		<a class="card" href="Tickets_CZ.html">
