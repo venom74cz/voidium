@@ -8,11 +8,11 @@ title: Voidium Documentation
 <div class="hero">
   <p>Choose your language / Vyber si jazyk:</p>
   <div class="card-grid">
-    <a class="card" href="INDEX_CZ.md">
+    <a class="card" href="INDEX_CZ.html">
       <strong>Čeština</strong>
       <div>Kompletní CZ dokumentace</div>
     </a>
-    <a class="card" href="INDEX_EN.md">
+    <a class="card" href="INDEX_EN.html">
       <strong>English</strong>
       <div>Full EN documentation</div>
     </a>
@@ -22,5 +22,5 @@ title: Voidium Documentation
 ---
 
 ## Quick links
-- [CZ index](INDEX_CZ.md)
-- [EN index](INDEX_EN.md)
+- [CZ index](INDEX_CZ.html)
+- [EN index](INDEX_EN.html)
