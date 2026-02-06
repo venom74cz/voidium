@@ -1,292 +1,226 @@
 ---
 layout: default
-title: Discord Integration (EN)
+title: Discord (EN)
 ---
 
-# Discord Integration – Voidium WIKI (EN)
+# 🤖 Discord
 
 <div class="hero">
-   <p><strong>Discord module</strong> connects the server to Discord: whitelist/linking, chat bridge, logs, status, topic and tickets.</p>
-   <div class="section-grid">
-      <a href="#1-feature-overview" class="section-card">
-         <div class="title">Feature overview</div>
-         <div class="card-desc">What this module does</div>
+   <p><strong>Discord module</strong> connects Voidium to your Discord server: whitelist/linking, chat bridge, console streaming, status/topic updates and tickets.</p>
+
+   <div class="note">
+      You must enable Discord intents: <code>GUILD_MEMBERS</code> and <code>MESSAGE_CONTENT</code>.
+   </div>
+
+   <h2>Jump to</h2>
+   <div class="card-grid">
+      <a class="card" href="#setup">
+         <div class="card-title"><span class="card-icon">✅</span>Setup</div>
+         <div class="card-desc">Bot, intents, permissions</div>
       </a>
-      <a href="#4-configuration-discordjson" class="section-card">
-         <div class="title">Configuration</div>
-         <div class="card-desc">All keys and meanings</div>
+      <a class="card" href="#config">
+         <div class="card-title"><span class="card-icon">⚙️</span>Configuration</div>
+         <div class="card-desc">discord.json + tickets.json</div>
       </a>
-      <a href="#6-account-linking--how-it-works" class="section-card">
-         <div class="title">Link workflow</div>
-         <div class="card-desc">Codes, whitelist, roles</div>
+      <a class="card" href="#linking">
+         <div class="card-title"><span class="card-icon">🔗</span>Linking</div>
+         <div class="card-desc">Whitelist codes, link channel, roles</div>
       </a>
-      <a href="#12-ticket-system-discord--mc" class="section-card">
-         <div class="title">Tickets</div>
-         <div class="card-desc">Discord + in‑game</div>
+      <a class="card" href="#chat-bridge">
+         <div class="card-title"><span class="card-icon">💬</span>Chat bridge</div>
+         <div class="card-desc">MC ↔ Discord messages</div>
+      </a>
+      <a class="card" href="#tickets">
+         <div class="card-title"><span class="card-icon">🎫</span>Tickets</div>
+         <div class="card-desc">Discord slash + in-game /ticket</div>
+      </a>
+      <a class="card" href="#troubleshooting">
+         <div class="card-title"><span class="card-icon">🧯</span>Troubleshooting</div>
+         <div class="card-desc">Common problems and fixes</div>
       </a>
    </div>
 </div>
 
+## ✅ Setup {#setup}
+
+You need:
+
+- A Discord bot (Developer Portal) invited to your guild
+- Enabled intents: <code>GUILD_MEMBERS</code> and <code>MESSAGE_CONTENT</code>
+- Channels (recommended): <strong>chat</strong>, <strong>link</strong>, <strong>console</strong>, <strong>status</strong>, plus a <strong>ticket category</strong>
+
+Minimal first-run checklist:
+
+1. Edit <code>config/voidium/discord.json</code>
+2. Set <code>enableDiscord: true</code>, <code>botToken</code>, <code>guildId</code>
+3. Configure channel IDs:
+   - <code>chatChannelId</code> (required for chat bridge)
+   - <code>linkChannelId</code> (recommended; see note below)
+4. Restart the server (for token changes), or try <code>/voidium reload</code> for small edits
+
 <div class="note">
-Tip: Make sure bot intents are enabled (<code>GUILD_MEMBERS</code>, <code>MESSAGE_CONTENT</code>).
+   <strong>Important:</strong> keep <code>MESSAGE_CONTENT</code> intent enabled so the bot can read Discord messages for the chat bridge.
 </div>
 
-## 1) Feature overview
-- **Whitelist + Account Linking** (Discord ↔ Minecraft)
-- **Chat Bridge** (MC → Discord and Discord → MC)
-- **Webhook messages** with skin-based avatars
-- **Console streaming** (server logs to Discord)
-- **Status messages** (Starting/Online/Stopping/Offline)
-- **Channel topic updater** (online players, uptime, TPS)
-- **Ban Sync** (Discord → MC and MC → Discord)
-- **Ticket system** (Discord slash commands + in-game /ticket)
+## ⚙️ Configuration {#config}
 
----
+Voidium uses two Discord-related config files:
 
-## 2) Requirements
-1. **Discord bot account** (Discord Developer Portal)
-2. **Bot token** (keep private)
-3. **Enabled intents**:
-   - `GUILD_MEMBERS`
-   - `MESSAGE_CONTENT`
-4. Bot must have access to configured channels (chat, link, console, status, ticket category).
+- <code>config/voidium/discord.json</code> (bot, channels, whitelist, chat bridge, status/topic, ban sync)
+- <code>config/voidium/tickets.json</code> (ticket system)
 
----
+### discord.json (key fields)
 
-## 3) Installation & first run
-1. Create a bot and invite it to your server (OAuth2 URL Generator).
-2. Enable intents in the Developer Portal.
-3. Open configuration: `config/voidium/discord.json`.
-4. Set required values:
-   - `enableDiscord: true`
-   - `botToken: ...`
-   - `guildId: ...`
-   - `chatChannelId / linkChannelId / consoleChannelId / statusChannelId`
-5. Restart the server or use `/voidium reload`.
+**Basics**
 
-Tip: Leave an ID empty if you don’t want to use that feature.
+- <code>enableDiscord</code>, <code>botToken</code>, <code>guildId</code>
 
----
+**Channels**
 
-## 4) Configuration: `discord.json`
-Below are all key fields with explanations.
+- <code>chatChannelId</code> — Discord ↔ MC chat bridge channel
+- <code>consoleChannelId</code> — console log streaming target
+- <code>linkChannelId</code> — channel where users can paste verification codes (messages are deleted)
+- <code>statusChannelId</code> — status messages; if empty, Voidium uses <code>chatChannelId</code>
 
-### 4.1 Basics
-- `enableDiscord` – enables the integration
-- `botToken` – bot token
-- `guildId` – Discord server ID
+**Whitelist & linking**
 
-### 4.2 Bot activity
-- `botActivityType` – `PLAYING | WATCHING | LISTENING | COMPETING`
-- `botActivityText` – activity text, supports placeholders (see below)
+- <code>enableWhitelist</code>
+- <code>kickMessage</code>, <code>verificationHintMessage</code>
+- <code>linkSuccessMessage</code>, <code>alreadyLinkedMessage</code>, <code>maxAccountsPerDiscord</code>
 
-### 4.3 Whitelist / linking
-- `enableWhitelist` – enables whitelist flow
-- `kickMessage` – message shown to player with code
-- `verificationHintMessage` – extra hint
-- `linkSuccessMessage` – message after linking
-- `alreadyLinkedMessage` – when limit is reached
-- `maxAccountsPerDiscord` – max accounts per Discord
+**Chat bridge**
 
-### 4.4 Channels
-- `chatChannelId` – chat bridge channel
-- `consoleChannelId` – console logs channel
-- `linkChannelId` – link channel (messages are deleted)
-- `statusChannelId` – status channel (falls back to `chatChannelId` if empty)
+- <code>enableChatBridge</code>
+- <code>minecraftToDiscordFormat</code>, <code>discordToMinecraftFormat</code>
+- <code>chatWebhookUrl</code> (optional; MC → Discord webhook with skin avatar)
 
-### 4.5 Status messages
-- `enableStatusMessages`
-- `statusMessageStarting`
-- `statusMessageStarted`
-- `statusMessageStopping`
-- `statusMessageStopped`
+<div class="note">
+   <strong>Emoji note:</strong> Discord → MC chat always maps a small set of Unicode emoji into <code>:aliases:</code> for Voidium client rendering. The <code>translateEmojis</code> toggle is currently only used for ticket-message forwarding (and may have limited effect depending on mappings).
+</div>
 
-### 4.6 Roles & prefixes
-- `linkedRoleId` – role assigned when linking via link channel (`linkChannelId`)
-- `rolePrefixes` – Discord role → prefix/suffix/color map
-- `useHexColors` – true = hex colors (Voidium client), false = MC colors
+**Status / topic**
 
-### 4.7 Ban Sync
-- `syncBansDiscordToMc` – Discord ban bans MC accounts
-- `syncBansMcToDiscord` – MC ban bans Discord account
+- <code>enableStatusMessages</code> + status text fields
+- <code>enableTopicUpdate</code>, <code>channelTopicFormat</code>, <code>uptimeFormat</code>
 
-### 4.8 Chat Bridge
-- `enableChatBridge`
-- `minecraftToDiscordFormat`
-- `discordToMinecraftFormat`
-- `translateEmojis` – currently affects only ticket messages (chat uses Unicode → alias mapping)
+**Ban sync**
 
-### 4.9 Webhook
-- `chatWebhookUrl` – if set, MC → Discord uses webhook with skin avatar
+- <code>syncBansDiscordToMc</code>, <code>syncBansMcToDiscord</code>
 
-### 4.10 Bot Messages (responses)
-- `invalidCodeMessage`
-- `notLinkedMessage`
-- `alreadyLinkedSingleMessage` (variable: `%uuid%`)
-- `alreadyLinkedMultipleMessage` (variable: `%count%`)
-- `unlinkSuccessMessage`
-- `wrongGuildMessage`
-- `ticketCreatedMessage`
-- `ticketClosingMessage`
-- `textChannelOnlyMessage`
+**Bot responses**
 
-### 4.11 Topic updater
-- `enableTopicUpdate`
-- `channelTopicFormat`
-- `uptimeFormat`
+- <code>invalidCodeMessage</code>, <code>notLinkedMessage</code>
+- <code>alreadyLinkedSingleMessage</code> (<code>%uuid%</code>), <code>alreadyLinkedMultipleMessage</code> (<code>%count%</code>)
+- <code>unlinkSuccessMessage</code>, <code>wrongGuildMessage</code>
+- <code>ticketCreatedMessage</code>, <code>ticketClosingMessage</code>, <code>textChannelOnlyMessage</code>
 
----
+**Roles & prefixes**
 
-## 5) Placeholders
-### 5.1 Whitelist / Link
-- `%code%` – verification code
-- `%player%` – player name (if available) / otherwise UUID
-- `%max%` – max accounts per Discord
+- <code>linkedRoleId</code> — role assigned after successful linking (link-channel flow)
+- <code>rolePrefixes</code> + <code>useHexColors</code>
 
-### 5.2 Chat formats
-- `%player%` – player name (MC → Discord)
-- `%message%` – message content
-- `%user%` – Discord user (Discord → MC)
+### tickets.json (TicketConfig)
 
-### 5.3 Status / Activity / Topic
-- `%online%` – current online players
-- `%max%` – max players
-- `%tps%` – TPS (placeholder for now)
-- `%uptime%` – server uptime
+File: <code>config/voidium/tickets.json</code>
 
-### 5.4 Bot messages
-- `%uuid%` – linked account UUID
-- `%count%` – number of linked accounts
+- <code>enableTickets</code>
+- <code>ticketCategoryId</code>, <code>supportRoleId</code>
+- <code>ticketChannelTopic</code> (placeholders: <code>%user%</code>, <code>%reason%</code>)
+- <code>maxTicketsPerUser</code>
+- Messages: <code>ticketCreatedMessage</code>, <code>ticketWelcomeMessage</code>, <code>ticketCloseMessage</code>, <code>noPermissionMessage</code>, <code>ticketLimitReachedMessage</code>, <code>ticketAlreadyClosedMessage</code>
+- Transcript: <code>enableTranscript</code>, <code>transcriptFormat</code> (<code>TXT</code>/<code>JSON</code>), <code>transcriptFilename</code> (supports <code>%user%</code>, <code>%date%</code>, <code>%reason%</code>)
+- In-game messages (color codes via <code>&</code>): <code>mcBotNotConnectedMessage</code>, <code>mcGuildNotFoundMessage</code>, <code>mcCategoryNotFoundMessage</code>, <code>mcTicketCreatedMessage</code>, <code>mcDiscordNotFoundMessage</code>
 
----
+## 🔗 Whitelist & Linking {#linking}
 
-## 6) Account linking – how it works
-### 6.1 In-game workflow (Whitelist)
-1. Player joins.
-2. If not linked, they **remain frozen** in place.
-3. They receive a code (`kickMessage`) + hint (`verificationHintMessage`).
-4. After successful link, they are unfrozen.
+### In-game (whitelist flow)
 
-Note: Code expires after **10 minutes**.
+When whitelist is enabled and a player is not linked:
 
-### 6.2 Link via Discord slash command
-- `/link <code>` – links Discord account to MC account.
-- `/unlink` – unlinks all accounts from Discord.
+1. The player joins and is <strong>frozen</strong> in place (not kicked).
+2. They receive a 6-digit code in chat (<code>kickMessage</code> + <code>verificationHintMessage</code>).
+3. The code expires after <strong>10 minutes</strong>.
+4. After linking, the player is unfrozen.
 
-### 6.3 Link via link channel
-- Send the code into `linkChannelId`.
-- Bot deletes the message (privacy) and replies.
-- If already linked, bot uses `alreadyLinked*` response.
+### On Discord
 
-### 6.4 Data storage
-- Links are stored in `config/voidium/storage/links.json`.
+- Slash commands:
+   - <code>/link code:&lt;code&gt;</code>
+   - <code>/unlink</code>
+- Link channel:
+   - User posts the code into <code>linkChannelId</code>
+   - Bot deletes the message and replies (auto-deletes the reply after a few seconds)
+   - Optional: assigns <code>linkedRoleId</code>
 
----
+Data is stored in <code>config/voidium/storage/links.json</code>.
 
-## 7) Chat Bridge
-### 7.1 MC → Discord
-- Sends MC chat to `chatChannelId`.
-- Uses `minecraftToDiscordFormat`.
-- If `chatWebhookUrl` is set, uses webhook with skin avatar.
+## 💬 Chat bridge {#chat-bridge}
 
-### 7.2 Discord → MC
-- Messages from `chatChannelId` go to MC.
-- Markdown to MC formatting:
-  - `**bold**` → bold
-  - `*italic*` → italic
-  - `__underline__` → underline
-  - `~~strike~~` → strikethrough
-- Unicode emoji are mapped to aliases (`:smile:`) for client rendering.
+### MC → Discord
 
-### 7.3 Join/Leave/Death
-- Join/Leave/Death are sent to Discord as messages.
+- Triggered by normal chat + <code>/say</code>
+- Sent into <code>chatChannelId</code>
+- Uses <code>minecraftToDiscordFormat</code>
+- If <code>chatWebhookUrl</code> is set, messages are sent via webhook (skin-based avatar)
 
----
+### Discord → MC
 
-## 8) Console streaming (logs)
-- Auto-enabled when `consoleChannelId` is set.
-- Logs are batched every ~3 seconds.
-- Uses ANSI colors by log level.
+- Messages from <code>chatChannelId</code> are forwarded into Minecraft when chat bridge is enabled
+- Basic Markdown is converted to MC formatting (bold/italic/underline/strike)
+- Some Unicode emoji are converted to <code>:aliases:</code> for Voidium client rendering
 
----
+### Join / leave / death
 
-## 9) Status messages
-- Messages are sent to `statusChannelId`.
-- Typically used on server start/stop.
+When chat bridge is enabled, join/leave/death messages are posted to Discord.
 
----
+## 🎫 Tickets {#tickets}
 
-## 10) Channel Topic Updater
-- If `enableTopicUpdate = true`, bot updates `chatChannelId` topic every ~10 minutes.
-- Uses `channelTopicFormat` and `uptimeFormat`.
+### Discord slash commands
 
----
+- <code>/ticket create reason:&lt;reason&gt;</code>
+- <code>/ticket close</code>
 
-## 11) Ban Sync
-### 11.1 Discord → MC
-- A Discord ban bans all linked MC accounts.
+Ticket creation is rate-limited (global cooldown ~60 seconds) to avoid Discord 429 errors.
 
-### 11.2 MC → Discord
-- If `syncBansMcToDiscord = true`, MC ban bans the Discord account.
+### In-game
 
----
+- <code>/ticket &lt;reason&gt; &lt;message...&gt;</code>
+- <code>/reply &lt;message...&gt;</code>
 
-## 12) Ticket system (Discord + MC)
-### 12.1 Discord slash commands
-- `/ticket create <reason>` – creates a ticket
-- `/ticket close` – closes the ticket
+See the full command reference here: <a href="Commands_EN.html">Commands</a>.
 
-### 12.2 In-game command
-- `/ticket <reason> <message>` – creates a ticket from MC
+### Transcripts
 
-### 12.3 Configuration: `tickets.json`
-- `enableTickets`
-- `ticketCategoryId`
-- `supportRoleId`
-- `ticketChannelTopic`
-- `maxTicketsPerUser`
-- `ticketWelcomeMessage`
-- `ticketCloseMessage`
-- `ticketLimitReachedMessage`
-- `enableTranscript` + `transcriptFormat` + `transcriptFilename`
+If transcripts are enabled:
 
-### 12.4 Transcripts
-- TXT and JSON are supported.
-- Transcript is uploaded after ticket close.
+- Voidium fetches up to the last ~100 messages
+- Uploads a TXT/JSON transcript file into the ticket channel
+- Then deletes the channel a few seconds after closing
 
----
+## 🧯 Troubleshooting {#troubleshooting}
 
-## 13) Troubleshooting
-**Bot won’t start:**
-- Check `botToken`.
-- Ensure intents are enabled.
+**Bot won’t start**
 
-**Chat Bridge not working:**
-- Check `enableChatBridge`.
-- Verify `chatChannelId`.
+- Verify <code>botToken</code> and <code>guildId</code>
+- Check that the intents are enabled in Developer Portal
 
-**Linking not working:**
-- Check `linkChannelId`.
-- Ensure the code isn’t expired.
+**Discord → MC messages do not arrive**
 
-**Logs not sent:**
-- Check `consoleChannelId`.
-- Bot needs permission to send messages.
+- Ensure <code>enableDiscord</code> and <code>enableChatBridge</code> are true
+- Check <code>chatChannelId</code>
+- Ensure <code>MESSAGE_CONTENT</code> intent is enabled
 
-**Ticket not created:**
-- Check `ticketCategoryId`.
-- Discord rate-limit: 60s cooldown between tickets.
+**Linking doesn’t work**
 
----
+- Code is valid for ~10 minutes
+- Check <code>linkChannelId</code> permissions (send + delete)
 
-## 14) Security recommendations
-- Never share the token.
-- Keep the link channel private.
-- Grant the bot minimal permissions.
+**Ticket not created**
 
----
+- Check <code>ticketCategoryId</code> and bot permissions
+- Remember the global ~60s cooldown between ticket creations
 
-## 15) Related files
-- `config/voidium/discord.json`
-- `config/voidium/tickets.json`
-- `config/voidium/storage/links.json`
+## Related
+
+- <a href="Config_EN.html">Configuration</a>
+- <a href="Commands_EN.html">Commands</a>

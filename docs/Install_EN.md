@@ -40,8 +40,7 @@ title: Installation (EN)
 ## ✅ Requirements {#requirements}
 
 <div class="note">
-	<strong>No hardcoded versions here:</strong> the exact Minecraft/NeoForge requirement depends on the jar you downloaded.
-	Check <code>META-INF/mods.toml</code> inside the jar (or the repository <code>mods.toml</code>) for the authoritative version ranges.
+	<strong>VERSION: 1.21.1+</strong>
 </div>
 
 ### Server

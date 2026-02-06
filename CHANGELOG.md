@@ -1,5 +1,14 @@
 # Voidium Changelog
 
+## [2.3.5] - 2026-02-06
+
+### 💬 Discord Bridge Fix
+- **Discord → MC Forwarding**: Messages from the Discord chat channel are now processed even when `linkChannelId` is not configured.
+
+### 📚 Documentation
+- **Web Panel Docs**: Added full Web panel documentation (EN/CZ).
+- **Discord Docs**: Updated troubleshooting notes to match current behavior.
+
 ## [2.3.4] - 2025-12-28
 
 ### 🗳️ Vote System

@@ -1,292 +1,226 @@
 ---
 layout: default
-title: Discord integrace (CZ)
+title: Discord (CZ)
 ---
 
-# Discord integrace – Voidium WIKI (CZ)
+# 🤖 Discord
 
 <div class="hero">
-   <p><strong>Modul Discord</strong> propojuje server s Discordem: whitelist/linkování, chat bridge, logy, statusy, topic a tickety.</p>
-   <div class="section-grid">
-      <a href="#1-rychly-prehled-funkci" class="section-card">
-         <div class="title">Přehled funkcí</div>
-         <div class="card-desc">Co modul umí</div>
+   <p><strong>Modul Discord</strong> propojuje Voidium s Discord serverem: whitelist/linkování, chat bridge, streamování konzole, status/topic a tickety.</p>
+
+   <div class="note">
+      Nezapomeň povolit bot intents: <code>GUILD_MEMBERS</code> a <code>MESSAGE_CONTENT</code>.
+   </div>
+
+   <h2>Rychlá navigace</h2>
+   <div class="card-grid">
+      <a class="card" href="#setup">
+         <div class="card-title"><span class="card-icon">✅</span>Setup</div>
+         <div class="card-desc">Bot, intents, práva</div>
       </a>
-      <a href="#4-konfigurace-discordjson" class="section-card">
-         <div class="title">Konfigurace</div>
-         <div class="card-desc">Všechny klíče a význam</div>
+      <a class="card" href="#config">
+         <div class="card-title"><span class="card-icon">⚙️</span>Konfigurace</div>
+         <div class="card-desc">discord.json + tickets.json</div>
       </a>
-      <a href="#6-linkovani-uctu--jak-to-funguje" class="section-card">
-         <div class="title">Link workflow</div>
-         <div class="card-desc">Kódy, whitelist, role</div>
+      <a class="card" href="#linking">
+         <div class="card-title"><span class="card-icon">🔗</span>Linkování</div>
+         <div class="card-desc">Kódy, link kanál, role</div>
       </a>
-      <a href="#12-ticket-system-discord--mc" class="section-card">
-         <div class="title">Tickety</div>
-         <div class="card-desc">Discord + in‑game</div>
+      <a class="card" href="#chat-bridge">
+         <div class="card-title"><span class="card-icon">💬</span>Chat bridge</div>
+         <div class="card-desc">MC ↔ Discord zprávy</div>
+      </a>
+      <a class="card" href="#tickets">
+         <div class="card-title"><span class="card-icon">🎫</span>Tickety</div>
+         <div class="card-desc">Discord slash + in-game /ticket</div>
+      </a>
+      <a class="card" href="#troubleshooting">
+         <div class="card-title"><span class="card-icon">🧯</span>Problémy</div>
+         <div class="card-desc">Nejčastější chyby</div>
       </a>
    </div>
 </div>
 
+## ✅ Setup {#setup}
+
+Potřebuješ:
+
+- Discord bot (Developer Portal) přidaný do guildy
+- Povolené intents: <code>GUILD_MEMBERS</code> a <code>MESSAGE_CONTENT</code>
+- Doporučené kanály: <strong>chat</strong>, <strong>link</strong>, <strong>console</strong>, <strong>status</strong> + <strong>ticket kategorie</strong>
+
+Rychlý checklist:
+
+1. Uprav <code>config/voidium/discord.json</code>
+2. Nastav <code>enableDiscord: true</code>, <code>botToken</code>, <code>guildId</code>
+3. Nastav kanály:
+   - <code>chatChannelId</code> (pro chat bridge)
+   - <code>linkChannelId</code> (doporučeno; viz poznámka)
+4. Restart serveru (hlavně při změně tokenu), nebo zkus <code>/voidium reload</code> pro menší změny
+
 <div class="note">
-Tip: Nezapomeň povolit bot intents (<code>GUILD_MEMBERS</code>, <code>MESSAGE_CONTENT</code>).
+   <strong>Důležité:</strong> ponech zapnutý intent <code>MESSAGE_CONTENT</code>, aby bot mohl číst zprávy pro chat bridge.
 </div>
 
-## 1) Rychlý přehled funkcí
-- **Whitelist + Linkování účtů** (Discord ↔ Minecraft)
-- **Chat Bridge** (MC → Discord a Discord → MC)
-- **Webhook zprávy** s avatary podle skinu
-- **Console streaming** (serverové logy do Discordu)
-- **Status zprávy** (Starting/Online/Stopping/Offline)
-- **Channel topic updater** (online hráči, uptime, TPS)
-- **Ban Sync** (Discord → MC i MC → Discord)
-- **Ticket systém** (Discord slash příkazy + in-game /ticket)
+## ⚙️ Konfigurace {#config}
 
----
+Voidium používá dva soubory:
 
-## 2) Požadavky
-1. **Discord bot účet** (Discord Developer Portal)
-2. **Token bota** (neukládat veřejně)
-3. **Povolené intents**:
-   - `GUILD_MEMBERS`
-   - `MESSAGE_CONTENT`
-4. Bot musí mít přístup do zvolených kanálů (chat, link, console, status, ticket kategorie).
+- <code>config/voidium/discord.json</code> (bot, kanály, whitelist, chat bridge, status/topic, ban sync)
+- <code>config/voidium/tickets.json</code> (ticket systém)
 
----
+### discord.json (klíčové položky)
 
-## 3) Instalace & první spuštění
-1. Vytvoř bota a přidej ho na server (OAuth2 URL Generator).
-2. Povol intents v Developer Portalu.
-3. Otevři konfiguraci: `config/voidium/discord.json`.
-4. Nastav základní hodnoty:
-   - `enableDiscord: true`
-   - `botToken: ...`
-   - `guildId: ...`
-   - `chatChannelId / linkChannelId / consoleChannelId / statusChannelId`
-5. Restartuj server nebo použij `/voidium reload`.
+**Základ**
 
-Tip: Pokud nechceš některou část používat, ponech příslušné ID prázdné.
+- <code>enableDiscord</code>, <code>botToken</code>, <code>guildId</code>
 
----
+**Kanály**
 
-## 4) Konfigurace: `discord.json`
-Níže jsou všechny klíčové položky s popisem.
+- <code>chatChannelId</code> — chat bridge kanál
+- <code>consoleChannelId</code> — streamování logů
+- <code>linkChannelId</code> — link kanál (zprávy s kódem se mažou)
+- <code>statusChannelId</code> — status zprávy; když je prázdné, použije se <code>chatChannelId</code>
 
-### 4.1 Základ
-- `enableDiscord` – zapíná celou integraci
-- `botToken` – token bota
-- `guildId` – ID Discord serveru
+**Whitelist & linkování**
 
-### 4.2 Aktivita bota
-- `botActivityType` – `PLAYING | WATCHING | LISTENING | COMPETING`
-- `botActivityText` – text aktivity, podporuje placeholdery (viz níže)
+- <code>enableWhitelist</code>
+- <code>kickMessage</code>, <code>verificationHintMessage</code>
+- <code>linkSuccessMessage</code>, <code>alreadyLinkedMessage</code>, <code>maxAccountsPerDiscord</code>
 
-### 4.3 Whitelist / linkování
-- `enableWhitelist` – zapíná whitelist systém
-- `kickMessage` – zpráva hráči s kódem
-- `verificationHintMessage` – doplňková nápověda
-- `linkSuccessMessage` – zpráva po propojení
-- `alreadyLinkedMessage` – když je dosažen limit účtů
-- `maxAccountsPerDiscord` – max. účtů na 1 Discord
+**Chat bridge**
 
-### 4.4 Kanály
-- `chatChannelId` – Discord kanál pro chat bridge
-- `consoleChannelId` – kanál pro logy
-- `linkChannelId` – kanál pro linkování (odeslané zprávy se mažou)
-- `statusChannelId` – kanál pro status zprávy (pokud je prázdné, použije se `chatChannelId`)
+- <code>enableChatBridge</code>
+- <code>minecraftToDiscordFormat</code>, <code>discordToMinecraftFormat</code>
+- <code>chatWebhookUrl</code> (volitelné; webhook pro MC → Discord s avatarem podle skinu)
 
-### 4.5 Status zprávy
-- `enableStatusMessages` – zapíná status zprávy
-- `statusMessageStarting`
-- `statusMessageStarted`
-- `statusMessageStopping`
-- `statusMessageStopped`
+<div class="note">
+   <strong>Emoji poznámka:</strong> Discord → MC chat vždy mapuje několik Unicode emoji na <code>:alias:</code> (kvůli renderingu ve Voidium klientu). Přepínač <code>translateEmojis</code> se aktuálně používá jen pro forward ticket zpráv (a efekt může být omezený podle mapování).
+</div>
 
-### 4.6 Role & prefixy
-- `linkedRoleId` – role při linknutí přes link kanál (`linkChannelId`)
-- `rolePrefixes` – mapování Discord role → prefix/suffix/barva
-- `useHexColors` – true = hex barvy (Voidium klient), false = MC barvy
+**Status / topic**
 
-### 4.7 Ban Sync
-- `syncBansDiscordToMc` – ban na Discordu banuje MC účet
-- `syncBansMcToDiscord` – ban v MC banuje Discord účet
+- <code>enableStatusMessages</code> + status texty
+- <code>enableTopicUpdate</code>, <code>channelTopicFormat</code>, <code>uptimeFormat</code>
 
-### 4.8 Chat Bridge
-- `enableChatBridge`
-- `minecraftToDiscordFormat`
-- `discordToMinecraftFormat`
-- `translateEmojis` – aktuálně ovlivňuje jen ticket zprávy (chat používá Unicode → alias mapování)
+**Ban sync**
 
-### 4.9 Webhook
-- `chatWebhookUrl` – pokud je nastaven, MC → Discord jde přes webhook (s avatarem podle skinu)
+- <code>syncBansDiscordToMc</code>, <code>syncBansMcToDiscord</code>
 
-### 4.10 Bot Messages (odpovědi bota)
-- `invalidCodeMessage`
-- `notLinkedMessage`
-- `alreadyLinkedSingleMessage` (proměnná: `%uuid%`)
-- `alreadyLinkedMultipleMessage` (proměnná: `%count%`)
-- `unlinkSuccessMessage`
-- `wrongGuildMessage`
-- `ticketCreatedMessage`
-- `ticketClosingMessage`
-- `textChannelOnlyMessage`
+**Odpovědi bota**
 
-### 4.11 Topic updater
-- `enableTopicUpdate`
-- `channelTopicFormat`
-- `uptimeFormat`
+- <code>invalidCodeMessage</code>, <code>notLinkedMessage</code>
+- <code>alreadyLinkedSingleMessage</code> (<code>%uuid%</code>), <code>alreadyLinkedMultipleMessage</code> (<code>%count%</code>)
+- <code>unlinkSuccessMessage</code>, <code>wrongGuildMessage</code>
+- <code>ticketCreatedMessage</code>, <code>ticketClosingMessage</code>, <code>textChannelOnlyMessage</code>
 
----
+**Role & prefixy**
 
-## 5) Placeholdery
-### 5.1 Whitelist / Link
-- `%code%` – ověřovací kód
-- `%player%` – jméno hráče (pokud je dostupné) / jinak UUID
-- `%max%` – max účtů na Discord
+- <code>linkedRoleId</code> — role při úspěšném linknutí (flow přes link kanál)
+- <code>rolePrefixes</code> + <code>useHexColors</code>
 
-### 5.2 Chat a formáty
-- `%player%` – jméno hráče (MC → Discord)
-- `%message%` – obsah zprávy
-- `%user%` – Discord uživatel (Discord → MC)
+### tickets.json (TicketConfig)
 
-### 5.3 Status / Activity / Topic
-- `%online%` – aktuální online hráči
-- `%max%` – max hráčů
-- `%tps%` – TPS (aktuálně placeholder)
-- `%uptime%` – uptime serveru
+Soubor: <code>config/voidium/tickets.json</code>
 
-### 5.4 Bot messages
-- `%uuid%` – UUID propojeného účtu
-- `%count%` – počet propojených účtů
+- <code>enableTickets</code>
+- <code>ticketCategoryId</code>, <code>supportRoleId</code>
+- <code>ticketChannelTopic</code> (proměnné: <code>%user%</code>, <code>%reason%</code>)
+- <code>maxTicketsPerUser</code>
+- Zprávy: <code>ticketCreatedMessage</code>, <code>ticketWelcomeMessage</code>, <code>ticketCloseMessage</code>, <code>noPermissionMessage</code>, <code>ticketLimitReachedMessage</code>, <code>ticketAlreadyClosedMessage</code>
+- Transcript: <code>enableTranscript</code>, <code>transcriptFormat</code> (<code>TXT</code>/<code>JSON</code>), <code>transcriptFilename</code> (podporuje <code>%user%</code>, <code>%date%</code>, <code>%reason%</code>)
+- In-game zprávy (barvy přes <code>&</code>): <code>mcBotNotConnectedMessage</code>, <code>mcGuildNotFoundMessage</code>, <code>mcCategoryNotFoundMessage</code>, <code>mcTicketCreatedMessage</code>, <code>mcDiscordNotFoundMessage</code>
 
----
+## 🔗 Whitelist & linkování {#linking}
 
-## 6) Linkování účtů – jak to funguje
-### 6.1 In-game workflow (Whitelist)
-1. Hráč se připojí.
-2. Pokud není propojen, **zůstane „zmrazený“** na místě.
-3. V chatu dostane kód (`kickMessage`) + hint (`verificationHintMessage`).
-4. Po úspěšném linku se automaticky odblokuje.
+### In-game (whitelist flow)
 
-Poznámka: Kód vyprší po **10 minutách**.
+Když je whitelist zapnutý a hráč není propojený:
 
-### 6.2 Link přes Discord slash příkaz
-- `/link <code>` – propojí Discord účet s MC účtem.
-- `/unlink` – odpojí všechny účty od Discordu.
+1. Hráč se připojí a zůstane <strong>zmrazený</strong> (ne kicketnutý).
+2. V chatu dostane 6místný kód (<code>kickMessage</code> + <code>verificationHintMessage</code>).
+3. Kód vyprší po <strong>10 minutách</strong>.
+4. Po úspěšném linku se hráč odblokuje.
 
-### 6.3 Link přes link kanál
-- Do kanálu `linkChannelId` stačí napsat kód.
-- Bot zprávu smaže (kvůli bezpečnosti) a pošle odpověď.
-- Pokud už je účet propojen, zobrazí se odpověď s `alreadyLinked*`.
+### Na Discordu
 
-### 6.4 Uložení dat
-- Linky se ukládají do `config/voidium/storage/links.json`.
+- Slash příkazy:
+   - <code>/link code:&lt;code&gt;</code>
+   - <code>/unlink</code>
+- Link kanál:
+   - Uživatel napíše kód do <code>linkChannelId</code>
+   - Bot zprávu smaže a odpoví (odpověď se po pár sekundách smaže)
+   - Volitelně přiřadí <code>linkedRoleId</code>
 
----
+Data se ukládají do <code>config/voidium/storage/links.json</code>.
 
-## 7) Chat Bridge
-### 7.1 MC → Discord
-- Odesílá zprávy z MC do `chatChannelId`.
-- Používá `minecraftToDiscordFormat`.
-- Pokud je nastaven `chatWebhookUrl`, použije webhook s avatarem podle skinu.
+## 💬 Chat bridge {#chat-bridge}
 
-### 7.2 Discord → MC
-- Zprávy z `chatChannelId` se posílají do MC.
-- Markdown se převádí na MC formát:
-  - `**bold**` → tučné
-  - `*italic*` → kurzíva
-  - `__underline__` → podtržení
-  - `~~strike~~` → přeškrtnutí
-- Unicode emoji se mapují na aliasy (`:smile:`) pro klient rendering.
+### MC → Discord
 
-### 7.3 Join/Leave/Death
-- Join/Leave/Death se posílají do Discordu jako zprávy.
+- Trigger: běžný chat + <code>/say</code>
+- Posílá se do <code>chatChannelId</code>
+- Použije <code>minecraftToDiscordFormat</code>
+- Pokud je <code>chatWebhookUrl</code> vyplněné, použije se webhook (avatar podle skinu)
 
----
+### Discord → MC
 
-## 8) Console streaming (logy)
-- Aktivuje se automaticky, pokud je `consoleChannelId` vyplněn.
-- Logy jsou posílány v batchi každé ~3 sekundy.
-- Používá ANSI barvy podle úrovně logu.
+- Zprávy z <code>chatChannelId</code> se forwardují do Minecraftu (když je chat bridge zapnutý)
+- Základní Markdown se převádí na MC formát (tučné/kurzíva/podtržení/přeškrtnutí)
+- Některé Unicode emoji se převádí na <code>:alias:</code>
 
----
+### Join / leave / death
 
-## 9) Status zprávy
-- Zprávy se posílají do `statusChannelId`.
-- Typicky se používají při startu/stopu serveru.
+Když je chat bridge zapnutý, join/leave/death zprávy se posílají do Discordu.
 
----
+## 🎫 Tickety {#tickets}
 
-## 10) Channel Topic Updater
-- Pokud je `enableTopicUpdate = true`, bot každých ~10 minut aktualizuje topic kanálu `chatChannelId`.
-- Používá `channelTopicFormat` a `uptimeFormat`.
+### Discord slash příkazy
 
----
+- <code>/ticket create reason:&lt;reason&gt;</code>
+- <code>/ticket close</code>
 
-## 11) Ban Synchronizace
-### 11.1 Discord → MC
-- Při banu na Discordu se banují všechny propojené MC účty.
+Vytváření ticketů má rate-limit (globální cooldown ~60 sekund), aby se zabránilo Discord 429.
 
-### 11.2 MC → Discord
-- Pokud je `syncBansMcToDiscord = true`, ban v MC banuje odpovídající Discord účet.
+### In-game
 
----
+- <code>/ticket &lt;reason&gt; &lt;message...&gt;</code>
+- <code>/reply &lt;message...&gt;</code>
 
-## 12) Ticket systém (Discord + MC)
-### 12.1 Discord slash příkazy
-- `/ticket create <reason>` – vytvoří ticket
-- `/ticket close` – uzavře ticket
+Detailní syntaxe je tady: <a href="Commands_CZ.html">Příkazy</a>.
 
-### 12.2 In-game příkaz
-- `/ticket <reason> <message>` – vytvoří ticket z MC
+### Transcripty
 
-### 12.3 Konfigurace: `tickets.json`
-- `enableTickets`
-- `ticketCategoryId`
-- `supportRoleId`
-- `ticketChannelTopic`
-- `maxTicketsPerUser`
-- `ticketWelcomeMessage`
-- `ticketCloseMessage`
-- `ticketLimitReachedMessage`
-- `enableTranscript` + `transcriptFormat` + `transcriptFilename`
+Pokud jsou transcripty zapnuté:
 
-### 12.4 Transcripty
-- Podporuje TXT i JSON.
-- Po uzavření ticketu se transcript nahraje do kanálu.
+- Voidium stáhne až ~100 posledních zpráv
+- Nahraje TXT/JSON soubor do ticket kanálu
+- A pak kanál pár sekund po uzavření smaže
 
----
+## 🧯 Řešení problémů {#troubleshooting}
 
-## 13) Troubleshooting
-**Bot se nespustí:**
-- Zkontroluj `botToken`.
-- Zkontroluj, že bot má povolené intents.
+**Bot se nespustí**
 
-**Chat Bridge nefunguje:**
-- Zkontroluj `enableChatBridge`.
-- Ověř `chatChannelId`.
+- Ověř <code>botToken</code> a <code>guildId</code>
+- Ověř, že jsou povolené intents v Developer Portalu
 
-**Linkování nefunguje:**
-- Zkontroluj `linkChannelId`.
-- Ověř, že kód není expirovaný.
+**Discord → MC zprávy nechodí**
 
-**Logy nechodí:**
-- Ověř `consoleChannelId`.
-- Bot musí mít práva posílat zprávy do kanálu.
+- <code>enableDiscord</code> a <code>enableChatBridge</code> musí být true
+- Zkontroluj <code>chatChannelId</code>
+- Ověř intent <code>MESSAGE_CONTENT</code>
 
-**Ticket se nevytvoří:**
-- Ověř `ticketCategoryId`.
-- Discord rate-limit: mezi tickety je 60s cooldown.
+**Linkování nefunguje**
 
----
+- Kód platí ~10 minut
+- Ověř práva v <code>linkChannelId</code> (send + delete)
 
-## 14) Bezpečnostní doporučení
-- Token nikdy nesdílej.
-- Link kanál drž soukromý.
-- Omez práva bota na minimum.
+**Ticket se nevytvoří**
 
----
+- Ověř <code>ticketCategoryId</code> + práva bota
+- Počítej s globálním cooldownem ~60s
 
-## 15) Související soubory
-- `config/voidium/discord.json`
-- `config/voidium/tickets.json`
-- `config/voidium/storage/links.json`
+## Další
+
+- <a href="Config_CZ.html">Konfigurace</a>
+- <a href="Commands_CZ.html">Příkazy</a>

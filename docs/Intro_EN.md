@@ -5,9 +5,46 @@ title: Introduction (EN)
 
 # 🚀 Introduction to Voidium
 
+<div class="hero">
+	<p><strong>VOIDIUM – INTELLIGENT SERVER CONTROL</strong> is an all‑in‑one management mod for NeoForge servers, with optional client features.</p>
+
+	<div class="note">
+		<strong>VERSION: 1.21.1+</strong><br>
+		Single jar for all supported Minecraft versions from 1.21.1.
+	</div>
+
+	<h2>Start here</h2>
+	<div class="card-grid">
+		<a class="card" href="Install_EN.html">
+			<div class="card-title"><span class="card-icon">🧰</span>Installation</div>
+			<div class="card-desc">Server + optional client</div>
+		</a>
+		<a class="card" href="QuickStart_EN.html">
+			<div class="card-title"><span class="card-icon">⚡</span>Quick Start</div>
+			<div class="card-desc">Minimal setup + verification</div>
+		</a>
+		<a class="card" href="Config_EN.html">
+			<div class="card-title"><span class="card-icon">🧩</span>Configuration</div>
+			<div class="card-desc">All config files overview</div>
+		</a>
+		<a class="card" href="Commands_EN.html">
+			<div class="card-title"><span class="card-icon">⌨️</span>Commands</div>
+			<div class="card-desc">In‑game commands & web link</div>
+		</a>
+		<a class="card" href="Discord_EN.html">
+			<div class="card-title"><span class="card-icon">🤖</span>Discord</div>
+			<div class="card-desc">Bot, chat bridge, tickets</div>
+		</a>
+		<a class="card" href="FutureFeatures_EN.html">
+			<div class="card-title"><span class="card-icon">🧭</span>Roadmap</div>
+			<div class="card-desc">Planned features</div>
+		</a>
+	</div>
+</div>
+
 ## What is Voidium?
 
-**VOIDIUM – INTELLIGENT SERVER CONTROL** is a comprehensive all-in-one solution for managing Minecraft servers built on NeoForge. The project combines advanced server tools with a modern web interface and deep Discord integration, enabling complete automation and monitoring of your server from a single place.
+Voidium combines advanced server tools with a modern web interface and deep Discord integration, enabling automation and monitoring from a single place.
 
 ### 🎯 Project goals
 
@@ -19,45 +56,40 @@ title: Introduction (EN)
 
 ## 📋 Compatibility
 
-- Voidium is built for NeoForge servers, with an optional client-side component.
-- For exact Minecraft/NeoForge compatibility, rely on `mods.toml` and the repository `README.md`.
+- Minecraft: 1.21.1+
+- NeoForge dedicated server (optional client-side component)
 - Recommended Java: 21+
 
 ### Requirements
 
 **Server:**
-- NeoForge 1.21.1 or newer
+- NeoForge for Minecraft 1.21.1+
 - Java 21+
 - Linux/Windows/macOS
 
 **Client (optional):**
-- NeoForge 1.21.1 with Voidium mod for advanced features (modern chat, emoji, DM)
+- NeoForge client (1.21.1+) with Voidium mod for advanced features (modern chat, emoji, history)
 
 ## 📚 Documentation structure
 
-Documentation is divided into the following sections:
-
-### 🟢 Getting Started
-- **[Installation](Install_EN.html)** – How to install Voidium on server and client
-- **[Quick Start](QuickStart_EN.html)** – First steps and basic configuration
-- **[Troubleshooting](Troubleshooting_EN.html)** – Common issues and solutions
-
-### 🔧 Modules
-- **[Discord](Discord_EN.html)** – Whitelist, chat bridge, tickets, statistics
-- **[Web Panel](Web_EN.html)** – Remote management via browser
-- **[Statistics](Stats_EN.html)** – Data collection and daily reports
-- **[Ranks](Ranks_EN.html)** – Automatic promotion based on playtime
-- **[Voting](Votes_EN.html)** – NuVotifier integration with offline queue
-- **[Tickets](Tickets_EN.html)** – Discord ticket system
-- **[Entity Cleaner](EntityCleaner_EN.html)** – Automatic world cleanup
-- **[Player List](PlayerList_EN.html)** – Custom TAB menu
-- **[Restarts](Restart_EN.html)** – Automatic and scheduled restarts
-- **[Announcements](Announcements_EN.html)** – Periodic broadcasts
-- **[Skin Restorer](SkinRestorer_EN.html)** – Skins for offline mode
-- **[Localization](Localization_EN.html)** – Custom translations
-
-### 🗺️ Roadmap
-- **[Future Features](FutureFeatures_EN.html)** – Planned updates and improvements
+<div class="section-grid">
+	<a class="section-card" href="Install_EN.html">
+		<div class="title">Getting started</div>
+		<div class="card-desc">Installation → Quick Start → Configuration</div>
+	</a>
+	<a class="section-card" href="Discord_EN.html">
+		<div class="title">Modules</div>
+		<div class="card-desc">Discord, Web, Stats, Votes, Ranks, …</div>
+	</a>
+	<a class="section-card" href="Troubleshooting_EN.html">
+		<div class="title">Troubleshooting</div>
+		<div class="card-desc">Common problems and fixes</div>
+	</a>
+	<a class="section-card" href="FutureFeatures_EN.html">
+		<div class="title">Roadmap</div>
+		<div class="card-desc">What’s planned next</div>
+	</a>
+</div>
 
 ## 🌟 Key features
 

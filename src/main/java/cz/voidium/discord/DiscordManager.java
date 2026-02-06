@@ -277,12 +277,8 @@ public class DiscordManager extends ListenerAdapter {
         // LOGGER.debug("Message received in channel {}, linkChannelId={}",
         // event.getChannel().getId(), linkChannelId);
 
-        if (linkChannelId == null || linkChannelId.isEmpty()) {
-            LOGGER.debug("Link channel ID is not configured, skipping message processing");
-            return;
-        }
-
-        if (event.getChannel().getId().equals(linkChannelId)) {
+        if (linkChannelId != null && !linkChannelId.isEmpty()
+                && event.getChannel().getId().equals(linkChannelId)) {
             String message = event.getMessage().getContentRaw().trim();
             long discordId = event.getAuthor().getIdLong();
 

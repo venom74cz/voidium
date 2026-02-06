@@ -5,9 +5,46 @@ title: Úvod (CZ)
 
 # 🚀 Úvod do Voidium
 
+<div class="hero">
+	<p><strong>VOIDIUM – INTELLIGENT SERVER CONTROL</strong> je all‑in‑one řešení pro správu NeoForge serveru, s volitelnými klientskými funkcemi.</p>
+
+	<div class="note">
+		<strong>VERSION: 1.21.1+</strong><br>
+		Jeden jar pro všechny podporované verze od 1.21.1.
+	</div>
+
+	<h2>Začít tady</h2>
+	<div class="card-grid">
+		<a class="card" href="Install_CZ.html">
+			<div class="card-title"><span class="card-icon">🧰</span>Instalace</div>
+			<div class="card-desc">Server + volitelný klient</div>
+		</a>
+		<a class="card" href="QuickStart_CZ.html">
+			<div class="card-title"><span class="card-icon">⚡</span>Rychlý start</div>
+			<div class="card-desc">Minimum setupu + ověření</div>
+		</a>
+		<a class="card" href="Config_CZ.html">
+			<div class="card-title"><span class="card-icon">🧩</span>Konfigurace</div>
+			<div class="card-desc">Přehled config souborů</div>
+		</a>
+		<a class="card" href="Commands_CZ.html">
+			<div class="card-title"><span class="card-icon">⌨️</span>Příkazy</div>
+			<div class="card-desc">In‑game příkazy + web link</div>
+		</a>
+		<a class="card" href="Discord_CZ.html">
+			<div class="card-title"><span class="card-icon">🤖</span>Discord</div>
+			<div class="card-desc">Bot, chat bridge, tickety</div>
+		</a>
+		<a class="card" href="FutureFeatures_CZ.html">
+			<div class="card-title"><span class="card-icon">🧭</span>Roadmapa</div>
+			<div class="card-desc">Plánované funkce</div>
+		</a>
+	</div>
+</div>
+
 ## Co je Voidium?
 
-**VOIDIUM – INTELLIGENT SERVER CONTROL** je komplexní all-in-one řešení pro správu Minecraft serverů postavených na NeoForge. Projekt kombinuje pokročilé serverové nástroje s moderním webovým rozhraním a hlubokou Discord integrací, což umožňuje kompletní automatizaci a monitoring vašeho serveru z jednoho místa.
+Voidium kombinuje pokročilé serverové nástroje s moderním webovým rozhraním a hlubokou Discord integrací, takže umožňuje automatizaci a monitoring z jednoho místa.
 
 ### 🎯 Hlavní cíle projektu
 
@@ -19,45 +56,40 @@ title: Úvod (CZ)
 
 ## 📋 Kompatibilita
 
-- Voidium je vyvíjen pro NeoForge (server) a volitelně i klient.
-- Přesnou kompatibilitu (Minecraft/NeoForge) ber vždy z `mods.toml` a z `README.md` v repozitáři.
+- Minecraft: 1.21.1+
+- NeoForge dedikovaný server (volitelně i klient)
 - Doporučená Java: 21+
 
 ### Požadavky
 
 **Server:**
-- NeoForge 1.21.1 nebo novější
+- NeoForge pro Minecraft 1.21.1+
 - Java 21+
 - Linux/Windows/macOS
 
 **Client (volitelný):**
-- NeoForge 1.21.1 s Voidium modem pro pokročilé funkce (moderní chat, emoji, DM)
+- NeoForge klient (1.21.1+) s Voidium modem pro pokročilé funkce (moderní chat, emoji, historie)
 
 ## 📚 Struktura dokumentace
 
-Dokumentace je rozdělena do následujících sekcí:
-
-### 🟢 Začínáme (Getting Started)
-- **[Instalace](Install_CZ.html)** – Jak nainstalovat Voidium na server a klienta
-- **[Rychlý start](QuickStart_CZ.html)** – První kroky a základní konfigurace
-- **[Řešení problémů](Troubleshooting_CZ.html)** – Časté problémy a jejich řešení
-
-### 🔧 Moduly (Modules)
-- **[Discord](Discord_CZ.html)** – Whitelist, chat bridge, tickety, statistiky
-- **[Web Panel](Web_CZ.html)** – Vzdálená správa přes prohlížeč
-- **[Statistiky](Stats_CZ.html)** – Sběr dat a denní reporty
-- **[Ranky](Ranks_CZ.html)** – Automatické povyšování za odehraný čas
-- **[Hlasování](Votes_CZ.html)** – NuVotifier integrace s offline frontou
-- **[Tickety](Tickets_CZ.html)** – Discord ticket systém
-- **[Entity Cleaner](EntityCleaner_CZ.html)** – Automatické čištění světa
-- **[Player List](PlayerList_CZ.html)** – Custom TAB menu
-- **[Restarty](Restart_CZ.html)** – Automatické a plánované restarty
-- **[Oznámení](Announcements_CZ.html)** – Pravidelné broadcasty
-- **[Skin Restorer](SkinRestorer_CZ.html)** – Skinky pro offline mode
-- **[Lokalizace](Localization_CZ.html)** – Vlastní překlady
-
-### 🗺️ Roadmap
-- **[Budoucí funkce](FutureFeatures_CZ.html)** – Plánované novinky a vylepšení
+<div class="section-grid">
+	<a class="section-card" href="Install_CZ.html">
+		<div class="title">Začínáme</div>
+		<div class="card-desc">Instalace → Rychlý start → Konfigurace</div>
+	</a>
+	<a class="section-card" href="Discord_CZ.html">
+		<div class="title">Moduly</div>
+		<div class="card-desc">Discord, Web, Stats, Votes, Ranks, …</div>
+	</a>
+	<a class="section-card" href="Troubleshooting_CZ.html">
+		<div class="title">Řešení problémů</div>
+		<div class="card-desc">Nejčastější chyby a opravy</div>
+	</a>
+	<a class="section-card" href="FutureFeatures_CZ.html">
+		<div class="title">Roadmapa</div>
+		<div class="card-desc">Co se chystá dál</div>
+	</a>
+</div>
 
 ## 🌟 Klíčové funkce
 
@@ -67,23 +99,23 @@ Dokumentace je rozdělena do následujících sekcí:
 ✅ Webhook chat s avatary hráčů  
 ✅ Slash příkazy (`/link`, `/unlink`, `/ticket`)  
 ✅ Live status embed  
-✅ Console streaming  
-✅ Ticket system  
+✅ Streamování konzole  
+✅ Ticket systém  
 ✅ Denní statistické reporty  
 
 ### Server management
 ✅ Web control panel (HTTP API)  
 ✅ Automatické restarty (fixed/interval/delayed)  
 ✅ Entity cleaner s whitelistem  
-✅ Auto-rank system  
-✅ TPS + paměť monitoring  
-✅ Vote rewards (NuVotifier)  
+✅ Auto-rank systém  
+✅ TPS + monitoring paměti  
+✅ Vote odměny (NuVotifier)  
 ✅ Skin restorer pro offline mode  
 
 ### Client-side (volitelné)
 ✅ Moderní Discord-style chat  
 ✅ Emoji rendering  
-✅ Chat history  
+✅ Historie chatu  
 
 ## 🔗 Odkazy
 
