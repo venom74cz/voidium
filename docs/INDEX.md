@@ -1,10 +1,26 @@
 ---
 layout: default
-title: Voidium Wiki
+title: Voidium Documentation
 ---
 
-# Voidium Wiki
+# Voidium Documentation
 
-Choose language / Vyber jazyk:
-- [CZ](INDEX_CZ.md)
-- [EN](INDEX_EN.md)
+<div class="hero">
+  <p>Choose your language / Vyber si jazyk:</p>
+  <div class="card-grid">
+    <a class="card" href="INDEX_CZ.html">
+      <strong>Čeština</strong>
+      <div>Kompletní CZ dokumentace</div>
+    </a>
+    <a class="card" href="INDEX_EN.html">
+      <strong>English</strong>
+      <div>Full EN documentation</div>
+    </a>
+  </div>
+</div>
+
+---
+
+## Quick links
+- [CZ index](INDEX_CZ.html)
+- [EN index](INDEX_EN.html)
