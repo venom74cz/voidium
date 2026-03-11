@@ -32,7 +32,7 @@ Hlavní rozcestník bude mít výběr jazyka: `docs/wiki/INDEX.md` → `INDEX_CZ
 5. Moduly (detailní technický popis)
    - Discord integrace
    - Ticket systém
-   - Web panel
+   - Web panel (🚧 WIP – being redesigned)
    - Auto-rank
    - Stats & reporty
    - Vote (NuVotifier)
@@ -66,3 +66,9 @@ Hlavní rozcestník bude mít výběr jazyka: `docs/wiki/INDEX.md` → `INDEX_CZ
 - Vytvořit detailní WIKI pro Discord modul:
    - CZ: [docs/wiki/Discord_CZ.md](wiki/Discord_CZ.md)
    - EN: [docs/wiki/Discord_EN.md](wiki/Discord_EN.md)
+
+## 4) Nové v 2.4
+- Chat: plná RGB podpora, tooltip na rank prefix/suffix, auto-reset barev
+- Discord: rename on link (`renameOnLink` toggle)
+- Web panel: starý odstraněn, nový je WIP
+- `/voidium reload`: plně restartuje RankManager + StatsManager

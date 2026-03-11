@@ -152,12 +152,6 @@ public class Voidium {
                         .sendStatusMessage(cz.voidium.config.DiscordConfig.getInstance().getStatusMessageStarted());
             }
 
-            // Start Web Manager
-            if (gc.isEnableWeb()) {
-                cz.voidium.web.WebManager.getInstance().setServer(event.getServer());
-                cz.voidium.web.WebManager.getInstance().start();
-            }
-
             // Start Stats Manager
             if (gc.isEnableStats()) {
                 cz.voidium.stats.StatsManager.getInstance().start(event.getServer());
@@ -225,7 +219,7 @@ public class Voidium {
             // Oznámení pro OPs
             if (announcementManager != null) {
                 announcementManager.broadcastToOps("&aVOIDIUM - INTELLIGENT SERVER CONTROL loaded and running!");
-                announcementManager.broadcastToOps("&eVersion: 2.2.4");
+                announcementManager.broadcastToOps("&eVersion: 2.4");
                 announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
             }
         } catch (Exception e) {
@@ -273,7 +267,6 @@ public class Voidium {
         cz.voidium.discord.DiscordManager.getInstance()
                 .sendStatusMessage(cz.voidium.config.DiscordConfig.getInstance().getStatusMessageStopping());
 
-        cz.voidium.web.WebManager.getInstance().stop();
         cz.voidium.stats.StatsManager.getInstance().stop();
         cz.voidium.ranks.RankManager.getInstance().stop();
     }

@@ -43,6 +43,7 @@ public class DiscordConfig {
 
     // Role settings
     private String linkedRoleId = "";
+    private boolean renameOnLink = false;
     private java.util.Map<String, RoleStyle> rolePrefixes = new java.util.HashMap<>(); // Discord Role ID ->
                                                                                        // Prefix/Suffix/Color
     // Color format: true = Hex codes (&#RRGGBB) for Voidium clients, false = MC
@@ -191,6 +192,10 @@ public class DiscordConfig {
 
     public String getLinkedRoleId() {
         return linkedRoleId;
+    }
+
+    public boolean isRenameOnLink() {
+        return renameOnLink;
     }
 
     public java.util.Map<String, RoleStyle> getRolePrefixes() {

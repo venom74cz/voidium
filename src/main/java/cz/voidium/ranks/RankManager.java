@@ -2,6 +2,8 @@ package cz.voidium.ranks;
 
 import cz.voidium.config.RanksConfig;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
@@ -71,6 +73,13 @@ public class RankManager {
         if (!config.isEnableAutoRanks())
             return;
 
+        // If PlayerListManager is active, it handles prefix/suffix via scoreboard
+        // teams.
+        // Avoid duplicating them in the display name.
+        if (cz.voidium.config.GeneralConfig.getInstance().isEnablePlayerList()) {
+            return;
+        }
+
         int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
         double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
         String uuid = player.getUUID().toString();
@@ -112,16 +121,52 @@ public class RankManager {
         }
 
         Component currentName = event.getDisplayname();
-        Component finalName = currentName;
+
+        // Build prefix/suffix as siblings on empty root.
+        // MC wraps the root with SHOW_ENTITY hover, but siblings keep their own
+        // HoverEvent.
+        MutableComponent finalName = Component.empty();
+        boolean hasChanges = false;
+
+        // Get configurable tooltip texts from RanksConfig
+        RanksConfig ranksConfig = RanksConfig.getInstance();
+        String playedFormat = ranksConfig != null ? ranksConfig.getTooltipPlayed() : "§7Played: §f%hours%h";
+        String requiredFormat = ranksConfig != null ? ranksConfig.getTooltipRequired() : "§7Required: §f%hours%h";
 
         if (bestPrefix != null) {
-            finalName = Component.literal(formatColors(bestPrefix.value)).append(finalName);
-        }
-        if (bestSuffix != null) {
-            finalName = finalName.copy().append(Component.literal(formatColors(bestSuffix.value)));
+            String playedText = playedFormat.replace("%hours%", String.format("%.1f", hoursPlayed));
+            String requiredText = requiredFormat.replace("%hours%", String.valueOf(bestPrefix.hours));
+            Component tooltip = Component.literal(playedText)
+                    .append(Component.literal("\n" + requiredText));
+
+            MutableComponent prefixComponent = Component.literal(formatColors(bestPrefix.value))
+                    .withStyle(style -> style.withHoverEvent(
+                            new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip)));
+
+            finalName.append(prefixComponent);
+            hasChanges = true;
         }
 
-        event.setDisplayname(finalName);
+        // Append the original player name as sibling (inherits root's SHOW_ENTITY)
+        finalName.append(currentName.copy());
+
+        if (bestSuffix != null) {
+            String playedText = playedFormat.replace("%hours%", String.format("%.1f", hoursPlayed));
+            String requiredText = requiredFormat.replace("%hours%", String.valueOf(bestSuffix.hours));
+            Component suffixTooltip = Component.literal(playedText)
+                    .append(Component.literal("\n" + requiredText));
+
+            MutableComponent suffixComponent = Component.literal(formatColors(bestSuffix.value))
+                    .withStyle(style -> style.withHoverEvent(
+                            new HoverEvent(HoverEvent.Action.SHOW_TEXT, suffixTooltip)));
+
+            finalName.append(suffixComponent);
+            hasChanges = true;
+        }
+
+        if (hasChanges) {
+            event.setDisplayname(finalName);
+        }
     }
 
     private void checkRanks() {

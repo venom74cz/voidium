@@ -54,20 +54,13 @@ _Next-generation server management made with AI_
 
 ## 🌐 Web Control Panel
 
-*   **Full Configuration Management**: Edit ALL mod configs (Discord, Votes, Restarts, Ranks, Tickets, Stats, PlayerList, EntityCleaner) directly from your browser
-*   **Player Management**: View online and offline players, kick/ban users, and manage Discord links
-*   **Live Statistics**: Real-time graphs showing player count and TPS over 24 hours
-*   **Localization**: Fully translated into English and Czech with "Reset to Default" functionality
-*   **Secure Access**: Token-based authentication via console link
-*   **Smart Editor**: User-friendly form-based editor with field descriptions and validation
-*   **Dynamic Updates**: Add/remove list items, manage complex configurations without file editing
-*   **🎨 Enhanced UX**: Collapsible config sections, sticky save bar, smooth animations
-*   **🎭 Discord Role Prefix Designer**: Live color preview, hex color picker, validation, templates, copy/paste between roles
+> 🚧 **Work In Progress** – The legacy web panel has been removed. A modern replacement with a completely redesigned UI is currently being developed.
 
 ## 👾 Discord Integration
 
 *   **Whitelist System**: Require players to link their Discord account to join (configurable max accounts per Discord)
 *   **Account Linking**: Secure code-based verification with automatic role assignment
+*   **Rename on Link**: Optionally rename Discord nickname to in-game name upon linking (`renameOnLink` toggle)
 *   **Smart Link Channel**: Responds to any message with link status, automatically processes verification codes
 *   **Chat Bridge**: Two-way chat synchronization with emoji translation (:smile: -> 😄) and markdown formatting
 *   **Smart Avatars**: Webhooks automatically resolve and display the correct player skin (even for offline-mode/restored skins)
@@ -106,6 +99,8 @@ _Next-generation server management made with AI_
 *   **Progress Tracking**: All player achievements automatically saved and persistent
 *   **Custom Rewards**: Executes commands (e.g., permission group changes) upon promotion
 *   **Flexible Configuration**: Support for prefix/suffix ranks with custom values
+*   **Hover Tooltips**: Rank prefix/suffix shows played hours and required hours on hover
+*   **Full RGB Colors**: Chat supports `&#RRGGBB` hex colors everywhere with automatic color reset
 
 ## 🎁 Vote Rewards (NuVotifier)
 
@@ -137,7 +132,7 @@ _Next-generation server management made with AI_
 ## ✅ Commands
 
 ### Operators
-`/voidium reload` · `/voidium restart <minutes>` · `/voidium cancel` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium config` · `/voidium skin <player>` · `/voidium votes pending [player]` · `/voidium votes clear` · `/voidium web` · `/voidium clear` · `/voidium clear items|mobs|xp|arrows` · `/voidium clear preview`
+`/voidium reload` · `/voidium restart <minutes>` · `/voidium cancel` · `/voidium announce <message>` · `/voidium players` · `/voidium memory` · `/voidium config` · `/voidium skin <player>` · `/voidium votes pending [player]` · `/voidium votes clear` · `/voidium clear` · `/voidium clear items|mobs|xp|arrows` · `/voidium clear preview`
 
 ### Players
 `/voidium status` · `/link` · `/ticket <reason> <message>`

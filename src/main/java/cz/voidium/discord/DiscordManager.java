@@ -200,6 +200,18 @@ public class DiscordManager extends ListenerAdapter {
 
                 event.reply(message).setEphemeral(true).queue();
 
+                // Rename on Discord if enabled
+                if (config.isRenameOnLink() && event.getGuild() != null) {
+                    final String finalPlayerName = playerName;
+                    event.getGuild().retrieveMemberById(discordId).queue(member -> {
+                        if (member != null) {
+                            member.modifyNickname(finalPlayerName).queue(
+                                    s -> LOGGER.info("Renamed {} to {}", member.getUser().getAsTag(), finalPlayerName),
+                                    e -> LOGGER.warn("Cannot rename {}: {}", member.getUser().getAsTag(),
+                                            e.getMessage()));
+                        }
+                    }, e -> LOGGER.warn("Cannot retrieve member {}: {}", discordId, e.getMessage()));
+                }
             } else {
                 event.reply(DiscordConfig.getInstance().getAlreadyLinkedMessage()
                         .replace("%max%", String.valueOf(DiscordConfig.getInstance().getMaxAccountsPerDiscord())))
@@ -334,6 +346,26 @@ public class DiscordManager extends ListenerAdapter {
 
                 event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + successMsg)
                         .queue(msg -> msg.delete().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS));
+
+                // Rename on Discord if enabled
+                if (config.isRenameOnLink() && event.getGuild() != null) {
+                    String playerName = playerUuid.toString();
+                    if (server != null) {
+                        var player = server.getPlayerList().getPlayer(playerUuid);
+                        if (player != null) {
+                            playerName = player.getName().getString();
+                        }
+                    }
+                    final String finalName = playerName;
+                    event.getGuild().retrieveMemberById(discordId).queue(member -> {
+                        if (member != null) {
+                            member.modifyNickname(finalName).queue(
+                                    s -> LOGGER.info("Renamed {} to {}", member.getUser().getAsTag(), finalName),
+                                    e -> LOGGER.warn("Cannot rename {}: {}", member.getUser().getAsTag(),
+                                            e.getMessage()));
+                        }
+                    }, e -> LOGGER.warn("Cannot retrieve member {}: {}", discordId, e.getMessage()));
+                }
 
                 // Assign Role
                 String roleId = DiscordConfig.getInstance().getLinkedRoleId();

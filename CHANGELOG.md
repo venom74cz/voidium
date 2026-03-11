@@ -1,5 +1,34 @@
 # Voidium Changelog
 
+## [2.4] - 2026-03-11
+
+### 🎨 Chat System Overhaul
+- **Full RGB Color Support**: Chat now supports `&#RRGGBB` hex colors everywhere, not just on lines with emojis.
+- **Recursive Component Parsing**: Refactored `ChatColorParser` to walk the Component tree recursively, preserving existing styles (HoverEvent, ClickEvent).
+- **§ Code Support**: Minecraft's `§` color codes are now normalized and rendered correctly alongside `&` codes.
+- **Color Bleeding Fix**: Automatic color reset before message text prevents rank prefix colors from leaking into player messages.
+
+### 🏅 Rank Tooltip
+- **Hover Tooltip on Rank Prefix/Suffix**: Hovering over a rank prefix or suffix now shows played hours and required hours.
+- **Configurable Tooltip Text**: New `tooltipPlayed` and `tooltipRequired` fields in `ranks.json` (default EN, overridable).
+- **Promotion Message**: Default text changed from Czech to English.
+
+### 👾 Discord Rename on Link
+- **Nickname Rename**: After linking a Minecraft account, the player's Discord nickname is automatically changed to their in-game name.
+- **Configurable**: New `renameOnLink` toggle in `discord.json` (default: `false`).
+- Works on both `/link` slash command and link channel message verification.
+
+### 🌐 Web Panel
+- **Old Web Editor Removed**: The legacy `WebManager` (4734 lines) has been fully removed.
+- **New Web Editor**: 🚧 Work In Progress – a modern replacement is being developed.
+
+### 🔄 Reload Improvements
+- **`/voidium reload`**: Now fully restarts `RankManager` and `StatsManager` in addition to all configs, Discord, PlayerList, VoteManager, and EntityCleaner.
+- `/voidium web` command removed (web panel is WIP).
+
+### 📊 Player List
+- **Time-Based Ranks in TAB**: Player list now checks playtime and displays matching rank prefixes/suffixes with hover tooltips.
+
 ## [2.3.5] - 2026-02-06
 
 ### 💬 Discord Bridge Fix

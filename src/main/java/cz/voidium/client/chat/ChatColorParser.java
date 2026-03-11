@@ -4,6 +4,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.contents.PlainTextContents;
+import net.minecraft.network.chat.contents.TranslatableContents;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,11 +15,16 @@ import java.util.regex.Pattern;
 /**
  * Parses chat messages for RGB/Hex color codes and Discord emojis.
  * 
+ * Recursively walks the Component tree to preserve existing Style properties
+ * (HoverEvent, ClickEvent, etc.) while parsing color codes and emojis.
+ * 
  * Supported color formats:
  * - &#RRGGBB or &#RGB (short form) - Standard hex format
+ * - §#RRGGBB or §#RGB - Section sign hex format
  * - <#RRGGBB> or <#RGB> - Bracketed hex format
- * - &x&R&R&G&G&B&B - Spigot/Bukkit format
+ * - &x&R&R&G&G&B&B or §x§R§R§G§G§B§B - Spigot/Bukkit format
  * - Minecraft color codes (&0-9, &a-f, &l, &m, &n, &o, &r)
+ * - Minecraft color codes (§0-9, §a-f, §l, §m, §n, §o, §r)
  * 
  * Emoji format:
  * - :emoji_name: - Discord-style emoji (rendered as textures via EmojiManager)
@@ -61,28 +68,148 @@ public class ChatColorParser {
 
     /**
      * Parse a Component and transform any color codes and emojis.
+     * Recursively walks the Component tree to preserve structure and styles.
      * Returns the original component if no transformation needed.
      */
     public static Component parseMessage(Component original) {
-        String plainText = original.getString();
-
-        // Quick check - if no special characters, return original
-        if (!containsColorCodes(plainText) && !containsEmoji(plainText)) {
+        // Quick check - if nothing needs processing, return original
+        if (!needsProcessing(original)) {
             return original;
         }
 
-        // Parse and build new component
-        return buildStyledComponent(plainText);
+        // Recursively process the component tree
+        return processComponent(original);
     }
 
     /**
-     * Check if text contains any color code patterns.
+     * Recursively check if any part of the Component tree needs processing.
+     */
+    private static boolean needsProcessing(Component component) {
+        // Check this node
+        if (component.getContents() instanceof PlainTextContents.LiteralContents literal) {
+            String text = literal.text();
+            if (containsColorCodes(text) || containsEmoji(text)) {
+                return true;
+            }
+        } else if (component.getContents() instanceof TranslatableContents translatable) {
+            for (Object arg : translatable.getArgs()) {
+                if (arg instanceof Component c && needsProcessing(c)) {
+                    return true;
+                }
+            }
+        }
+
+        // Check siblings
+        for (Component sibling : component.getSiblings()) {
+            if (needsProcessing(sibling)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Recursively process a Component, preserving tree structure and styles.
+     */
+    private static MutableComponent processComponent(Component component) {
+        Style originalStyle = component.getStyle();
+        MutableComponent result;
+
+        if (component.getContents() instanceof PlainTextContents.LiteralContents literal) {
+            String text = literal.text();
+            // Normalize § to & for unified processing
+            String normalized = text.replace('§', '&');
+
+            if (containsColorCodes(normalized) || containsEmoji(normalized)) {
+                // Parse into styled segments
+                normalized = normalizeHexFormats(normalized);
+                List<StyledSegment> segments = parseSegments(normalized);
+
+                result = Component.empty();
+                for (StyledSegment segment : segments) {
+                    Style mergedStyle = mergeStyles(originalStyle, segment.style);
+                    result.append(Component.literal(segment.text).withStyle(mergedStyle));
+                }
+            } else if (!text.isEmpty()) {
+                result = Component.literal(text).withStyle(originalStyle);
+            } else {
+                result = Component.empty().withStyle(originalStyle);
+            }
+
+        } else if (component.getContents() instanceof TranslatableContents translatable) {
+            // Process translatable args recursively
+            Object[] args = translatable.getArgs();
+            Object[] newArgs = new Object[args.length];
+            boolean changed = false;
+
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof Component c) {
+                    if (needsProcessing(c)) {
+                        newArgs[i] = processComponent(c);
+                        changed = true;
+                    } else {
+                        newArgs[i] = args[i];
+                    }
+                } else {
+                    newArgs[i] = args[i];
+                }
+            }
+
+            if (changed) {
+                result = Component.translatable(translatable.getKey(), newArgs).withStyle(originalStyle);
+            } else {
+                result = component.plainCopy();
+                result.withStyle(originalStyle);
+            }
+
+        } else {
+            // Other content types (score, keybind, etc.) - keep as-is
+            result = component.plainCopy();
+            result.withStyle(originalStyle);
+        }
+
+        // Process siblings recursively
+        for (Component sibling : component.getSiblings()) {
+            if (needsProcessing(sibling)) {
+                result.append(processComponent(sibling));
+            } else {
+                result.append(sibling);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Merge styles: keeps parsed color/formatting, preserves original interactive
+     * properties.
+     * This ensures HoverEvent, ClickEvent, and Insertion from the parent are not
+     * lost.
+     */
+    private static Style mergeStyles(Style original, Style parsed) {
+        Style result = parsed;
+        if (original.getHoverEvent() != null && result.getHoverEvent() == null) {
+            result = result.withHoverEvent(original.getHoverEvent());
+        }
+        if (original.getClickEvent() != null && result.getClickEvent() == null) {
+            result = result.withClickEvent(original.getClickEvent());
+        }
+        if (original.getInsertion() != null && result.getInsertion() == null) {
+            result = result.withInsertion(original.getInsertion());
+        }
+        return result;
+    }
+
+    /**
+     * Check if text contains any color code patterns (& or § based).
      */
     private static boolean containsColorCodes(String text) {
-        return text.contains("&#") ||
+        return text.contains("&#") || text.contains("§#") ||
                 text.contains("<#") ||
-                text.contains("&x") ||
-                MINECRAFT_COLOR_PATTERN.matcher(text).find();
+                text.contains("&x") || text.contains("§x") ||
+                MINECRAFT_COLOR_PATTERN.matcher(text).find() ||
+                Pattern.compile("§([0-9a-fk-or])", Pattern.CASE_INSENSITIVE).matcher(text).find();
     }
 
     /**
@@ -90,31 +217,6 @@ public class ChatColorParser {
      */
     private static boolean containsEmoji(String text) {
         return text.contains(":") && EMOJI_PATTERN.matcher(text).find();
-    }
-
-    /**
-     * Build a styled MutableComponent from text with color codes and emojis.
-     */
-    private static MutableComponent buildStyledComponent(String text) {
-        // First, normalize all hex formats to a unified internal format
-        text = normalizeHexFormats(text);
-
-        // Parse into segments with their styles
-        List<StyledSegment> segments = parseSegments(text);
-
-        // Build the final component
-        MutableComponent result = Component.empty();
-        for (StyledSegment segment : segments) {
-            if (segment.isEmoji) {
-                // For emoji, we keep the :name: format - rendering is handled by EmojiManager
-                // in the font renderer mixin
-                result.append(Component.literal(segment.text).withStyle(segment.style));
-            } else {
-                result.append(Component.literal(segment.text).withStyle(segment.style));
-            }
-        }
-
-        return result;
     }
 
     /**

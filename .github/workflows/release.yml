@@ -99,6 +99,20 @@ jobs:
           files: build/libs/*.jar
           body_path: release_notes.md
 
+      - name: Upload to CurseForge
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: itsmeow/curseforge-upload@v3
+        with:
+          token: ${{ secrets.CF_API_TOKEN }}
+          project_id: 1342197
+          game_endpoint: minecraft
+          file_path: build/libs/voidium-${{ env.VERSION }}.jar
+          display_name: Voidium ${{ env.VERSION }}
+          changelog: release_notes.md
+          changelog_type: markdown
+          game_versions: "Minecraft 1.21:1.21.1,Minecraft 1.21:1.21.2,Minecraft 1.21:1.21.3,Minecraft 1.21:1.21.4,Minecraft 1.21:1.21.5,Minecraft 1.21:1.21.6,Minecraft 1.21:1.21.7,Minecraft 1.21:1.21.8,Minecraft 1.21:1.21.9,Minecraft 1.21:1.21.10,Minecraft 1.21:1.21.11,Java 21,NeoForge"
+          release_type: release
+
       - name: Notify Discord
         if: steps.check_tag.outputs.exists == 'false'
         env:

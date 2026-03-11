@@ -277,9 +277,54 @@ public class PlayerListManager {
 
             // 2. Add time-based ranks from RanksConfig
             if (ranksConfig != null && ranksConfig.getRanks() != null) {
-                // TODO: Check player's actual playtime when playtime tracking is implemented
-                // For now, we can apply all ranks or skip this
-                // Example: if player has X hours, add corresponding rank prefix/suffix
+                int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+                double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
+
+                RanksConfig.RankDefinition bestTimePrefix = null;
+                RanksConfig.RankDefinition bestTimeSuffix = null;
+
+                for (RanksConfig.RankDefinition rank : ranksConfig.getRanks()) {
+                    if (hoursPlayed < rank.hours)
+                        continue;
+
+                    // Check custom conditions
+                    boolean meetsConditions = true;
+                    if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
+                        String uuid = player.getUUID().toString();
+                        for (RanksConfig.CustomCondition cond : rank.customConditions) {
+                            if (!cz.voidium.ranks.ProgressTracker.getInstance()
+                                    .meetsCondition(uuid, cond.type, cond.count)) {
+                                meetsConditions = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!meetsConditions)
+                        continue;
+
+                    if ("PREFIX".equalsIgnoreCase(rank.type)) {
+                        if (bestTimePrefix == null || rank.hours > bestTimePrefix.hours)
+                            bestTimePrefix = rank;
+                    } else if ("SUFFIX".equalsIgnoreCase(rank.type)) {
+                        if (bestTimeSuffix == null || rank.hours > bestTimeSuffix.hours)
+                            bestTimeSuffix = rank;
+                    }
+                }
+
+                if (bestTimePrefix != null) {
+                    String translatedPrefix = translateColorCodes(bestTimePrefix.value);
+                    allPrefixes.append(translatedPrefix);
+                    if (!translatedPrefix.endsWith(" ")) {
+                        allPrefixes.append(" ");
+                    }
+                }
+                if (bestTimeSuffix != null) {
+                    String translatedSuffix = translateColorCodes(bestTimeSuffix.value);
+                    if (!translatedSuffix.startsWith(" ")) {
+                        allSuffixes.append(" ");
+                    }
+                    allSuffixes.append(translatedSuffix);
+                }
             }
 
             // 3. Default prefix/suffix (applied if nothing else)
