@@ -72,11 +72,16 @@ public class RanksConfig {
     public static void init(Path configDir) {
         Path configPath = configDir.resolve("ranks.json");
         if (Files.exists(configPath)) {
-            try (Reader reader = Files.newBufferedReader(configPath)) {
-                instance = GSON.fromJson(reader, RanksConfig.class);
+            try {
+                instance = ConfigFileHelper.loadJson(configPath, GSON, RanksConfig.class);
+                if (instance == null) {
+                    instance = new RanksConfig(configPath);
+                }
                 instance.configPath = configPath;
-                if (instance.ranks == null)
-                    instance.ranks = new ArrayList<>();
+                boolean migrated = instance.normalize();
+                if (migrated) {
+                    instance.save();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 instance = new RanksConfig(configPath);
@@ -85,6 +90,49 @@ public class RanksConfig {
             instance = new RanksConfig(configPath);
             instance.save();
         }
+    }
+
+    private boolean normalize() {
+        boolean changed = false;
+        if (checkIntervalMinutes < 1) {
+            checkIntervalMinutes = 5;
+            changed = true;
+        }
+        if (ranks == null) {
+            ranks = new ArrayList<>();
+            changed = true;
+        }
+        for (RankDefinition rank : ranks) {
+            if (rank.customConditions == null) {
+                rank.customConditions = new ArrayList<>();
+                changed = true;
+            }
+            if (rank.type == null || rank.type.isBlank()) {
+                rank.type = "PREFIX";
+                changed = true;
+            }
+            if (rank.value == null) {
+                rank.value = "";
+                changed = true;
+            }
+            if (rank.hours < 0) {
+                rank.hours = 0;
+                changed = true;
+            }
+        }
+        if (promotionMessage == null || promotionMessage.isBlank()) {
+            promotionMessage = "&aCongratulations! You have earned the rank &b%rank%&a!";
+            changed = true;
+        }
+        if (tooltipPlayed == null || tooltipPlayed.isBlank()) {
+            tooltipPlayed = "§7Played: §f%hours%h";
+            changed = true;
+        }
+        if (tooltipRequired == null || tooltipRequired.isBlank()) {
+            tooltipRequired = "§7Required: §f%hours%h";
+            changed = true;
+        }
+        return changed;
     }
 
     public void save() {
@@ -117,6 +165,30 @@ public class RanksConfig {
 
     public String getTooltipRequired() {
         return tooltipRequired != null ? tooltipRequired : "§7Required: §f%hours%h";
+    }
+
+    public void setEnableAutoRanks(boolean enableAutoRanks) {
+        this.enableAutoRanks = enableAutoRanks;
+    }
+
+    public void setCheckIntervalMinutes(int checkIntervalMinutes) {
+        this.checkIntervalMinutes = Math.max(1, checkIntervalMinutes);
+    }
+
+    public void setRanks(List<RankDefinition> ranks) {
+        this.ranks = ranks == null ? new ArrayList<>() : new ArrayList<>(ranks);
+    }
+
+    public void setPromotionMessage(String promotionMessage) {
+        this.promotionMessage = promotionMessage;
+    }
+
+    public void setTooltipPlayed(String tooltipPlayed) {
+        this.tooltipPlayed = tooltipPlayed;
+    }
+
+    public void setTooltipRequired(String tooltipRequired) {
+        this.tooltipRequired = tooltipRequired;
     }
 
     // Apply locale preset

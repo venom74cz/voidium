@@ -68,6 +68,14 @@ public class StatsConfig {
     public String getReportPeakLabel() { return reportPeakLabel; }
     public String getReportAverageLabel() { return reportAverageLabel; }
     public String getReportFooter() { return reportFooter; }
+
+    public void setEnableStats(boolean enableStats) { this.enableStats = enableStats; }
+    public void setReportChannelId(String reportChannelId) { this.reportChannelId = reportChannelId; }
+    public void setReportTime(String reportTime) { this.reportTime = reportTime; }
+    public void setReportTitle(String reportTitle) { this.reportTitle = reportTitle; }
+    public void setReportPeakLabel(String reportPeakLabel) { this.reportPeakLabel = reportPeakLabel; }
+    public void setReportAverageLabel(String reportAverageLabel) { this.reportAverageLabel = reportAverageLabel; }
+    public void setReportFooter(String reportFooter) { this.reportFooter = reportFooter; }
     
     // Apply locale preset
     public void applyLocale(String locale) {

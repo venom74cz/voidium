@@ -85,64 +85,7 @@ public class VoteManager {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
-        if (pendingQueue == null) {
-            return;
-        }
-
-        String username = player.getGameProfile().getName();
-        
-        // Check for pending votes
-        if (!pendingQueue.hasPendingVotes(username)) {
-            return;
-        }
-
-        int count = pendingQueue.getPendingCount(username);
-        LOGGER.info("Player {} logged in with {} pending vote(s)", username, count);
-        
-        // Deliver pending votes
-        server.execute(() -> {
-            List<PendingVoteQueue.PendingVote> pendingVotes = pendingQueue.dequeueForPlayer(username);
-            
-            if (pendingVotes.isEmpty()) {
-                return;
-            }
-
-            VoteConfig config = VoteConfig.getInstance();
-            if (config == null) {
-                return;
-            }
-
-            List<String> commands = config.getCommands();
-            if (commands == null || commands.isEmpty()) {
-                return;
-            }
-
-            LOGGER.info("Delivering {} pending vote reward(s) to {}", pendingVotes.size(), username);
-            
-            int rewardCount = 0;
-            for (PendingVoteQueue.PendingVote vote : pendingVotes) {
-                rewardCount++;
-                LOGGER.debug("Processing pending vote #{} from {} at {}", rewardCount, vote.getUsername(), vote.getTimestamp());
-                for (String commandTemplate : commands) {
-                    String command = commandTemplate.replace("%PLAYER%", username);
-                    String cmdLower = command.toLowerCase().trim();
-                    if (cmdLower.startsWith("broadcast ") || cmdLower.startsWith("say ")) {
-                        continue;
-                    }
-                    try {
-                        var source = server.createCommandSourceStack();
-                        server.getCommands().performPrefixedCommand(source, command);
-                    } catch (Exception e) {
-                        LOGGER.error("Failed to execute pending vote reward command", e);
-                    }
-                }
-            }
-
-            String message = config.getLogging().getPendingVoteMessage()
-                    .replace("%COUNT%", String.valueOf(pendingVotes.size()))
-                    .replace("&", "§");
-            player.sendSystemMessage(Component.literal(message));
-        });
+        deliverPendingVotesToPlayer(player);
     }
 
     /**
@@ -150,6 +93,92 @@ public class VoteManager {
      */
     public PendingVoteQueue getPendingQueue() {
         return pendingQueue;
+    }
+
+    /**
+     * Deliver pending votes for ALL currently online players.
+     * Returns total number of votes delivered.
+     */
+    public int deliverAllOnlinePending() {
+        if (pendingQueue == null) return 0;
+        int total = 0;
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            int delivered = deliverPendingVotesToPlayer(player);
+            if (delivered > 0) total += delivered;
+        }
+        return total;
+    }
+
+    public int deliverPendingVotesForPlayer(String username) {
+        if (pendingQueue == null) {
+            return 0;
+        }
+        ServerPlayer player = server.getPlayerList().getPlayerByName(username);
+        if (player == null) {
+            return -1;
+        }
+        return deliverPendingVotesToPlayer(player);
+    }
+
+    public int clearPendingVotesForPlayer(String username) {
+        return pendingQueue == null ? 0 : pendingQueue.clearForPlayer(username);
+    }
+
+    private int deliverPendingVotesToPlayer(ServerPlayer player) {
+        if (pendingQueue == null) {
+            return 0;
+        }
+        String username = player.getGameProfile().getName();
+        if (!pendingQueue.hasPendingVotes(username)) {
+            return 0;
+        }
+
+        int count = pendingQueue.getPendingCount(username);
+        LOGGER.info("Player {} has {} pending vote(s) ready for delivery", username, count);
+        server.execute(() -> processPendingVotesForPlayer(player, username));
+        return count;
+    }
+
+    private void processPendingVotesForPlayer(ServerPlayer player, String username) {
+        List<PendingVoteQueue.PendingVote> pendingVotes = pendingQueue.dequeueForPlayer(username);
+        if (pendingVotes.isEmpty()) {
+            return;
+        }
+
+        VoteConfig config = VoteConfig.getInstance();
+        if (config == null) {
+            return;
+        }
+
+        List<String> commands = config.getCommands();
+        if (commands == null || commands.isEmpty()) {
+            return;
+        }
+
+        LOGGER.info("Delivering {} pending vote reward(s) to {}", pendingVotes.size(), username);
+        int rewardCount = 0;
+        for (PendingVoteQueue.PendingVote vote : pendingVotes) {
+            rewardCount++;
+            LOGGER.debug("Processing pending vote #{} from {} at {}", rewardCount, vote.getUsername(), vote.getTimestamp());
+            for (String commandTemplate : commands) {
+                String command = commandTemplate.replace("%PLAYER%", username);
+                String cmdLower = command.toLowerCase().trim();
+                if (cmdLower.startsWith("broadcast ") || cmdLower.startsWith("say ")) {
+                    continue;
+                }
+                try {
+                    var source = server.createCommandSourceStack();
+                    server.getCommands().performPrefixedCommand(source, command);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to execute pending vote reward command", e);
+                }
+            }
+        }
+
+        String message = config.getLogging().getPendingVoteMessage()
+                .replace("%COUNT%", String.valueOf(pendingVotes.size()))
+                .replace("&", "§");
+        player.sendSystemMessage(Component.literal(message));
     }
 
     private void notifyOps(String message) {

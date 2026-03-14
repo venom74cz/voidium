@@ -307,7 +307,130 @@ public class DiscordConfig {
         return statusMessageStopped;
     }
 
-    // Setters (pro WebManager)
+    public void setEnableDiscord(boolean enableDiscord) {
+        this.enableDiscord = enableDiscord;
+    }
+
+    public void setBotToken(String botToken) {
+        this.botToken = botToken;
+    }
+
+    public void setGuildId(String guildId) {
+        this.guildId = guildId;
+    }
+
+    public void setBotActivityType(String botActivityType) {
+        this.botActivityType = botActivityType;
+    }
+
+    public void setBotActivityText(String botActivityText) {
+        this.botActivityText = botActivityText;
+    }
+
+    public void setEnableWhitelist(boolean enableWhitelist) {
+        this.enableWhitelist = enableWhitelist;
+    }
+
+    public void setKickMessage(String kickMessage) {
+        this.kickMessage = kickMessage;
+    }
+
+    public void setVerificationHintMessage(String verificationHintMessage) {
+        this.verificationHintMessage = verificationHintMessage;
+    }
+
+    public void setLinkSuccessMessage(String linkSuccessMessage) {
+        this.linkSuccessMessage = linkSuccessMessage;
+    }
+
+    public void setAlreadyLinkedMessage(String alreadyLinkedMessage) {
+        this.alreadyLinkedMessage = alreadyLinkedMessage;
+    }
+
+    public void setMaxAccountsPerDiscord(int maxAccountsPerDiscord) {
+        this.maxAccountsPerDiscord = maxAccountsPerDiscord;
+    }
+
+    public void setChatChannelId(String chatChannelId) {
+        this.chatChannelId = chatChannelId;
+    }
+
+    public void setConsoleChannelId(String consoleChannelId) {
+        this.consoleChannelId = consoleChannelId;
+    }
+
+    public void setLinkChannelId(String linkChannelId) {
+        this.linkChannelId = linkChannelId;
+    }
+
+    public void setStatusChannelId(String statusChannelId) {
+        this.statusChannelId = statusChannelId;
+    }
+
+    public void setEnableStatusMessages(boolean enableStatusMessages) {
+        this.enableStatusMessages = enableStatusMessages;
+    }
+
+    public void setStatusMessageStarting(String statusMessageStarting) {
+        this.statusMessageStarting = statusMessageStarting;
+    }
+
+    public void setStatusMessageStarted(String statusMessageStarted) {
+        this.statusMessageStarted = statusMessageStarted;
+    }
+
+    public void setStatusMessageStopping(String statusMessageStopping) {
+        this.statusMessageStopping = statusMessageStopping;
+    }
+
+    public void setStatusMessageStopped(String statusMessageStopped) {
+        this.statusMessageStopped = statusMessageStopped;
+    }
+
+    public void setLinkedRoleId(String linkedRoleId) {
+        this.linkedRoleId = linkedRoleId;
+    }
+
+    public void setRenameOnLink(boolean renameOnLink) {
+        this.renameOnLink = renameOnLink;
+    }
+
+    public void setUseHexColors(boolean useHexColors) {
+        this.useHexColors = useHexColors;
+    }
+
+    public void setRolePrefixes(java.util.Map<String, RoleStyle> rolePrefixes) {
+        this.rolePrefixes = rolePrefixes != null ? new java.util.HashMap<>(rolePrefixes) : new java.util.HashMap<>();
+    }
+
+    public void setSyncBansDiscordToMc(boolean syncBansDiscordToMc) {
+        this.syncBansDiscordToMc = syncBansDiscordToMc;
+    }
+
+    public void setSyncBansMcToDiscord(boolean syncBansMcToDiscord) {
+        this.syncBansMcToDiscord = syncBansMcToDiscord;
+    }
+
+    public void setEnableChatBridge(boolean enableChatBridge) {
+        this.enableChatBridge = enableChatBridge;
+    }
+
+    public void setMinecraftToDiscordFormat(String minecraftToDiscordFormat) {
+        this.minecraftToDiscordFormat = minecraftToDiscordFormat;
+    }
+
+    public void setDiscordToMinecraftFormat(String discordToMinecraftFormat) {
+        this.discordToMinecraftFormat = discordToMinecraftFormat;
+    }
+
+    public void setTranslateEmojis(boolean translateEmojis) {
+        this.translateEmojis = translateEmojis;
+    }
+
+    public void setChatWebhookUrl(String chatWebhookUrl) {
+        this.chatWebhookUrl = chatWebhookUrl;
+    }
+
     public void setEnableTopicUpdate(boolean enableTopicUpdate) {
         this.enableTopicUpdate = enableTopicUpdate;
     }
@@ -318,6 +441,42 @@ public class DiscordConfig {
 
     public void setUptimeFormat(String uptimeFormat) {
         this.uptimeFormat = uptimeFormat;
+    }
+
+    public void setInvalidCodeMessage(String invalidCodeMessage) {
+        this.invalidCodeMessage = invalidCodeMessage;
+    }
+
+    public void setNotLinkedMessage(String notLinkedMessage) {
+        this.notLinkedMessage = notLinkedMessage;
+    }
+
+    public void setAlreadyLinkedSingleMessage(String alreadyLinkedSingleMessage) {
+        this.alreadyLinkedSingleMessage = alreadyLinkedSingleMessage;
+    }
+
+    public void setAlreadyLinkedMultipleMessage(String alreadyLinkedMultipleMessage) {
+        this.alreadyLinkedMultipleMessage = alreadyLinkedMultipleMessage;
+    }
+
+    public void setUnlinkSuccessMessage(String unlinkSuccessMessage) {
+        this.unlinkSuccessMessage = unlinkSuccessMessage;
+    }
+
+    public void setWrongGuildMessage(String wrongGuildMessage) {
+        this.wrongGuildMessage = wrongGuildMessage;
+    }
+
+    public void setTicketCreatedMessage(String ticketCreatedMessage) {
+        this.ticketCreatedMessage = ticketCreatedMessage;
+    }
+
+    public void setTicketClosingMessage(String ticketClosingMessage) {
+        this.ticketClosingMessage = ticketClosingMessage;
+    }
+
+    public void setTextChannelOnlyMessage(String textChannelOnlyMessage) {
+        this.textChannelOnlyMessage = textChannelOnlyMessage;
     }
 
     // Apply locale preset

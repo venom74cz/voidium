@@ -21,6 +21,9 @@ title: Plány a Roadmap (CZ)
                     <li><strong>Discord OAuth</strong> – Přihlášení do panelu pomocí Discord účtu s určitou rolí (bez nutnosti tokenu z konzole).</li>
                     <li><strong>Live Console</strong> – Sledování výstupu konzole v reálném čase přímo v prohlížeči (WebSocket).</li>
                     <li><strong>Grafy a Vizualizace</strong> – Grafy historie TPS, RAM a počtu hráčů v administračním panelu.</li>
+                    <li><strong>🔧 Persistentní AI historie (WIP)</strong> – Ukládání historie konverzací admin AI napříč sezeními pro kontinuitu.</li>
+                    <li><strong>🔧 Statistiky ticketů v dashboardu (WIP)</strong> – Analytika a statistiky pro ticketový systém (doba odezvy, míra vyřešení, objem).</li>
+                    <li><strong>🔧 Výběr ranku pro PLAYTIME režim (WIP)</strong> – Když je režim přístupu hráčů k AI nastaven na PLAYTIME, zobrazit dropdown s nakonfigurovanými ranky, aby admin mohl vybrat z existujících definic místo ručního zadávání hodin.</li>
                 </ul>
 
                 <h3>2) Pokročilá Discord Integrace</h3>

@@ -13,8 +13,8 @@ public class DiscordChatListener {
         if (!DiscordConfig.getInstance().isEnableDiscord() || !DiscordConfig.getInstance().isEnableChatBridge()) return;
         
         String playerName = event.getEntity().getName().getString();
-        String message = "**" + playerName + "** joined the game";
-        DiscordManager.getInstance().sendChatMessage(null, null, message);
+        java.util.UUID uuid = event.getEntity().getUUID();
+        DiscordManager.getInstance().sendEventEmbed(playerName, uuid, playerName + " joined the game", 0x55FF55); // green
     }
 
     @SubscribeEvent
@@ -22,8 +22,8 @@ public class DiscordChatListener {
         if (!DiscordConfig.getInstance().isEnableDiscord() || !DiscordConfig.getInstance().isEnableChatBridge()) return;
         
         String playerName = event.getEntity().getName().getString();
-        String message = "**" + playerName + "** left the game";
-        DiscordManager.getInstance().sendChatMessage(null, null, message);
+        java.util.UUID uuid = event.getEntity().getUUID();
+        DiscordManager.getInstance().sendEventEmbed(playerName, uuid, playerName + " left the game", 0xFF5555); // red
     }
 
     @SubscribeEvent
@@ -32,8 +32,8 @@ public class DiscordChatListener {
         
         if (event.getEntity() instanceof ServerPlayer player) {
             String deathMessage = event.getSource().getLocalizedDeathMessage(player).getString();
-            String message = "**" + deathMessage + "**";
-            DiscordManager.getInstance().sendChatMessage(null, null, message);
+            java.util.UUID uuid = player.getUUID();
+            DiscordManager.getInstance().sendEventEmbed(player.getName().getString(), uuid, deathMessage, 0x555555); // gray
         }
     }
 }

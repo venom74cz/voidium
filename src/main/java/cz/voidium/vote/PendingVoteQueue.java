@@ -140,6 +140,31 @@ public class PendingVoteQueue {
         }
     }
 
+    public List<PendingVote> snapshot() {
+        lock.lock();
+        try {
+            return new ArrayList<>(queue);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int clearForPlayer(String username) {
+        lock.lock();
+        try {
+            int before = queue.size();
+            queue.removeIf(vote -> vote.username.equalsIgnoreCase(username));
+            int removed = before - queue.size();
+            if (removed > 0) {
+                save();
+                LOGGER.info("Cleared {} pending vote(s) for {}", removed, username);
+            }
+            return removed;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     /**
      * Load pending votes from disk
      */

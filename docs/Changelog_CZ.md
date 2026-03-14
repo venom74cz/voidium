@@ -22,19 +22,40 @@ title: Changelog (CZ)
 
 ## 🆕 Nejnovější verze {#latest}
 
-### 2.3.5 — 2026‑02‑06
+### 2.5 — 2026‑03‑14
 
-**Discord**
+**Web Control Panel — přepsání do React + Vite**
 
-- Forward zpráv Discord → MC funguje i bez nastaveného <code>linkChannelId</code>.
+- Kompletní přepsání admin panelu do React 19 + Vite 6 + TypeScript SPA, zabaleno v mod JARu.
+- SSE real-time aktualizace (push každé 3s), dark/light téma, volba jazyka (EN/CZ).
+- Config Studio: vizuální editor pro všech 12 modulů se schématem, diff, náhled, apply, rollback.
+- Toast notifikace, systémové info (CPU/RAM/Disk), ikona serveru, editor server.properties.
+- Živá konzole se spuštěním příkazů, live chat feed, audit trail, SVG grafy výkonu.
+- Náhled MC textových barev, nápovědy u custom podmínek v editoru ranků.
+- AI admin asistent s návrhy konfigurace, analýzou incidentů a historií konverzací hráčů.
+- Rate limiting na AI endpointech (120 req/min na IP).
 
-**Dokumentace**
+**Zabezpečení & Sessions**
 
-- Přidána plná dokumentace Web panelu (EN/CZ).
-- Aktualizované troubleshooting poznámky u Discord dokumentace.
+- Maskované tajné hodnoty v Config Studiu, čištění session, sliding sessions, HttpOnly cookies.
+- Allowlist příkazů konzole, redakce AI tajemství, nastavitelný session TTL.
+
+**Opravy chyb**
+
+- Config Studio diff už neukazuje falešné změny po apply.
+- AnnouncementManager reload už nespad ne scheduler.
+- Opravena registrace Mixinů pro synchronizaci banů.
+
+### 2.4 — 2026‑03‑11
+
+- Plná podpora RGB barev v chatu (<code>&#RRGGBB</code>).
+- Tooltip u ranku při hoveru (odehrané hodiny / požadované hodiny).
+- Discord přejmenování při propojení účtu.
+- Vylepšený reload (<code>/voidium reload</code> restartuje všechny manažery).
 
 ## 📚 Historie verzí {#history}
 
+- 2.3.5 — Oprava Discord bridge + dokumentace Web panelu
 - 2.3.4 — Zpevnění vote systému + release messaging
 - 2.3.3 — Limit stáří votů + V1 kompatibilita
 - 2.3.1 — Chat vylepšení + build metadata

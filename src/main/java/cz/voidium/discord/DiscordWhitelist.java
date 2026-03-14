@@ -1,6 +1,7 @@
 package cz.voidium.discord;
 
 import cz.voidium.config.DiscordConfig;
+import cz.voidium.config.GeneralConfig;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -42,6 +43,15 @@ public class DiscordWhitelist {
     public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
+        }
+
+        // Maintenance mode: only OPs can join
+        GeneralConfig generalConfig = GeneralConfig.getInstance();
+        if (generalConfig != null && generalConfig.isMaintenanceMode()) {
+            if (!player.hasPermissions(2)) {
+                player.connection.disconnect(Component.literal("§8[§bVoidium§8] §cServer is in maintenance mode. Please try again later.\n§8[§bVoidium§8] §cServer je v údržbě. Zkuste to prosím později."));
+                return;
+            }
         }
 
         DiscordConfig config = DiscordConfig.getInstance();

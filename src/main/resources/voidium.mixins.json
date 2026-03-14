@@ -4,7 +4,9 @@
   "package": "cz.voidium.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "PlayerListMixin"
+    "PlayerListMixin",
+    "StoredUserEntryAccessor",
+    "UserBanListMixin"
   ],
   "client": [
     "ChatComponentMixin",

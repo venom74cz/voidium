@@ -27,11 +27,11 @@ public class VoteConfig {
     private String rsaPublicKeyPath = "votifier_rsa_public.pem";
     private String sharedSecret = generateSharedSecret();
     private boolean announceVotes = true;
-    private String announcementMessage = "&b%PLAYER% &7hlasoval pro server a získal odměnu!";
+    private String announcementMessage = "&b%PLAYER% &7voted for the server and received a reward!";
     private int announcementCooldown = 300; // seconds
     private int maxVoteAgeHours = 24;
     private List<String> commands = new ArrayList<>(List.of(
-            "tellraw %PLAYER% {\"text\":\"Děkujeme za hlasování!\",\"color\":\"green\"}",
+                "tellraw %PLAYER% {\"text\":\"Thanks for voting!\",\"color\":\"green\"}",
             "give %PLAYER% diamond 1"
     ));
     private Logging logging = new Logging();
@@ -52,6 +52,14 @@ public class VoteConfig {
         public boolean isNotifyOpsOnError() { return notifyOpsOnError; }
         public String getPendingQueueFile() { return pendingQueueFile; }
         public String getPendingVoteMessage() { return pendingVoteMessage; }
+
+        public void setVoteLog(boolean voteLog) { this.voteLog = voteLog; }
+        public void setVoteLogFile(String voteLogFile) { this.voteLogFile = voteLogFile; }
+        public void setArchiveJson(boolean archiveJson) { this.archiveJson = archiveJson; }
+        public void setArchivePath(String archivePath) { this.archivePath = archivePath; }
+        public void setNotifyOpsOnError(boolean notifyOpsOnError) { this.notifyOpsOnError = notifyOpsOnError; }
+        public void setPendingQueueFile(String pendingQueueFile) { this.pendingQueueFile = pendingQueueFile; }
+        public void setPendingVoteMessage(String pendingVoteMessage) { this.pendingVoteMessage = pendingVoteMessage; }
     }
 
     public VoteConfig(Path configPath) {
@@ -131,6 +139,18 @@ public class VoteConfig {
     public int getMaxVoteAgeHours() { return maxVoteAgeHours; }
     public List<String> getCommands() { return commands; }
     public Logging getLogging() { return logging; }
+
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public void setHost(String host) { this.host = host; }
+    public void setPort(int port) { this.port = port; }
+    public void setRsaPrivateKeyPath(String rsaPrivateKeyPath) { this.rsaPrivateKeyPath = rsaPrivateKeyPath; }
+    public void setRsaPublicKeyPath(String rsaPublicKeyPath) { this.rsaPublicKeyPath = rsaPublicKeyPath; }
+    public void setSharedSecret(String sharedSecret) { this.sharedSecret = sharedSecret; }
+    public void setAnnounceVotes(boolean announceVotes) { this.announceVotes = announceVotes; }
+    public void setAnnouncementMessage(String announcementMessage) { this.announcementMessage = announcementMessage; }
+    public void setAnnouncementCooldown(int announcementCooldown) { this.announcementCooldown = announcementCooldown; }
+    public void setMaxVoteAgeHours(int maxVoteAgeHours) { this.maxVoteAgeHours = maxVoteAgeHours; }
+    public void setCommands(List<String> commands) { this.commands = commands == null ? new ArrayList<>() : new ArrayList<>(commands); }
 
     public void applyLocale(String locale) {
         java.util.Map<String, String> messages = LocalePresets.getVoteMessages(locale);

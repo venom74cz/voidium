@@ -6,14 +6,19 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -200,6 +205,10 @@ public class EntityCleaner {
         if (config.getEntityWhitelist().contains(entityId.toString())) {
             return false;
         }
+
+        if (config.isProtectBosses() && isProtectedBoss(entity, entityId)) {
+            return false;
+        }
         
         // Check named entity protection
         if (!config.isRemoveNamedEntities() && entity.hasCustomName()) {
@@ -248,6 +257,38 @@ public class EntityCleaner {
         
         return false;
     }
+
+    private boolean isProtectedBoss(Entity entity, ResourceLocation entityId) {
+        if (entity instanceof EnderDragon || entity instanceof WitherBoss) {
+            return true;
+        }
+        String path = entityId != null ? entityId.getPath().toLowerCase(java.util.Locale.ROOT) : "";
+        String className = entity.getClass().getSimpleName().toLowerCase(java.util.Locale.ROOT);
+        if (path.contains("boss") || className.contains("boss")) {
+            return true;
+        }
+        return hasBossBarField(entity.getClass(), entity);
+    }
+
+    private boolean hasBossBarField(Class<?> type, Entity entity) {
+        Class<?> current = type;
+        while (current != null && current != Object.class) {
+            for (Field field : current.getDeclaredFields()) {
+                if (!BossEvent.class.isAssignableFrom(field.getType()) && !ServerBossEvent.class.isAssignableFrom(field.getType())) {
+                    continue;
+                }
+                try {
+                    field.setAccessible(true);
+                    if (field.get(entity) != null) {
+                        return true;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return false;
+    }
     
     /**
      * Force immediate cleanup with specified types.
@@ -265,7 +306,31 @@ public class EntityCleaner {
     public int getSecondsUntilCleanup() {
         return secondsUntilCleanup;
     }
-    
+
+    /**
+     * Per-dimension preview of entities that would be removed.
+     * Returns map: dimension path (e.g. "overworld","the_nether","the_end") -> CleanupResult.
+     */
+    public java.util.Map<String, CleanupResult> previewCleanupByDimension() {
+        EntityCleanerConfig config = EntityCleanerConfig.getInstance();
+        java.util.Map<String, CleanupResult> map = new java.util.LinkedHashMap<>();
+
+        for (ServerLevel level : server.getAllLevels()) {
+            String dim = level.dimension().location().getPath(); // e.g. overworld, the_nether, the_end
+            CleanupResult result = new CleanupResult();
+            for (Entity entity : level.getAllEntities()) {
+                if (shouldRemove(entity, config, true, true, true, true)) {
+                    if (entity instanceof ItemEntity) result.items++;
+                    else if (entity instanceof ExperienceOrb) result.xpOrbs++;
+                    else if (entity instanceof AbstractArrow) result.arrows++;
+                    else result.mobs++;
+                }
+            }
+            map.put(dim, result);
+        }
+        return map;
+    }
+
     /**
      * Result of entity cleanup operation.
      */

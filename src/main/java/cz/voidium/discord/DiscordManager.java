@@ -648,7 +648,7 @@ public class DiscordManager extends ListenerAdapter {
         int max = server.getMaxPlayers();
         long uptimeMillis = System.currentTimeMillis() - serverStartTime;
         String uptime = formatDuration(uptimeMillis);
-        double tps = 20.0; // Placeholder until we get real TPS
+        double tps = cz.voidium.util.TpsTracker.getInstance().getTPS();
 
         String formattedText = text
                 .replace("%online%", String.valueOf(online))
@@ -902,6 +902,41 @@ public class DiscordManager extends ListenerAdapter {
         }
     }
 
+    /**
+     * Sends a compact embed for player events (join/leave/death) to the chat channel.
+     * Includes the player's skin head as thumbnail for visual flair.
+     */
+    public void sendEventEmbed(String playerName, UUID uuid, String description, int color) {
+        if (jda == null) return;
+
+        String channelId = DiscordConfig.getInstance().getChatChannelId();
+        if (channelId == null || channelId.isEmpty()) return;
+
+        net.dv8tion.jda.api.entities.channel.concrete.TextChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) return;
+
+        // Resolve UUID from skin cache for offline-mode servers
+        if (playerName != null) {
+            cz.voidium.skin.SkinCache.CachedEntry entry = cz.voidium.skin.SkinCache.get(playerName);
+            if (entry != null) {
+                uuid = entry.uuid();
+            }
+        }
+
+        String avatarUrl = uuid != null
+                ? "https://minotar.net/helm/" + uuid.toString() + "/64.png"
+                : "https://minotar.net/helm/MHF_Steve/64.png";
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setDescription(description);
+        eb.setColor(new Color(color));
+        eb.setAuthor(playerName, null, avatarUrl);
+
+        channel.sendMessageEmbeds(eb.build()).queue(
+                success -> LOGGER.debug("Event embed sent: {}", description),
+                error -> LOGGER.error("Failed to send event embed: {}", error.getMessage()));
+    }
+
     public List<Role> getRoles() {
         if (jda == null)
             return java.util.Collections.emptyList();
@@ -912,6 +947,26 @@ public class DiscordManager extends ListenerAdapter {
         if (guild == null)
             return java.util.Collections.emptyList();
         return guild.getRoles();
+    }
+
+    /**
+     * Returns guild roles as serialization-friendly list of maps.
+     * Each map: {id, name, color, position}.
+     */
+    public List<Map<String, Object>> getGuildRolesData() {
+        List<Role> roles = getRoles();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Role role : roles) {
+            if (role.isPublicRole()) continue; // skip @everyone
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", role.getId());
+            m.put("name", role.getName());
+            m.put("color", role.getColor() != null
+                    ? String.format("#%06X", role.getColor().getRGB() & 0xFFFFFF) : "#99AAB5");
+            m.put("position", role.getPosition());
+            result.add(m);
+        }
+        return result;
     }
 
     /**

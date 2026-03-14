@@ -106,6 +106,7 @@ Voidium uses two Discord-related config files:
 **Ban sync**
 
 - <code>syncBansDiscordToMc</code>, <code>syncBansMcToDiscord</code>
+- Ban sync uses Mixin injection (<code>UserBanListMixin</code>) for automatic detection — no polling
 
 **Bot responses**
 
@@ -171,7 +172,10 @@ Data is stored in <code>config/voidium/storage/links.json</code>.
 
 ### Join / leave / death
 
-When chat bridge is enabled, join/leave/death messages are posted to Discord.
+When chat bridge is enabled, join/leave/death events are posted to Discord as **colored embeds** with the player's skin thumbnail:
+- **Join** — green embed
+- **Leave** — red embed
+- **Death** — gray embed
 
 ## 🎫 Tickets {#tickets}
 

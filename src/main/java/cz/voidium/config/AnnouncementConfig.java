@@ -43,12 +43,17 @@ public class AnnouncementConfig {
 
     private static AnnouncementConfig load(Path configPath) {
         AnnouncementConfig config = new AnnouncementConfig(configPath);
-        
+        boolean migrated = false;
+
         if (Files.exists(configPath)) {
-            try (Reader reader = Files.newBufferedReader(configPath)) {
-                AnnouncementConfig loaded = GSON.fromJson(reader, AnnouncementConfig.class);
+            try {
+                AnnouncementConfig loaded = ConfigFileHelper.loadJson(configPath, GSON, AnnouncementConfig.class);
                 if (loaded != null) {
                     loaded.configPath = configPath;
+                    migrated = loaded.normalize();
+                    if (migrated) {
+                        loaded.save();
+                    }
                     return loaded;
                 }
             } catch (Exception e) {
@@ -58,6 +63,23 @@ public class AnnouncementConfig {
         
         config.save();
         return config;
+    }
+
+    private boolean normalize() {
+        boolean changed = false;
+        if (announcements == null) {
+            announcements = new ArrayList<>();
+            changed = true;
+        }
+        if (announcementIntervalMinutes < 0) {
+            announcementIntervalMinutes = 30;
+            changed = true;
+        }
+        if (prefix == null) {
+            prefix = "&8[&bVoidium&8]&r ";
+            changed = true;
+        }
+        return changed;
     }
 
     public void save() {
@@ -83,6 +105,18 @@ public class AnnouncementConfig {
     public List<String> getAnnouncements() { return announcements; }
     public int getAnnouncementIntervalMinutes() { return announcementIntervalMinutes; }
     public String getPrefix() { return prefix; }
+
+    public void setAnnouncements(List<String> announcements) {
+        this.announcements = announcements == null ? new ArrayList<>() : new ArrayList<>(announcements);
+    }
+
+    public void setAnnouncementIntervalMinutes(int announcementIntervalMinutes) {
+        this.announcementIntervalMinutes = Math.max(0, announcementIntervalMinutes);
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
     
     // Apply locale preset
     public void applyLocale(String locale) {

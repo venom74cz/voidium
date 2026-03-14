@@ -106,6 +106,7 @@ Voidium používá dva soubory:
 **Ban sync**
 
 - <code>syncBansDiscordToMc</code>, <code>syncBansMcToDiscord</code>
+- Ban sync používá Mixin injekci (<code>UserBanListMixin</code>) pro automatickou detekci — žádný polling
 
 **Odpovědi bota**
 
@@ -171,7 +172,10 @@ Data se ukládají do <code>config/voidium/storage/links.json</code>.
 
 ### Join / leave / death
 
-Když je chat bridge zapnutý, join/leave/death zprávy se posílají do Discordu.
+Když je chat bridge zapnutý, join/leave/death eventy se posílají do Discordu jako **barevné embedy** s miniaturou skinu hráče:
+- **Join** — zelený embed
+- **Leave** — červený embed
+- **Death** — šedý embed
 
 ## 🎫 Tickety {#tickets}
 

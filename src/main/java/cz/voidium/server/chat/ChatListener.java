@@ -15,10 +15,7 @@ public class ChatListener {
     public void onServerChat(ServerChatEvent event) {
         String content = event.getMessage().getString();
         String sender = event.getPlayer().getName().getString();
-        // Simple format for history: "Sender: Message"
-        // In a real implementation, we might want to store more metadata or the full
-        // Component
-        ChatHistoryManager.getInstance().addGlobalMessage(sender + ": " + content);
+        ChatHistoryManager.getInstance().addEntry(sender, content);
     }
 
     @SubscribeEvent

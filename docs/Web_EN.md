@@ -6,7 +6,7 @@ title: Web panel (EN)
 # 🌐 Web panel
 
 <div class="hero">
-	<p><strong>Voidium Web Control Panel</strong> is a lightweight HTTP dashboard for server status, quick actions, and live config editing.</p>
+	<p><strong>Voidium Web Control Panel</strong> is a React 19 + Vite 6 + TypeScript SPA bundled into the mod JAR. It provides a full admin dashboard for server status, quick actions, AI assistance, and live config editing — no external dependencies needed.</p>
 
 	<div class="note">
 		Access is protected by a one‑time token in the URL. The token changes on every server start and is stored in a session cookie after first load.
@@ -74,38 +74,56 @@ File: <code>config/voidium/web.json</code>
 
 The panel exposes a few HTTP endpoints:
 
+**Static assets**
+
+- <code>GET /</code> — React SPA entry (index.html, requires auth)
+- <code>GET /assets/*</code> — hashed JS/CSS bundles (immutable cache)
+
 **Dashboard**
 
-- <code>GET /</code> — HTML dashboard (requires auth)
-- <code>GET /css/style.css</code> — panel styles
+- <code>GET /api/dashboard</code> — full server telemetry JSON (auth required)
+- <code>GET /api/feeds</code> — chat + console feed snapshot
+- <code>GET /api/events</code> — Server-Sent Events (SSE) stream, pushes dashboard data every 3 seconds
 
 **Actions (POST)**
 
-- <code>/api/action</code> (form payload):
-	- <code>action=restart</code>
-	- <code>action=announce</code> + <code>message</code>
-	- <code>action=kick</code> + <code>player</code>
-	- <code>action=ban</code> + <code>uuid</code> + <code>name</code>
-	- <code>action=unban</code> + <code>uuid</code>
-	- <code>action=unlink</code> + <code>uuid</code>
+- <code>POST /api/action</code> (JSON payload with <code>action</code> field):
+	- <code>restart</code>, <code>reload</code>, <code>announce</code>, <code>maintenance_on/off</code>
+	- <code>entitycleaner_preview/all/items/mobs/xp/arrows</code>
+	- <code>vote_payout/clear/payout_all/clear_all</code>
+	- <code>ticket_close/note/transcript</code>
 
-**Config API**
+**Config Studio API**
 
-- <code>GET /api/config</code> — returns current config JSON
-- <code>POST /api/config</code> — saves config updates
+- <code>GET /api/config/schema</code> — field definitions for all modules
+- <code>GET /api/config/values</code> — current config values
+- <code>GET /api/config/defaults</code> — factory defaults
+- <code>GET /api/config/locale</code> — locale preset (en/cz)
+- <code>POST /api/config/preview</code> — preview changes with impact flags
+- <code>POST /api/config/diff</code> — diff current vs proposed values
+- <code>POST /api/config/apply</code> — apply changes (creates backup)
+- <code>POST /api/config/rollback</code> — rollback to last backup
+- <code>POST /api/config/reload</code> — reload configs from disk
 
-The POST endpoint supports both:
+**AI API**
 
-- <code>{"section":"discord","data":{...}}</code>
-- legacy format <code>{"discord":{...},"general":{...}}</code>
+- <code>POST /api/ai/admin</code> — admin AI conversation
+- <code>POST /api/ai/admin/suggest</code> — AI config suggestions
+- <code>GET /api/ai/players</code> — player AI conversation history
 
-**Locale reset**
+**Console**
 
-- <code>POST /api/locale</code> with JSON: <code>{"locale":"en"}</code> or <code>{"locale":"cz"}</code>
+- <code>POST /api/console/execute</code> — execute allowlisted commands
 
-**Stats history**
+**Schema export**
 
-- <code>GET /api/stats/history</code> — stats datapoints (if Stats module is enabled)
+- <code>GET /api/config/schema/export</code> — full config schema in JSON Schema draft-07 format
+
+**Server management**
+
+- <code>GET /api/server-icon</code> — server favicon (PNG, no auth required)
+- <code>GET /api/server-properties</code> — read server.properties as JSON key-value pairs
+- <code>POST /api/server-properties</code> — write server.properties (JSON body with key-value pairs)
 
 **Discord roles**
 
@@ -115,8 +133,8 @@ The POST endpoint supports both:
 
 - The panel runs over plain HTTP; keep it on a trusted network or behind a reverse proxy.
 - Don’t share the token URL.
-- Restarting the server invalidates old tokens.
-
+- Restarting the server invalidates old tokens.- **Rate limiting**: AI endpoints (<code>/api/ai/*</code>) enforce 120 requests/minute per IP. Exceeding the limit returns HTTP 429 with <code>Retry-After</code> header.
+- **Theme & locale**: Dark/light theme and language preference are stored in <code>localStorage</code> (client-side only).
 ## 🧯 Troubleshooting {#troubleshooting}
 
 **Panel doesn’t start**

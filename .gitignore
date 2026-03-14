@@ -22,3 +22,5 @@ logs/
 # Config cache
 .gradle/configuration-cache/
 .github/instructions/GPT 5 LIKE SONNET 4.instructions.md
+/web-panel/node_modules
+/.github/instructions

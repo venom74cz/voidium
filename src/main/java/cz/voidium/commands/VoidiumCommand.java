@@ -13,6 +13,7 @@ import cz.voidium.server.SkinRestorer;
 import cz.voidium.vote.VoteManager;
 import cz.voidium.discord.DiscordManager;
 import cz.voidium.entitycleaner.EntityCleaner;
+import cz.voidium.web.WebManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -70,6 +71,9 @@ public class VoidiumCommand {
                 .then(Commands.literal("config")
                         .requires(source -> source.hasPermission(2))
                         .executes(VoidiumCommand::config))
+                .then(Commands.literal("web")
+                    .requires(source -> source.hasPermission(2))
+                    .executes(VoidiumCommand::web))
                 .then(Commands.literal("skin")
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.argument("player", StringArgumentType.word())
@@ -111,6 +115,7 @@ public class VoidiumCommand {
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium cancel §7- Cancel scheduled restart"),
                 false);
         context.getSource().sendSuccess(() -> Component.literal("§e/voidium config §7- Configuration settings"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§e/voidium web §7- Generate secure web panel link"), false);
         context.getSource().sendSuccess(
                 () -> Component.literal("§e/voidium skin <player> §7- Try refresh player skin (offline mode)"), false);
         context.getSource().sendSuccess(
@@ -164,6 +169,7 @@ public class VoidiumCommand {
             cz.voidium.config.TicketConfig.init(voidiumDir);
             cz.voidium.config.PlayerListConfig.init(voidiumDir);
             cz.voidium.config.GeneralConfig.init(voidiumDir);
+            cz.voidium.config.AIConfig.init(voidiumDir);
             cz.voidium.config.RestartConfig.init(voidiumDir);
             cz.voidium.config.AnnouncementConfig.init(voidiumDir);
             cz.voidium.config.EntityCleanerConfig.init(voidiumDir);
@@ -174,6 +180,14 @@ public class VoidiumCommand {
 
             if (entityCleaner != null) {
                 entityCleaner.reload();
+            }
+
+            if (restartManager != null) {
+                restartManager.reload();
+            }
+
+            if (announcementManager != null) {
+                announcementManager.reload();
             }
 
             DiscordManager.getInstance().setServer(context.getSource().getServer());
@@ -333,6 +347,28 @@ public class VoidiumCommand {
         context.getSource().sendSuccess(() -> Component.literal("§7- announcements.json - announcements"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7- general.json - general settings"), false);
         context.getSource().sendSuccess(() -> Component.literal("§7After editing use: §e/voidium reload"), false);
+        return 1;
+    }
+
+    private static int web(CommandContext<CommandSourceStack> context) {
+        WebManager webManager = WebManager.getInstance();
+        if (!cz.voidium.config.GeneralConfig.getInstance().isEnableWeb()) {
+            context.getSource().sendFailure(Component.literal("§8[§bVoidium§8] §cWeb UI is disabled in general.json"));
+            return 0;
+        }
+        if (!webManager.isRunning()) {
+            webManager.setServer(context.getSource().getServer());
+            webManager.start();
+        }
+
+        String oneTimeUrl = webManager.issueAccessUrl();
+        String persistentUrl = webManager.getPersistentAccessUrl();
+
+        context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aVoidium Web panel is ready:"), false);
+        context.getSource().sendSuccess(() -> Component.literal("§7One-time URL: §b" + oneTimeUrl), false);
+        context.getSource().sendSuccess(() -> Component.literal("§7Persistent admin URL: §e" + persistentUrl), false);
+        context.getSource().sendSuccess(
+                () -> Component.literal("§7Persistent URL uses the token stored in §econfig/voidium/web.json"), false);
         return 1;
     }
 

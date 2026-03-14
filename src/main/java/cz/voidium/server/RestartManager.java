@@ -361,6 +361,55 @@ public class RestartManager {
         }
     }
 
+    public long getSecondsUntilNextRestart() {
+        RestartConfig config = RestartConfig.getInstance();
+        if (config == null) {
+            return -1;
+        }
+        if (config.getRestartType() == RestartConfig.RestartType.FIXED_TIME) {
+            if (config.getFixedRestartTimes().isEmpty()) {
+                return -1;
+            }
+            LocalDateTime now = LocalDateTime.now();
+            long minSecondsUntil = Long.MAX_VALUE;
+            for (LocalTime time : config.getFixedRestartTimes()) {
+                LocalDateTime candidate = findNextOccurrence(now, time);
+                if (wasAlreadyExecutedToday(time)) {
+                    candidate = LocalDateTime.of(now.toLocalDate().plusDays(1), time);
+                }
+                long secondsUntil = now.until(candidate, ChronoUnit.SECONDS);
+                if (secondsUntil > 0 && secondsUntil < minSecondsUntil) {
+                    minSecondsUntil = secondsUntil;
+                }
+            }
+            return minSecondsUntil == Long.MAX_VALUE ? -1 : minSecondsUntil;
+        }
+        if (config.getRestartType() == RestartConfig.RestartType.INTERVAL) {
+            int intervalHours = config.getIntervalHours();
+            if (intervalHours <= 0) {
+                return -1;
+            }
+            long elapsedSeconds = (System.currentTimeMillis() - serverStartTime) / 1000L;
+            long intervalSeconds = intervalHours * 3600L;
+            long secondsLeft = intervalSeconds - (elapsedSeconds % intervalSeconds);
+            return Math.max(0, secondsLeft);
+        }
+        long secondsLeft = (serverStartTime + (config.getDelayMinutes() * 60L * 1000L) - System.currentTimeMillis()) / 1000L;
+        return Math.max(0, secondsLeft);
+    }
+
+    public long getRestartCycleSeconds() {
+        RestartConfig config = RestartConfig.getInstance();
+        if (config == null) {
+            return 0;
+        }
+        return switch (config.getRestartType()) {
+            case INTERVAL -> Math.max(0, config.getIntervalHours()) * 3600L;
+            case DELAY -> Math.max(0, config.getDelayMinutes()) * 60L;
+            default -> 0L;
+        };
+    }
+
     public void shutdown() {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdownNow();

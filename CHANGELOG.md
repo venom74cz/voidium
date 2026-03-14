@@ -1,5 +1,80 @@
 # Voidium Changelog
 
+## [2.5] - 2026-03-14
+
+### 🌐 Web Control Panel — React + Vite Rewrite
+- **React 19 + Vite 6 + TypeScript**: Web panel frontend completely rewritten from inline Java strings (~1600 lines) to a proper React SPA with type-safe components, bundled into the mod JAR.
+- **16 Modular Components**: Hero, MetricGrid, TimerGrid, Timeline, QuickActions, SecurityPanel, PlayerRoster, ModuleHealth, VoteQueue, TicketPanel, StatsCharts, ConfigStudio, Console, LiveFeeds, AiPanel, MaintenanceBanner.
+- **SSE Real-time Updates**: Dashboard uses Server-Sent Events (`/api/events`) for 3-second push updates instead of 10-second polling. Automatic fallback to polling on connection loss.
+- **Dark / Light Theme**: Theme toggle in SecurityPanel with dark mode as default. Persistent via localStorage, anti-flash inline script prevents theme flicker on load.
+- **Locale Selector**: Language dropdown (English / Čeština) in SecurityPanel, persisted to localStorage, compatible with `?lang=cz` URL parameter.
+- **JSON Schema Export**: New `/api/config/schema/export` endpoint returns full configuration schema in JSON Schema draft-07 format for external tooling and validation.
+- **API Rate Limiting**: 120 requests per minute per IP with sliding window on AI endpoints (`/api/ai/*`). Returns 429 with `Retry-After` header when exceeded.
+- **Static Asset Serving**: WebManager serves pre-built assets from classpath (`/web/`) with content-type detection and immutable caching for hashed assets.
+- **Dev Mode Support**: Vite dev server with API proxy for hot-reload during development.
+- **Full Single-Page Dashboard**: Real-time server metrics, player list, scheduled task timers, and alert banners.
+- **Config Studio**: Complete visual config editor for all 12 modules — schema-driven forms with preview, diff, apply, rollback, defaults, and locale preset support.
+- **RGB Color Picker**: Inline color helper for `&#RRGGBB` text fields in Config Studio.
+- **Structured Editors**: Dedicated editors for rank lists and Discord role prefix mappings.
+- **Impact Classification**: Each config field change is labeled as "live-safe" or "restart-required".
+- **Live Console**: Stream server logs in the browser with syntax highlighting and command execution.
+- **Live Chat Feed**: Real-time chat history from `ChatHistoryManager`.
+- **Audit Trail**: All web panel actions logged to `web-audit.log` with timestamp, action, source, and status.
+- **SVG Performance Graphs**: 24-hour history charts for player count and TPS.
+- **`/voidium web` Re-enabled**: Generate bootstrap URL + persistent admin URL directly from in-game.- **Toast Notifications**: Non-blocking toast system (success, error, warning, info) with auto-dismiss. Replaces generic alerts for all user-facing feedback.
+- **System Info Cards**: CPU usage, RAM usage, and disk usage metrics in the dashboard (via `OperatingSystemMXBean` + `FileStore`).
+- **Server Icon**: Server favicon displayed in the dashboard hero section (`/api/server-icon` endpoint).
+- **Server Properties Editor**: View and edit `server.properties` directly from the Web panel (`/api/server-properties` GET/POST).
+- **MC Text Preview**: Live preview of Minecraft color codes (`&a`, `&b`, `&#RRGGBB`, etc.) in Config Studio text fields.
+- **HTTP Error Feedback**: Frontend properly surfaces server error messages (rate limit, validation, etc.) instead of generic "Action failed".
+- **Custom Conditions Hints**: Rank editor shows format examples and available condition types (KILL, VISIT, BREAK, PLACE) below the JSON textarea.
+### � Discord Improvements
+- **MC → Discord Ban Sync**: Fixed mixin registration — `StoredUserEntryAccessor` and `UserBanListMixin` were implemented but not registered in `voidium.mixins.json`. Bans now properly sync bidirectionally.
+- **Event Embeds**: Player join/leave/death messages now use colored Discord embeds with player skin thumbnails (green for join, red for leave, gray for death) instead of plain text.
+
+### 🎫 Ticket Auto-Assignment
+- **Auto-Assign Support Member**: New tickets are automatically assigned to the support team member with the fewest active tickets.
+- **Configurable**: `enableAutoAssign` toggle and `assignedMessage` template in `ticket.json`.
+
+### �🔐 Security & Session Hardening
+- **Secret Masking**: Sensitive config fields (`botToken`, `adminToken`, `sharedSecret`, API keys) are shown as `••••••` in Config Studio. Masked values are never written back.
+- **Session Cleanup Thread**: `Voidium-SessionCleaner` daemon purges expired bootstrap tokens and sessions every 5 minutes.
+- **Session Sliding**: Active sessions are renewed on each authenticated request.
+- **HttpOnly Cookies**: `voidium_session` cookie set with `HttpOnly; SameSite=Lax; Path=/`.
+- **Configurable Session TTL**: `sessionTtlMinutes` in `web.json` (default 120, minimum 5).
+- **Console Command Allowlist**: Web console only permits safe commands (messaging, teleport, utility, voidium).
+- **AI Secret Redaction**: Config context sent to LLM has apiKey, botToken, sharedSecret, adminToken, and chatWebhookUrl redacted.
+
+### 🛡️ Maintenance Mode
+- **Login Block**: When `maintenanceMode: true` in `general.json`, only OPs (permission level 2+) can join. Non-OPs get a bilingual disconnect message.
+- **Dashboard Banner**: "⚠ MAINTENANCE MODE ACTIVE" banner with one-click disable button.
+- **Web Panel Toggle**: `maintenance_on` / `maintenance_off` actions from the dashboard.
+- **Config Studio Warning**: Preview shows a warning when maintenance mode is enabled.
+
+### 🤖 AI System
+- **Per-Player Conversation History**: Each player gets their own conversation state (max 16 turns), stored in-memory keyed by UUID.
+- **Player History Panel**: `/api/ai/players` endpoint shows all player conversations sorted by last activity.
+- **Moderation Guardrails**: Input filter blocks keywords (hack, exploit, dupe, cheat, crash, grief, xray, bypass, injection, etc.). Blocked messages return a moderation notice.
+- **Response Length Cap**: AI responses capped at 4000 characters.
+- **Prompt Length Limit**: Player prompts capped at `playerPromptMaxLength` (default 280 chars).
+- **Per-Player Cooldown**: `playerCooldownSeconds` (default 20) prevents spam.
+- **World / Game Mode Restrictions**: `disabledWorlds` and `disabledGameModes` lists in `ai.json` block AI usage in specific dimensions or game modes.
+- **Access Gating**: 5 modes — ALL, PLAYTIME, DISCORD_ROLE, PLAYTIME_OR_DISCORD_ROLE, PLAYTIME_AND_DISCORD_ROLE.
+- **AI Config Suggestions**: `/api/ai/admin/suggest` — AI proposes config changes, staged in Config Studio with diff preview before apply.
+- **Incident Review**: One-click button grabs last 30 console + 20 chat lines, sends to AI for anomaly/error/security analysis.
+
+### 📊 Dashboard Improvements
+- **Scheduled Task Timeline**: Visual timeline panel with progress bars for restart, entity cleaner, and stats report timers.
+- **Live Timer Ticking**: Timer cards and timeline update every second.
+- **Vote Queue Inspector**: Pending vote snapshot, payout, and clear actions from dashboard.
+- **Boss Protection Status**: EntityCleaner section shows boss protection toggle state.
+
+### 🔧 Bug Fixes
+- **Config Studio Diff**: Fixed phantom diff showing ~23 changes after apply. Root cause: GSON `deepCopy()` converted integers to doubles, so `equalsValue(24, 24.0)` returned false.
+- **Config Studio State**: Diff, summary, and preview errors are now cleared after successful apply, rollback, or reload.
+- **AnnouncementManager Reload**: Fixed `ScheduledThreadPoolExecutor` "Task rejected" crash on config reload — scheduler is now recreated instead of reusing a terminated instance.
+- **Mixin Registration**: `StoredUserEntryAccessor` and `UserBanListMixin` were implemented but not registered in `voidium.mixins.json`.
+
 ## [2.4] - 2026-03-11
 
 ### 🎨 Chat System Overhaul
@@ -24,7 +99,7 @@
 
 ### 🔄 Reload Improvements
 - **`/voidium reload`**: Now fully restarts `RankManager` and `StatsManager` in addition to all configs, Discord, PlayerList, VoteManager, and EntityCleaner.
-- `/voidium web` command removed (web panel is WIP).
+- `/voidium web` command re-enabled in v2.5.
 
 ### 📊 Player List
 - **Time-Based Ranks in TAB**: Player list now checks playtime and displays matching rank prefixes/suffixes with hover tooltips.

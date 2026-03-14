@@ -54,7 +54,34 @@ _Next-generation server management made with AI_
 
 ## 🌐 Web Control Panel
 
-> 🚧 **Work In Progress** – The legacy web panel has been removed. A modern replacement with a completely redesigned UI is currently being developed.
+*   **React 19 + Vite 6 + TypeScript**: Modern SPA with 16 modular components, bundled into the JAR — no external dependencies
+*   **Full Admin Dashboard**: Real-time server metrics, player list, alert banners, and performance graphs
+*   **Config Studio**: Visual editor for all 12 config modules with preview, diff, apply, rollback, and locale presets
+*   **Live Console**: Server log streaming with command execution (safety-allowlisted commands only)
+*   **Live Chat Feed**: Real-time chat history viewer
+*   **Scheduled Task Timeline**: Visual progress bars for restart, entity cleaner, and stats report timers
+*   **SVG Performance Graphs**: 24-hour history charts for player count and TPS
+*   **Secret Masking**: Sensitive fields (bot tokens, API keys) shown as `••••••` — never written back
+*   **Audit Trail**: All actions logged to `web-audit.log` with timestamp and source
+*   **3 Auth Methods**: Admin token (permanent), bootstrap token (one-time via `/voidium web`), session cookie (rolling TTL)
+*   **Bilingual UI**: English and Czech interface via `web.json` `language` field
+
+## 🤖 AI Admin Assistant
+
+*   **Admin AI Chat**: Ask the AI about server status, config optimization, and player management
+*   **AI Config Suggestions**: AI proposes config changes → diff preview → confirm before apply
+*   **Per-Player Chat**: Players can talk to AI in-game with conversation history (max 16 turns per player)
+*   **Incident Review**: One-click analysis of recent console + chat logs for anomalies and security concerns
+*   **Moderation Guardrails**: Input filter blocks exploit/cheat keywords; response length & prompt size capped
+*   **Access Gating**: 5 modes — ALL, PLAYTIME, DISCORD_ROLE, or combinations
+*   **World / Game Mode Restrictions**: Disable AI in specific dimensions or game modes
+*   **Secret Redaction**: API keys, tokens, and secrets are stripped from AI context
+
+## 🛡️ Maintenance Mode
+
+*   **Login Block**: Only OPs can join when maintenance mode is active — others get a bilingual disconnect message
+*   **Dashboard Banner**: "⚠ MAINTENANCE MODE ACTIVE" with one-click toggle
+*   **Web Panel Control**: Enable/disable from dashboard or Config Studio
 
 ## 👾 Discord Integration
 
@@ -67,7 +94,8 @@ _Next-generation server management made with AI_
 *   **Console Streaming**: Stream server console logs directly to a Discord channel (batched for performance)
 *   **Status Messages**: Automated server lifecycle announcements (Starting, Online, Stopping, Offline) with debug logging
 *   **Channel Topic Updater**: Automatically updates channel topic with live stats (Online/Max players, Uptime)
-*   **Ban Synchronization**: Bidirectional ban sync between game and Discord server
+*   **Ban Synchronization**: Bidirectional ban sync between game and Discord server (mixin-based, automatic)
+*   **Event Embeds**: Player join/leave/death messages use colored Discord embeds with player skin thumbnails
 *   **Daily Stats**: Automated performance reports with configurable labels and messages
 *   **Role Sync**: Map Discord roles to in-game permissions
 *   **Webhooks**: Support for logging events via Discord webhooks
@@ -83,6 +111,7 @@ _Next-generation server management made with AI_
 *   **Support Role Integration**: Configurable support role with automatic channel access
 *   **Ticket Limits**: Configurable max tickets per user to prevent abuse
 *   **Easy Closing**: Close button for quick ticket resolution
+*   **Auto-Assignment**: New tickets are automatically assigned to the support member with the fewest active tickets
 *   **📄 Ticket Transcripts**: Automatically saves full conversation history (TXT or JSON format) when ticket closes
 *   **Full Customization**: All messages and settings configurable via web panel or config files
 *   **Bilingual**: Complete English and Czech translations

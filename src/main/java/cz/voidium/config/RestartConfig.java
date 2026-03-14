@@ -74,12 +74,17 @@ public class RestartConfig {
 
     private static RestartConfig load(Path configPath) {
         RestartConfig config = new RestartConfig(configPath);
-        
+        boolean migrated = false;
+
         if (Files.exists(configPath)) {
-            try (Reader reader = Files.newBufferedReader(configPath)) {
-                RestartConfig loaded = GSON.fromJson(reader, RestartConfig.class);
+            try {
+                RestartConfig loaded = ConfigFileHelper.loadJson(configPath, GSON, RestartConfig.class);
                 if (loaded != null) {
                     loaded.configPath = configPath;
+                    migrated = loaded.normalize();
+                    if (migrated) {
+                        loaded.save();
+                    }
                     return loaded;
                 }
             } catch (Exception e) {
@@ -89,6 +94,41 @@ public class RestartConfig {
         
         config.save();
         return config;
+    }
+
+    private boolean normalize() {
+        boolean changed = false;
+        if (restartType == null) {
+            restartType = RestartType.FIXED_TIME;
+            changed = true;
+        }
+        if (fixedRestartTimes == null || fixedRestartTimes.isEmpty()) {
+            fixedRestartTimes = new ArrayList<>();
+            fixedRestartTimes.add(LocalTime.of(6, 0));
+            fixedRestartTimes.add(LocalTime.of(18, 0));
+            changed = true;
+        }
+        if (intervalHours < 1) {
+            intervalHours = 6;
+            changed = true;
+        }
+        if (delayMinutes < 1) {
+            delayMinutes = 60;
+            changed = true;
+        }
+        if (warningMessage == null) {
+            warningMessage = "&cServer restart in %minutes% minutes!";
+            changed = true;
+        }
+        if (restartingNowMessage == null) {
+            restartingNowMessage = "&cServer is restarting now!";
+            changed = true;
+        }
+        if (kickMessage == null) {
+            kickMessage = "&cServer is restarting. Please reconnect in a few minutes.";
+            changed = true;
+        }
+        return changed;
     }
 
     public void save() {

@@ -65,6 +65,7 @@ public class VoidiumConfig {
         AnnouncementConfig.init(configDir);
         GeneralConfig.init(configDir);
         VoteConfig.init(configDir);
+        AIConfig.init(configDir);
         
         // Zachování kompatibility
         Path oldConfigPath = configDir.resolve("voidium.json");

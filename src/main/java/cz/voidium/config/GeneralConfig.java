@@ -43,6 +43,9 @@ public class GeneralConfig {
     // Enable/disable Custom Player List (TAB menu)
     private boolean enablePlayerList = true;
 
+    // Maintenance mode – blocks player login and shows a banner on the dashboard
+    private boolean maintenanceMode = false;
+
     // Number of hours to keep a cached skin entry (value+signature) before refetch.
     // Minimum enforced internally is 1. Set higher (e.g. 48) to reduce Mojang API calls,
     // or lower (e.g. 6) if players frequently change skins. Default 24.
@@ -67,12 +70,17 @@ public class GeneralConfig {
 
     private static GeneralConfig load(Path configPath) {
         GeneralConfig config = new GeneralConfig(configPath);
-        
+        boolean migrated = false;
+
         if (Files.exists(configPath)) {
-            try (Reader reader = Files.newBufferedReader(configPath)) {
-                GeneralConfig loaded = GSON.fromJson(reader, GeneralConfig.class);
+            try {
+                GeneralConfig loaded = ConfigFileHelper.loadJson(configPath, GSON, GeneralConfig.class);
                 if (loaded != null) {
                     loaded.configPath = configPath;
+                    migrated = loaded.normalize();
+                    if (migrated) {
+                        loaded.save();
+                    }
                     return loaded;
                 }
             } catch (Exception e) {
@@ -82,6 +90,19 @@ public class GeneralConfig {
         
         config.save();
         return config;
+    }
+
+    private boolean normalize() {
+        boolean changed = false;
+        if (skinCacheHours < 1) {
+            skinCacheHours = 24;
+            changed = true;
+        }
+        if (modPrefix == null || modPrefix.isBlank()) {
+            modPrefix = "&8[&bVoidium&8]&r ";
+            changed = true;
+        }
+        return changed;
     }
 
     public void save() {
@@ -116,8 +137,23 @@ public class GeneralConfig {
     public boolean isEnableRanks() { return enableRanks; }
     public boolean isEnableVote() { return enableVote; }
     public boolean isEnablePlayerList() { return enablePlayerList; }
+    public boolean isMaintenanceMode() { return maintenanceMode; }
     public int getSkinCacheHours() { return skinCacheHours; }
     public String getModPrefix() { return modPrefix; }
+
+    public void setEnableMod(boolean enableMod) { this.enableMod = enableMod; }
+    public void setEnableRestarts(boolean enableRestarts) { this.enableRestarts = enableRestarts; }
+    public void setEnableAnnouncements(boolean enableAnnouncements) { this.enableAnnouncements = enableAnnouncements; }
+    public void setEnableSkinRestorer(boolean enableSkinRestorer) { this.enableSkinRestorer = enableSkinRestorer; }
+    public void setEnableDiscord(boolean enableDiscord) { this.enableDiscord = enableDiscord; }
+    public void setEnableWeb(boolean enableWeb) { this.enableWeb = enableWeb; }
+    public void setEnableStats(boolean enableStats) { this.enableStats = enableStats; }
+    public void setEnableRanks(boolean enableRanks) { this.enableRanks = enableRanks; }
+    public void setEnableVote(boolean enableVote) { this.enableVote = enableVote; }
+    public void setEnablePlayerList(boolean enablePlayerList) { this.enablePlayerList = enablePlayerList; }
+    public void setMaintenanceMode(boolean maintenanceMode) { this.maintenanceMode = maintenanceMode; }
+    public void setSkinCacheHours(int skinCacheHours) { this.skinCacheHours = Math.max(1, skinCacheHours); }
+    public void setModPrefix(String modPrefix) { this.modPrefix = modPrefix; }
     
     // Apply locale preset
     public void applyLocale(String locale) {

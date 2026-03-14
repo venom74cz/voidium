@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AnnouncementManager {
     private final MinecraftServer server;
-    private final ScheduledExecutorService scheduler;
+    private ScheduledExecutorService scheduler;
     private final AtomicInteger currentAnnouncementIndex;
 
     public AnnouncementManager(MinecraftServer server) {
@@ -74,5 +74,11 @@ public class AnnouncementManager {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdownNow();
         }
+    }
+
+    public void reload() {
+        shutdown();
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduleAnnouncements();
     }
 }

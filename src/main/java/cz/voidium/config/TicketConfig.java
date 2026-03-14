@@ -14,6 +14,8 @@ public class TicketConfig {
     private boolean enableTickets = true;
     private String ticketCategoryId = "";
     private String supportRoleId = "";
+    private boolean enableAutoAssign = true;
+    private String assignedMessage = "📌 **%assignee%** has been assigned to this ticket (fewest active tickets).";
     
     // Available placeholders: %user% (Discord user tag), %reason% (ticket reason)
     private String ticketChannelTopic = "Ticket for %user% | Reason: %reason%";
@@ -89,6 +91,8 @@ public class TicketConfig {
     public boolean isEnableTickets() { return enableTickets; }
     public String getTicketCategoryId() { return ticketCategoryId; }
     public String getSupportRoleId() { return supportRoleId; }
+    public boolean isEnableAutoAssign() { return enableAutoAssign; }
+    public String getAssignedMessage() { return assignedMessage; }
     public String getTicketChannelTopic() { return ticketChannelTopic; }
     public int getMaxTicketsPerUser() { return maxTicketsPerUser; }
     
@@ -108,6 +112,28 @@ public class TicketConfig {
     public String getMcCategoryNotFoundMessage() { return mcCategoryNotFoundMessage; }
     public String getMcTicketCreatedMessage() { return mcTicketCreatedMessage; }
     public String getMcDiscordNotFoundMessage() { return mcDiscordNotFoundMessage; }
+
+    public void setEnableTickets(boolean enableTickets) { this.enableTickets = enableTickets; }
+    public void setTicketCategoryId(String ticketCategoryId) { this.ticketCategoryId = ticketCategoryId; }
+    public void setSupportRoleId(String supportRoleId) { this.supportRoleId = supportRoleId; }
+    public void setEnableAutoAssign(boolean enableAutoAssign) { this.enableAutoAssign = enableAutoAssign; }
+    public void setAssignedMessage(String assignedMessage) { this.assignedMessage = assignedMessage; }
+    public void setTicketChannelTopic(String ticketChannelTopic) { this.ticketChannelTopic = ticketChannelTopic; }
+    public void setMaxTicketsPerUser(int maxTicketsPerUser) { this.maxTicketsPerUser = maxTicketsPerUser; }
+    public void setTicketCreatedMessage(String ticketCreatedMessage) { this.ticketCreatedMessage = ticketCreatedMessage; }
+    public void setTicketWelcomeMessage(String ticketWelcomeMessage) { this.ticketWelcomeMessage = ticketWelcomeMessage; }
+    public void setTicketCloseMessage(String ticketCloseMessage) { this.ticketCloseMessage = ticketCloseMessage; }
+    public void setNoPermissionMessage(String noPermissionMessage) { this.noPermissionMessage = noPermissionMessage; }
+    public void setTicketLimitReachedMessage(String ticketLimitReachedMessage) { this.ticketLimitReachedMessage = ticketLimitReachedMessage; }
+    public void setTicketAlreadyClosedMessage(String ticketAlreadyClosedMessage) { this.ticketAlreadyClosedMessage = ticketAlreadyClosedMessage; }
+    public void setEnableTranscript(boolean enableTranscript) { this.enableTranscript = enableTranscript; }
+    public void setTranscriptFormat(String transcriptFormat) { this.transcriptFormat = transcriptFormat; }
+    public void setTranscriptFilename(String transcriptFilename) { this.transcriptFilename = transcriptFilename; }
+    public void setMcBotNotConnectedMessage(String mcBotNotConnectedMessage) { this.mcBotNotConnectedMessage = mcBotNotConnectedMessage; }
+    public void setMcGuildNotFoundMessage(String mcGuildNotFoundMessage) { this.mcGuildNotFoundMessage = mcGuildNotFoundMessage; }
+    public void setMcCategoryNotFoundMessage(String mcCategoryNotFoundMessage) { this.mcCategoryNotFoundMessage = mcCategoryNotFoundMessage; }
+    public void setMcTicketCreatedMessage(String mcTicketCreatedMessage) { this.mcTicketCreatedMessage = mcTicketCreatedMessage; }
+    public void setMcDiscordNotFoundMessage(String mcDiscordNotFoundMessage) { this.mcDiscordNotFoundMessage = mcDiscordNotFoundMessage; }
 
     public void applyLocale(String locale) {
         Map<String, String> messages = LocalePresets.getTicketMessages(locale);

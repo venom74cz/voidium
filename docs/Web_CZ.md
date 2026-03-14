@@ -6,7 +6,7 @@ title: Web panel (CZ)
 # 🌐 Web panel
 
 <div class="hero">
-	<p><strong>Voidium Web Control Panel</strong> je lehký HTTP dashboard pro stav serveru, rychlé akce a editaci konfigurace.</p>
+	<p><strong>Voidium Web Control Panel</strong> je React 19 + Vite 6 + TypeScript SPA zabalená přímo v mod JARu. Poskytuje kompletní admin dashboard pro stav serveru, rychlé akce, AI asistenci a vizuální editaci konfigurace — bez externích závislostí.</p>
 
 	<div class="note">
 		Přístup chrání jednorázový token v URL. Token se mění při každém startu serveru a po prvním otevření se uloží do session cookie.
@@ -73,38 +73,56 @@ Soubor: <code>config/voidium/web.json</code>
 
 Panel má několik endpointů:
 
+**Statické assety**
+
+- <code>GET /</code> — React SPA (index.html, vyžaduje auth)
+- <code>GET /assets/*</code> — hashované JS/CSS bundly (immutable cache)
+
 **Dashboard**
 
-- <code>GET /</code> — HTML dashboard (vyžaduje auth)
-- <code>GET /css/style.css</code> — styly panelu
+- <code>GET /api/dashboard</code> — kompletní telemetrie serveru (vyžaduje auth)
+- <code>GET /api/feeds</code> — snapshot chatu + konzole
+- <code>GET /api/events</code> — Server-Sent Events (SSE) stream, push dashboard dat každé 3 sekundy
 
 **Akce (POST)**
 
-- <code>/api/action</code> (form payload):
-	- <code>action=restart</code>
-	- <code>action=announce</code> + <code>message</code>
-	- <code>action=kick</code> + <code>player</code>
-	- <code>action=ban</code> + <code>uuid</code> + <code>name</code>
-	- <code>action=unban</code> + <code>uuid</code>
-	- <code>action=unlink</code> + <code>uuid</code>
+- <code>POST /api/action</code> (JSON s polem <code>action</code>):
+	- <code>restart</code>, <code>reload</code>, <code>announce</code>, <code>maintenance_on/off</code>
+	- <code>entitycleaner_preview/all/items/mobs/xp/arrows</code>
+	- <code>vote_payout/clear/payout_all/clear_all</code>
+	- <code>ticket_close/note/transcript</code>
 
-**Config API**
+**Config Studio API**
 
-- <code>GET /api/config</code> — vrátí aktuální konfiguraci
-- <code>POST /api/config</code> — uloží změny konfigurace
+- <code>GET /api/config/schema</code> — definice polí pro všechny moduly
+- <code>GET /api/config/values</code> — aktuální hodnoty
+- <code>GET /api/config/defaults</code> — tovární výchozí hodnoty
+- <code>GET /api/config/locale</code> — lokální preset (en/cz)
+- <code>POST /api/config/preview</code> — náhled změn s impact flagy
+- <code>POST /api/config/diff</code> — diff aktuální vs navržené hodnoty
+- <code>POST /api/config/apply</code> — aplikuj změny (vytvoří zálohu)
+- <code>POST /api/config/rollback</code> — vrátí poslední zálohu
+- <code>POST /api/config/reload</code> — reload konfigů z disku
 
-POST podporuje oba formáty:
+**AI API**
 
-- <code>{"section":"discord","data":{...}}</code>
-- starší formát <code>{"discord":{...},"general":{...}}</code>
+- <code>POST /api/ai/admin</code> — admin AI konverzace
+- <code>POST /api/ai/admin/suggest</code> — AI návrhy konfigurace
+- <code>GET /api/ai/players</code> — historie AI konverzací hráčů
 
-**Reset lokalizace**
+**Konzole**
 
-- <code>POST /api/locale</code> s JSON: <code>{"locale":"en"}</code> nebo <code>{"locale":"cz"}</code>
+- <code>POST /api/console/execute</code> — spustí povolené příkazy
 
-**Historie statistik**
+**Export schématu**
 
-- <code>GET /api/stats/history</code> — datapointy (pokud je Stats modul aktivní)
+- <code>GET /api/config/schema/export</code> — kompletní schéma konfigurace ve formátu JSON Schema draft-07
+
+**Správa serveru**
+
+- <code>GET /api/server-icon</code> — ikona serveru (PNG, bez auth)
+- <code>GET /api/server-properties</code> — čtení server.properties jako JSON key-value
+- <code>POST /api/server-properties</code> — zápis server.properties (JSON body s key-value páry)
 
 **Discord role**
 
@@ -115,6 +133,8 @@ POST podporuje oba formáty:
 - Panel běží přes HTTP; používej interní síť nebo reverse proxy.
 - Nesdílej token URL.
 - Restart serveru vždy invaliduje staré tokeny.
+- **Rate limiting**: AI endpointy (<code>/api/ai/*</code>) mají limit 120 požadavků/minutu na IP. Po překročení vrací HTTP 429 s hlavičkou <code>Retry-After</code>.
+- **Téma & jazyk**: Dark/light téma a jazyk se ukládají do <code>localStorage</code> (pouze na straně klienta).
 
 ## 🧯 Řešení problémů {#troubleshooting}
 

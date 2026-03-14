@@ -34,6 +34,9 @@ public class TicketManager {
     private volatile long lastTicketCreationTime = 0;
     private static final long TICKET_CREATION_COOLDOWN_MS = 60_000; // 60 seconds between ticket creations
 
+    // Map: channel ID -> assigned support member ID  (for auto-assignment load balancing)
+    private final java.util.Map<String, String> ticketAssignee = new java.util.concurrent.ConcurrentHashMap<>();
+
     private TicketManager() {
     }
 
@@ -42,6 +45,9 @@ public class TicketManager {
             instance = new TicketManager();
         }
         return instance;
+    }
+
+    public record TicketSnapshot(String channelId, String playerName, int cachedMessages, java.util.List<String> previewLines) {
     }
 
     public void createTicket(Member member, String reason) {
@@ -112,6 +118,11 @@ public class TicketManager {
                             .setActionRow(Button.danger("close_ticket", "Close Ticket"))
                             .queue();
 
+                        appendTicketMessage(channel.getId(), "[SYSTEM] Ticket created for " + member.getUser().getAsTag() + " | Reason: " + reason);
+
+                    // Auto-assign support member
+                    autoAssignSupport(channel, guild);
+
                     // Set topic
                     channel.getManager().setTopic(config.getTicketChannelTopic()
                             .replace("%user%", member.getUser().getAsTag())
@@ -124,6 +135,7 @@ public class TicketManager {
         TicketConfig config = TicketConfig.getInstance();
 
         String playerName = ticketToPlayer.remove(channel.getId());
+        ticketAssignee.remove(channel.getId());
         LOGGER.info("Closing ticket channel {}", channel.getName());
 
         EmbedBuilder embed = new EmbedBuilder();
@@ -241,6 +253,13 @@ public class TicketManager {
 
     public String getPlayerNameForTicket(String channelId) {
         return ticketToPlayer.get(channelId);
+    }
+
+    /**
+     * Returns cached transcript lines for a ticket channel (web download).
+     */
+    public java.util.List<String> getTranscriptLines(String channelId) {
+        return ticketMessages.getOrDefault(channelId, java.util.List.of());
     }
 
     public void createTicket(long discordId, String reason, String initialMessage,
@@ -364,6 +383,7 @@ public class TicketManager {
                     // Store mapping: channel ID -> player name
                     String playerName = player.getName().getString();
                     ticketToPlayer.put(channel.getId(), playerName);
+                    appendTicketMessage(channel.getId(), "[SYSTEM] Ticket created for " + playerName + " | Reason: " + reason);
                     LOGGER.info("Created ticket channel {} for player {}", channel.getName(), playerName);
 
                     // Send Packet to Client
@@ -394,6 +414,10 @@ public class TicketManager {
                     channel.sendMessage("**" + playerName + "**: " + initialMessage).queue(
                             success -> LOGGER.debug("Sent initial message to ticket"),
                             error -> LOGGER.error("Failed to send initial message: {}", error.getMessage()));
+                        appendTicketMessage(channel.getId(), playerName + ": " + initialMessage);
+
+                    // Auto-assign support member
+                    autoAssignSupport(channel, guild);
 
                     // Set topic
                     channel.getManager().setTopic(config.getTicketChannelTopic()
@@ -435,6 +459,57 @@ public class TicketManager {
                 success -> player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§aReply sent!")),
                 error -> player.sendSystemMessage(
                         net.minecraft.network.chat.Component.literal("§cFailed to send reply: " + error.getMessage())));
+        appendTicketMessage(channelId, playerName + ": " + message);
+    }
+
+    public void sendWebNote(String channelId, String message) {
+        JDA jda = DiscordManager.getInstance().getJda();
+        if (jda == null) {
+            throw new IllegalStateException("Discord bot is not connected.");
+        }
+        TextChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) {
+            throw new IllegalStateException("Ticket channel not found.");
+        }
+
+        channel.sendMessage("**[Web Admin]** " + message).queue(
+                success -> LOGGER.debug("Sent web note to ticket {}", channelId),
+                error -> LOGGER.warn("Failed to send web note to ticket {}: {}", channelId, error.getMessage()));
+        appendTicketMessage(channelId, "[Web Admin] " + message);
+    }
+
+    public void closeTicketFromWeb(String channelId) {
+        JDA jda = DiscordManager.getInstance().getJda();
+        if (jda == null) {
+            throw new IllegalStateException("Discord bot is not connected.");
+        }
+        TextChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) {
+            throw new IllegalStateException("Ticket channel not found.");
+        }
+        closeTicket(channel, channel.getGuild().getSelfMember());
+    }
+
+    public java.util.List<TicketSnapshot> snapshotOpenTickets() {
+        java.util.List<TicketSnapshot> snapshots = new java.util.ArrayList<>();
+        for (java.util.Map.Entry<String, String> entry : ticketToPlayer.entrySet()) {
+            java.util.List<String> preview = ticketMessages.getOrDefault(entry.getKey(), java.util.List.of());
+            int from = Math.max(0, preview.size() - 4);
+            snapshots.add(new TicketSnapshot(entry.getKey(), entry.getValue(), preview.size(), new java.util.ArrayList<>(preview.subList(from, preview.size()))));
+        }
+        snapshots.sort(java.util.Comparator.comparing(TicketSnapshot::playerName));
+        return snapshots;
+    }
+
+    private void appendTicketMessage(String channelId, String line) {
+        ticketMessages.compute(channelId, (key, existing) -> {
+            java.util.List<String> messages = existing == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(existing);
+            messages.add(line);
+            if (messages.size() > 24) {
+                messages = new java.util.ArrayList<>(messages.subList(messages.size() - 24, messages.size()));
+            }
+            return messages;
+        });
     }
 
     public String getOpenTicketChannel(net.minecraft.server.level.ServerPlayer player) {
@@ -444,5 +519,50 @@ public class TicketManager {
                 .map(java.util.Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Auto-assigns the support member with the fewest active tickets to this channel.
+     * Sends a notification message with the assigned member's mention.
+     */
+    private void autoAssignSupport(TextChannel channel, Guild guild) {
+        TicketConfig config = TicketConfig.getInstance();
+        if (!config.isEnableAutoAssign()) return;
+
+        String supportRoleId = config.getSupportRoleId();
+        if (supportRoleId == null || supportRoleId.isEmpty()) return;
+
+        Role supportRole = guild.getRoleById(supportRoleId);
+        if (supportRole == null) return;
+
+        guild.findMembersWithRoles(supportRole).onSuccess(members -> {
+            if (members.isEmpty()) return;
+
+            // Count active tickets per support member
+            java.util.Map<String, Long> ticketCounts = new java.util.HashMap<>();
+            for (Member m : members) {
+                ticketCounts.put(m.getId(), 0L);
+            }
+            for (String assigneeId : ticketAssignee.values()) {
+                ticketCounts.computeIfPresent(assigneeId, (k, v) -> v + 1);
+            }
+
+            // Find member with fewest active tickets
+            Member leastBusy = members.stream()
+                    .min(java.util.Comparator.comparingLong(m -> ticketCounts.getOrDefault(m.getId(), 0L)))
+                    .orElse(null);
+
+            if (leastBusy == null) return;
+
+            ticketAssignee.put(channel.getId(), leastBusy.getId());
+
+            String msg = config.getAssignedMessage()
+                    .replace("%assignee%", leastBusy.getEffectiveName());
+            channel.sendMessage(leastBusy.getAsMention() + "\n" + msg).queue(
+                    s -> LOGGER.info("Auto-assigned ticket {} to {} ({} active tickets)",
+                            channel.getName(), leastBusy.getEffectiveName(),
+                            ticketCounts.getOrDefault(leastBusy.getId(), 0L)),
+                    e -> LOGGER.warn("Failed to send auto-assign message: {}", e.getMessage()));
+        });
     }
 }

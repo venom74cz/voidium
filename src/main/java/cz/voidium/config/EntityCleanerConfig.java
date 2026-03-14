@@ -47,6 +47,9 @@ public class EntityCleanerConfig {
     
     // If false, tamed animals (wolves, cats, horses) will be protected
     private boolean removeTamedAnimals = false;
+
+    // If true, bosses are always protected, including modded bosses when detectable.
+    private boolean protectBosses = true;
     
     // === Whitelists ===
     
@@ -97,12 +100,17 @@ public class EntityCleanerConfig {
 
     private static EntityCleanerConfig load(Path configPath) {
         EntityCleanerConfig config = new EntityCleanerConfig(configPath);
-        
+
         if (Files.exists(configPath)) {
-            try (Reader reader = Files.newBufferedReader(configPath)) {
-                EntityCleanerConfig loaded = GSON.fromJson(reader, EntityCleanerConfig.class);
+            try {
+                String raw = Files.readString(configPath);
+                EntityCleanerConfig loaded = ConfigFileHelper.loadJson(configPath, GSON, EntityCleanerConfig.class);
                 if (loaded != null) {
                     loaded.configPath = configPath;
+                    boolean hadProtectBosses = raw.contains("\"protectBosses\"");
+                    if (loaded.normalize(hadProtectBosses)) {
+                        loaded.save();
+                    }
                     return loaded;
                 }
             } catch (Exception e) {
@@ -112,6 +120,39 @@ public class EntityCleanerConfig {
         
         config.save();
         return config;
+    }
+
+    private boolean normalize(boolean hadProtectBosses) {
+        boolean changed = false;
+        if (warningTimes == null || warningTimes.isEmpty()) {
+            warningTimes = new ArrayList<>(List.of(30, 10, 5));
+            changed = true;
+        }
+        if (cleanupIntervalSeconds < 10) {
+            cleanupIntervalSeconds = 300;
+            changed = true;
+        }
+        if (entityWhitelist == null) {
+            entityWhitelist = new ArrayList<>();
+            changed = true;
+        }
+        if (itemWhitelist == null) {
+            itemWhitelist = new ArrayList<>();
+            changed = true;
+        }
+        if (warningMessage == null || warningMessage.isBlank()) {
+            warningMessage = "&e[EntityCleaner] &fClearing entities in &c%seconds% &fseconds!";
+            changed = true;
+        }
+        if (cleanupMessage == null || cleanupMessage.isBlank()) {
+            cleanupMessage = "&a[EntityCleaner] &fRemoved &e%items% items&f, &e%mobs% mobs&f, &e%xp% XP orbs&f, &e%arrows% arrows&f.";
+            changed = true;
+        }
+        if (!hadProtectBosses) {
+            protectBosses = true;
+            changed = true;
+        }
+        return changed;
     }
 
     public void save() {
@@ -133,6 +174,7 @@ public class EntityCleanerConfig {
                 writer.write("// === Protection Settings ===\n");
                 writer.write("// removeNamedEntities - if false, named entities (name tags) are protected\n");
                 writer.write("// removeTamedAnimals - if false, tamed animals are protected\n");
+                writer.write("// protectBosses - if true, bosses are never removed, including detectable modded bosses\n");
                 writer.write("// \n");
                 writer.write("// === Whitelists ===\n");
                 writer.write("// entityWhitelist - entity types that will NEVER be removed\n");
@@ -158,6 +200,7 @@ public class EntityCleanerConfig {
     public boolean isRemoveArrows() { return removeArrows; }
     public boolean isRemoveNamedEntities() { return removeNamedEntities; }
     public boolean isRemoveTamedAnimals() { return removeTamedAnimals; }
+    public boolean isProtectBosses() { return protectBosses; }
     public List<String> getEntityWhitelist() { return entityWhitelist; }
     public List<String> getItemWhitelist() { return itemWhitelist; }
     public String getWarningMessage() { return warningMessage; }
@@ -174,6 +217,7 @@ public class EntityCleanerConfig {
     public void setRemoveArrows(boolean removeArrows) { this.removeArrows = removeArrows; }
     public void setRemoveNamedEntities(boolean removeNamedEntities) { this.removeNamedEntities = removeNamedEntities; }
     public void setRemoveTamedAnimals(boolean removeTamedAnimals) { this.removeTamedAnimals = removeTamedAnimals; }
+    public void setProtectBosses(boolean protectBosses) { this.protectBosses = protectBosses; }
     public void setEntityWhitelist(List<String> entityWhitelist) { this.entityWhitelist = entityWhitelist; }
     public void setItemWhitelist(List<String> itemWhitelist) { this.itemWhitelist = itemWhitelist; }
     public void setWarningMessage(String warningMessage) { this.warningMessage = warningMessage; }

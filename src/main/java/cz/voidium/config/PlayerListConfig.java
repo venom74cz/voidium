@@ -51,9 +51,15 @@ public class PlayerListConfig {
     public static void init(Path configDir) {
         Path configPath = configDir.resolve("playerlist.json");
         if (Files.exists(configPath)) {
-            try (Reader reader = Files.newBufferedReader(configPath)) {
-                instance = GSON.fromJson(reader, PlayerListConfig.class);
+            try {
+                instance = ConfigFileHelper.loadJson(configPath, GSON, PlayerListConfig.class);
+                if (instance == null) {
+                    instance = new PlayerListConfig(configPath);
+                }
                 instance.configPath = configPath;
+                if (instance.normalize()) {
+                    instance.save();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 instance = new PlayerListConfig(configPath);
@@ -62,6 +68,21 @@ public class PlayerListConfig {
             instance = new PlayerListConfig(configPath);
             instance.save();
         }
+    }
+
+    private boolean normalize() {
+        boolean changed = false;
+        if (headerLine1 == null) { headerLine1 = "§b§l✦ VOIDIUM SERVER ✦"; changed = true; }
+        if (headerLine2 == null) { headerLine2 = "§7Online: §a%online%§7/§a%max%"; changed = true; }
+        if (headerLine3 == null) { headerLine3 = ""; changed = true; }
+        if (footerLine1 == null) { footerLine1 = "§7TPS: §a%tps%"; changed = true; }
+        if (footerLine2 == null) { footerLine2 = "§7Ping: §e%ping%ms"; changed = true; }
+        if (footerLine3 == null) { footerLine3 = ""; changed = true; }
+        if (playerNameFormat == null || playerNameFormat.isBlank()) { playerNameFormat = "%rank_prefix%%player_name%%rank_suffix%"; changed = true; }
+        if (defaultPrefix == null) { defaultPrefix = "§7"; changed = true; }
+        if (defaultSuffix == null) { defaultSuffix = ""; changed = true; }
+        if (updateIntervalSeconds < 3) { updateIntervalSeconds = 5; changed = true; }
+        return changed;
     }
 
     public void save() {
@@ -86,6 +107,20 @@ public class PlayerListConfig {
     public String getDefaultPrefix() { return defaultPrefix; }
     public String getDefaultSuffix() { return defaultSuffix; }
     public int getUpdateIntervalSeconds() { return updateIntervalSeconds; }
+
+    public void setEnableCustomPlayerList(boolean enableCustomPlayerList) { this.enableCustomPlayerList = enableCustomPlayerList; }
+    public void setHeaderLine1(String headerLine1) { this.headerLine1 = headerLine1; }
+    public void setHeaderLine2(String headerLine2) { this.headerLine2 = headerLine2; }
+    public void setHeaderLine3(String headerLine3) { this.headerLine3 = headerLine3; }
+    public void setFooterLine1(String footerLine1) { this.footerLine1 = footerLine1; }
+    public void setFooterLine2(String footerLine2) { this.footerLine2 = footerLine2; }
+    public void setFooterLine3(String footerLine3) { this.footerLine3 = footerLine3; }
+    public void setEnableCustomNames(boolean enableCustomNames) { this.enableCustomNames = enableCustomNames; }
+    public void setPlayerNameFormat(String playerNameFormat) { this.playerNameFormat = playerNameFormat; }
+    public void setCombineMultipleRanks(boolean combineMultipleRanks) { this.combineMultipleRanks = combineMultipleRanks; }
+    public void setDefaultPrefix(String defaultPrefix) { this.defaultPrefix = defaultPrefix; }
+    public void setDefaultSuffix(String defaultSuffix) { this.defaultSuffix = defaultSuffix; }
+    public void setUpdateIntervalSeconds(int updateIntervalSeconds) { this.updateIntervalSeconds = Math.max(3, updateIntervalSeconds); }
     
     // Apply locale preset
     public void applyLocale(String locale) {

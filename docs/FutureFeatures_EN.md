@@ -21,6 +21,9 @@ title: Plans & Roadmap (EN)
                     <li><strong>Discord OAuth</strong> – Login to panel using Discord account acces with specific role (no console token required).</li>
                     <li><strong>Live Console</strong> – Real-time server console monitoring directly in browser (WebSocket).</li>
                     <li><strong>Graphs & Visuals</strong> – History graphs for TPS, RAM, and Player Count in the dashboard.</li>
+                    <li><strong>🔧 Persistent AI History (WIP)</strong> – Save admin AI conversation history across sessions for continuity.</li>
+                    <li><strong>🔧 Ticket Dashboard Stats (WIP)</strong> – Analytics and statistics for the ticket system (response times, resolution rates, volume).</li>
+                    <li><strong>🔧 Playtime Rank Role Picker (WIP)</strong> – When AI player access mode is set to PLAYTIME, show a dropdown of configured rank tiers so admins can pick from existing rank definitions instead of entering hours manually.</li>
                 </ul>
 
                 <h3>2) Advanced Discord Integration</h3>

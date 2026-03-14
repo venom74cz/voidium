@@ -116,6 +116,14 @@ public class Voidium {
         return voteManager;
     }
 
+    public EntityCleaner getEntityCleaner() {
+        return entityCleaner;
+    }
+
+    public AnnouncementManager getAnnouncementManager() {
+        return announcementManager;
+    }
+
     private void onServerStarting(ServerStartingEvent event) {
         cz.voidium.config.GeneralConfig gc = cz.voidium.config.GeneralConfig.getInstance();
         // Start Discord Manager early to send "Starting" message
@@ -211,6 +219,11 @@ public class Voidium {
                 VoidiumCommand.setEntityCleaner(entityCleaner);
             }
 
+            if (gc.isEnableWeb()) {
+                cz.voidium.web.WebManager.getInstance().setServer(event.getServer());
+                cz.voidium.web.WebManager.getInstance().start();
+            }
+
             // Nastavení managerů pro příkazy
             VoidiumCommand.setManagers(restartManager, announcementManager);
 
@@ -229,6 +242,7 @@ public class Voidium {
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
         VoidiumCommand.register(event.getDispatcher());
+        cz.voidium.commands.AICommand.register(event.getDispatcher());
         cz.voidium.commands.TicketCommand.register(event.getDispatcher());
         cz.voidium.commands.ReplyCommand.register(event.getDispatcher());
     }
@@ -256,6 +270,8 @@ public class Voidium {
 
         // Stop PlayerListManager
         cz.voidium.playerlist.PlayerListManager.getInstance().stop();
+
+        cz.voidium.web.WebManager.getInstance().stop();
 
         // Stop Stats and Ranks Managers
         cz.voidium.stats.StatsManager.getInstance().stop();
