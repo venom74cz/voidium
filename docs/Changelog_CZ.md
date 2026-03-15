@@ -22,6 +22,14 @@ title: Changelog (CZ)
 
 ## 🆕 Nejnovější verze {#latest}
 
+### 2.5.1 — 2026-03-15
+
+**Opravy chatu a ranků**
+
+- Odkazy z Discordu přeposlané do Minecraft chatu jsou znovu klikatelné.
+- Rank prefixy a suffixy v TABu znovu ukazují tooltip s odehranými a požadovanými hodinami, i když je zapnutý PlayerList.
+- Metadata verze byla sjednocena na 2.5.1.
+
 ### 2.5 — 2026‑03‑14
 
 **Web Control Panel — přepsání do React + Vite**
@@ -55,6 +63,7 @@ title: Changelog (CZ)
 
 ## 📚 Historie verzí {#history}
 
+- 2.5 — React + Vite rewrite web panelu
 - 2.3.5 — Oprava Discord bridge + dokumentace Web panelu
 - 2.3.4 — Zpevnění vote systému + release messaging
 - 2.3.3 — Limit stáří votů + V1 kompatibilita

@@ -22,6 +22,14 @@ title: Changelog (EN)
 
 ## 🆕 Latest release {#latest}
 
+### 2.5.1 — 2026-03-15
+
+**Chat + Rank Fixes**
+
+- Discord links forwarded into Minecraft chat are clickable again.
+- Rank prefixes and suffixes in TAB show the playtime / required-hours tooltip again when PlayerList is enabled.
+- Version metadata updated to 2.5.1.
+
 ### 2.5 — 2026‑03‑14
 
 **Web Control Panel — React + Vite Rewrite**
@@ -55,6 +63,7 @@ title: Changelog (EN)
 
 ## 📚 Previous versions {#history}
 
+- 2.5 — React + Vite web panel rewrite
 - 2.3.5 — Discord bridge fix + Web panel docs
 - 2.3.4 — Vote system hardening + release messaging improvements
 - 2.3.3 — Vote age limit + V1 compatibility fixes

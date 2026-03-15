@@ -4,6 +4,8 @@ import cz.voidium.config.PlayerListConfig;
 import cz.voidium.config.RanksConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
@@ -161,6 +163,8 @@ public class PlayerListManager {
             ChatFormatting primaryColor = ChatFormatting.WHITE;
             boolean hasColor = false;
             boolean combineMultiple = config.isCombineMultipleRanks();
+            MutableComponent rankPrefixComp = null;
+            MutableComponent rankSuffixComp = null;
 
             // 0. Inherit from existing team (if not voidium team) to respect other mods
             PlayerTeam currentTeam = player.getTeam();
@@ -313,22 +317,32 @@ public class PlayerListManager {
 
                 if (bestTimePrefix != null) {
                     String translatedPrefix = translateColorCodes(bestTimePrefix.value);
-                    allPrefixes.append(translatedPrefix);
-                    if (!translatedPrefix.endsWith(" ")) {
-                        allPrefixes.append(" ");
-                    }
+                    if (!translatedPrefix.endsWith(" ")) translatedPrefix += " ";
+                    String pf = ranksConfig.getTooltipPlayed() != null ? ranksConfig.getTooltipPlayed() : "§7Played: §f%hours%h";
+                    String rf = ranksConfig.getTooltipRequired() != null ? ranksConfig.getTooltipRequired() : "§7Required: §f%hours%h";
+                    String pt = pf.replace("%hours%", String.format("%.1f", hoursPlayed));
+                    String rt = rf.replace("%hours%", String.valueOf(bestTimePrefix.hours));
+                    Component tooltip = Component.literal(pt).append(Component.literal("\n" + rt));
+                    rankPrefixComp = Component.literal(translatedPrefix)
+                            .withStyle(style -> style.withHoverEvent(
+                                    new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip)));
                 }
                 if (bestTimeSuffix != null) {
                     String translatedSuffix = translateColorCodes(bestTimeSuffix.value);
-                    if (!translatedSuffix.startsWith(" ")) {
-                        allSuffixes.append(" ");
-                    }
-                    allSuffixes.append(translatedSuffix);
+                    if (!translatedSuffix.startsWith(" ")) translatedSuffix = " " + translatedSuffix;
+                    String pf = ranksConfig.getTooltipPlayed() != null ? ranksConfig.getTooltipPlayed() : "§7Played: §f%hours%h";
+                    String rf = ranksConfig.getTooltipRequired() != null ? ranksConfig.getTooltipRequired() : "§7Required: §f%hours%h";
+                    String pt = pf.replace("%hours%", String.format("%.1f", hoursPlayed));
+                    String rt = rf.replace("%hours%", String.valueOf(bestTimeSuffix.hours));
+                    Component suffixTooltip = Component.literal(pt).append(Component.literal("\n" + rt));
+                    rankSuffixComp = Component.literal(translatedSuffix)
+                            .withStyle(style -> style.withHoverEvent(
+                                    new HoverEvent(HoverEvent.Action.SHOW_TEXT, suffixTooltip)));
                 }
             }
 
             // 3. Default prefix/suffix (applied if nothing else)
-            if (allPrefixes.length() == 0 && config.getDefaultPrefix() != null
+            if (allPrefixes.length() == 0 && rankPrefixComp == null && config.getDefaultPrefix() != null
                     && !config.getDefaultPrefix().isEmpty()) {
                 String defaultPrefix = translateColorCodes(config.getDefaultPrefix());
                 allPrefixes.append(defaultPrefix);
@@ -336,7 +350,7 @@ public class PlayerListManager {
                     allPrefixes.append(" ");
                 }
             }
-            if (allSuffixes.length() == 0 && config.getDefaultSuffix() != null
+            if (allSuffixes.length() == 0 && rankSuffixComp == null && config.getDefaultSuffix() != null
                     && !config.getDefaultSuffix().isEmpty()) {
                 String defaultSuffix = translateColorCodes(config.getDefaultSuffix());
                 if (!defaultSuffix.startsWith(" ")) {
@@ -353,9 +367,17 @@ public class PlayerListManager {
                 team = scoreboard.addPlayerTeam(teamName);
             }
 
-            // Set team properties with combined prefixes/suffixes
-            team.setPlayerPrefix(Component.literal(allPrefixes.toString()));
-            team.setPlayerSuffix(Component.literal(allSuffixes.toString()));
+            // Set team properties with combined prefixes/suffixes (rank parts have HoverEvent)
+            MutableComponent finalPrefix = Component.empty();
+            if (allPrefixes.length() > 0) finalPrefix.append(Component.literal(allPrefixes.toString()));
+            if (rankPrefixComp != null) finalPrefix.append(rankPrefixComp);
+
+            MutableComponent finalSuffix = Component.empty();
+            if (rankSuffixComp != null) finalSuffix.append(rankSuffixComp);
+            if (allSuffixes.length() > 0) finalSuffix.append(Component.literal(allSuffixes.toString()));
+
+            team.setPlayerPrefix(finalPrefix);
+            team.setPlayerSuffix(finalSuffix);
             team.setColor(primaryColor);
 
             // Add player to team

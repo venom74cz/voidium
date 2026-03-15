@@ -1,7 +1,9 @@
 package cz.voidium.discord;
 
 import cz.voidium.config.DiscordConfig;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.ServerChatEvent;
@@ -9,6 +11,8 @@ import net.neoforged.neoforge.event.CommandEvent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChatBridge {
     private static ChatBridge instance;
@@ -129,21 +133,37 @@ public class ChatBridge {
         message = message.replaceAll("__(.+?)__", "§n$1§r");
         message = message.replaceAll("~~(.+?)~~", "§m$1§r");
 
-        // Clickable Links (Simple detection)
-        // We wrap links in a ClickEvent component if possible, but since we are
-        // constructing a string format,
-        // we rely on the client's auto-link detection or we need to construct a complex
-        // Component.
-        // For simplicity in this string-based format, we just color them to make them
-        // stand out.
-        message = message.replaceAll("(https?://\\S+)", "§9$1§r");
-
+        // Build Component with clickable links
+        // First, build the formatted message string (without URLs processed)
         String finalMessage = format
                 .replace("%user%", user)
                 .replace("%message%", message)
                 .replace("&", "§");
 
-        server.getPlayerList().broadcastSystemMessage(Component.literal(finalMessage), false);
+        // Parse URLs and create clickable Components
+        Pattern urlPattern = Pattern.compile("(https?://\\S+)");
+        Matcher urlMatcher = urlPattern.matcher(finalMessage);
+        MutableComponent chatComponent = Component.empty();
+        int lastEnd = 0;
+
+        while (urlMatcher.find()) {
+            // Append text before the URL
+            if (urlMatcher.start() > lastEnd) {
+                chatComponent.append(Component.literal(finalMessage.substring(lastEnd, urlMatcher.start())));
+            }
+            // Append clickable URL
+            String url = urlMatcher.group(1);
+            chatComponent.append(Component.literal("§9" + url + "§r")
+                    .withStyle(style -> style.withClickEvent(
+                            new ClickEvent(ClickEvent.Action.OPEN_URL, url))));
+            lastEnd = urlMatcher.end();
+        }
+        // Append remaining text after last URL
+        if (lastEnd < finalMessage.length()) {
+            chatComponent.append(Component.literal(finalMessage.substring(lastEnd)));
+        }
+
+        server.getPlayerList().broadcastSystemMessage(chatComponent, false);
     }
 
     public void sendTicketMessageToPlayer(String playerName, String discordUser, String message, String channelId) {

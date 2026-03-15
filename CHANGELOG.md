@@ -1,5 +1,12 @@
 # Voidium Changelog
 
+## [2.5.1] - 2026-03-15
+
+### Fixes
+- **Clickable Discord Links in MC Chat**: Discord bridge messages now create proper `ClickEvent.OPEN_URL` components instead of only coloring URLs blue, so links are clickable again in chat.
+- **Rank Hover Tooltip in TAB**: Time-based rank prefixes and suffixes in the player list now keep their hover tooltip when PlayerList is enabled, including played hours and required hours for the displayed rank.
+- **Version Metadata Sync**: Updated project version metadata to `2.5.1` for the current release.
+
 ## [2.5] - 2026-03-14
 
 ### 🌐 Web Control Panel — React + Vite Rewrite
