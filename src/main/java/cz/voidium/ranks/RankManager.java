@@ -1,5 +1,6 @@
 package cz.voidium.ranks;
 
+import cz.voidium.config.PlayerListConfig;
 import cz.voidium.config.RanksConfig;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -25,6 +26,7 @@ public class RankManager {
 
     private MinecraftServer server;
     private ScheduledExecutorService scheduler;
+    private boolean registeredEvents;
 
     private RankManager() {
     }
@@ -39,16 +41,22 @@ public class RankManager {
     public void start(MinecraftServer server) {
         this.server = server;
         RanksConfig config = RanksConfig.getInstance();
-        if (!config.isEnableAutoRanks())
+        if (!config.isEnableAutoRanks()) {
+            refreshOnlinePlayerNames();
             return;
+        }
 
-        NeoForge.EVENT_BUS.register(this);
+        if (!registeredEvents) {
+            NeoForge.EVENT_BUS.register(this);
+            registeredEvents = true;
+        }
 
         scheduler = Executors.newScheduledThreadPool(1);
         int interval = Math.max(1, config.getCheckIntervalMinutes());
 
-        scheduler.scheduleAtFixedRate(this::checkRanks, interval, interval, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(this::scheduleRankCheck, interval, interval, TimeUnit.MINUTES);
         LOGGER.info("Rank Manager started. Checking every {} minutes.", interval);
+        refreshOnlinePlayerNames();
     }
 
     public void stop() {
@@ -56,7 +64,11 @@ public class RankManager {
             scheduler.shutdownNow();
             scheduler = null;
         }
-        NeoForge.EVENT_BUS.unregister(this);
+        if (registeredEvents) {
+            NeoForge.EVENT_BUS.unregister(this);
+            registeredEvents = false;
+        }
+        refreshOnlinePlayerNames();
     }
 
     public void reload() {
@@ -73,10 +85,7 @@ public class RankManager {
         if (!config.isEnableAutoRanks())
             return;
 
-        // If PlayerListManager is active, it handles prefix/suffix via scoreboard
-        // teams.
-        // Avoid duplicating them in the display name.
-        if (cz.voidium.config.GeneralConfig.getInstance().isEnablePlayerList()) {
+        if (isCustomPlayerListNameHandlingActive()) {
             return;
         }
 
@@ -169,6 +178,13 @@ public class RankManager {
         }
     }
 
+    private void scheduleRankCheck() {
+        if (server == null) {
+            return;
+        }
+        runOnServerThread(this::checkRanks);
+    }
+
     private void checkRanks() {
         if (server == null)
             return;
@@ -222,6 +238,47 @@ public class RankManager {
                     player.sendSystemMessage(Component.literal(formatColors(msg)));
                 }
             }
+        }
+
+        refreshOnlinePlayerNames();
+    }
+
+    private boolean isCustomPlayerListNameHandlingActive() {
+        cz.voidium.config.GeneralConfig generalConfig = cz.voidium.config.GeneralConfig.getInstance();
+        PlayerListConfig playerListConfig = PlayerListConfig.getInstance();
+        return generalConfig != null
+                && generalConfig.isEnablePlayerList()
+                && playerListConfig != null
+                && playerListConfig.isEnableCustomPlayerList()
+                && playerListConfig.isEnableCustomNames();
+    }
+
+    private void refreshOnlinePlayerNames() {
+        if (server == null) {
+            return;
+        }
+
+        runOnServerThread(() -> {
+            List<ServerPlayer> players = List.copyOf(server.getPlayerList().getPlayers());
+            boolean refreshTabListNames = isCustomPlayerListNameHandlingActive();
+            for (ServerPlayer player : players) {
+                player.refreshDisplayName();
+                if (refreshTabListNames) {
+                    player.refreshTabListName();
+                }
+            }
+        });
+    }
+
+    private void runOnServerThread(Runnable action) {
+        if (server == null) {
+            return;
+        }
+
+        if (server.isSameThread()) {
+            action.run();
+        } else {
+            server.execute(action);
         }
     }
 

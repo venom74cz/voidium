@@ -847,7 +847,7 @@ public class WebManager {
                             sendJson(exchange, 400, Map.of("message", "Announcement message is required."));
                             return;
                         }
-                        AnnouncementManager manager = Voidium.getInstance().getAnnouncementManager();
+                        AnnouncementManager manager = Voidium.getInstance().ensureAnnouncementManager(server);
                         if (manager == null) {
                             sendJson(exchange, 400, Map.of("message", "Announcement manager is not available."));
                             return;

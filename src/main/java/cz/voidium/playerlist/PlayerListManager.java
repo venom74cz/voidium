@@ -2,32 +2,38 @@ package cz.voidium.playerlist;
 
 import cz.voidium.config.PlayerListConfig;
 import cz.voidium.config.RanksConfig;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.stats.Stats;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.time.ZonedDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import net.minecraft.stats.Stats;
 
 public class PlayerListManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("voidium-playerlist");
+    private static final String DEFAULT_PLAYER_NAME_FORMAT = "%rank_prefix%%player_name%%rank_suffix%";
     private static PlayerListManager instance;
 
     private MinecraftServer server;
     private ScheduledExecutorService executor;
+    private boolean registeredEvents;
 
     private PlayerListManager() {
     }
@@ -40,8 +46,8 @@ public class PlayerListManager {
     }
 
     public void start(MinecraftServer server) {
-        this.server = server;
         stop();
+        this.server = server;
 
         PlayerListConfig config = PlayerListConfig.getInstance();
         if (!config.isEnableCustomPlayerList()) {
@@ -49,7 +55,13 @@ public class PlayerListManager {
             return;
         }
 
-        int interval = Math.max(3, config.getUpdateIntervalSeconds()); // Minimum 3 seconds for performance
+        if (config.isEnableCustomNames()) {
+            NeoForge.EVENT_BUS.register(this);
+            registeredEvents = true;
+            refreshPlayerNames();
+        }
+
+        int interval = Math.max(3, config.getUpdateIntervalSeconds());
         executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleAtFixedRate(this::updatePlayerList, 0, interval, TimeUnit.SECONDS);
 
@@ -61,21 +73,36 @@ public class PlayerListManager {
             executor.shutdownNow();
             executor = null;
         }
+
+        if (registeredEvents) {
+            NeoForge.EVENT_BUS.unregister(this);
+            registeredEvents = false;
+        }
+
+        refreshPlayerNames();
     }
 
     private void updatePlayerList() {
-        if (server == null)
+        if (server == null) {
             return;
+        }
+
         PlayerListConfig config = PlayerListConfig.getInstance();
-        if (!config.isEnableCustomPlayerList())
+        if (!config.isEnableCustomPlayerList()) {
             return;
+        }
 
+        runOnServerThread(this::updatePlayerListOnServerThread);
+    }
+
+    private void updatePlayerListOnServerThread() {
+        if (server == null) {
+            return;
+        }
+
+        PlayerListConfig config = PlayerListConfig.getInstance();
         try {
-            // Create a defensive copy to avoid ConcurrentModificationException
-            // since this runs in a separate thread while players may join/leave
             List<ServerPlayer> players = List.copyOf(server.getPlayerList().getPlayers());
-
-            // Build header/footer for each player (for playtime)
             for (ServerPlayer player : players) {
                 int ping = player.connection.latency();
                 String header = buildTextWithPlayer(config.getHeaderLine1(), config.getHeaderLine2(),
@@ -86,9 +113,9 @@ public class PlayerListManager {
                 player.connection.send(new net.minecraft.network.protocol.game.ClientboundTabListPacket(
                         Component.literal(header), Component.literal(footer)));
 
-                // Update player team (for colored names and prefix/suffix)
                 if (config.isEnableCustomNames()) {
-                    updatePlayerTeam(player);
+                    player.refreshDisplayName();
+                    player.refreshTabListName();
                 }
             }
         } catch (Exception e) {
@@ -96,46 +123,310 @@ public class PlayerListManager {
         }
     }
 
-    // New: Build text with player-specific placeholders
+    @SubscribeEvent
+    public void onNameFormat(PlayerEvent.NameFormat event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !isCustomNameFormattingEnabled()) {
+            return;
+        }
+
+        event.setDisplayname(buildFormattedPlayerName(player, event.getDisplayname()));
+    }
+
+    @SubscribeEvent
+    public void onTabListNameFormat(PlayerEvent.TabListNameFormat event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !isCustomNameFormattingEnabled()) {
+            return;
+        }
+
+        Component baseName = event.getDisplayName() != null ? event.getDisplayName() : player.getName().copy();
+        event.setDisplayName(buildFormattedPlayerName(player, baseName));
+    }
+
+    private boolean isCustomNameFormattingEnabled() {
+        if (server == null) {
+            return false;
+        }
+
+        cz.voidium.config.GeneralConfig generalConfig = cz.voidium.config.GeneralConfig.getInstance();
+        PlayerListConfig config = PlayerListConfig.getInstance();
+        return generalConfig != null
+                && generalConfig.isEnablePlayerList()
+                && config.isEnableCustomPlayerList()
+                && config.isEnableCustomNames();
+    }
+
+    private Component buildFormattedPlayerName(ServerPlayer player, Component baseName) {
+        NameDecoration decoration = collectNameDecoration(player);
+        Component playerNameComponent = baseName.copy();
+
+        if (decoration.playerNameColor() != null) {
+            playerNameComponent = playerNameComponent.copy()
+                    .withStyle(style -> style.withColor(decoration.playerNameColor()));
+        }
+
+        return applyNameFormat(PlayerListConfig.getInstance().getPlayerNameFormat(), decoration.prefixComponent(),
+                playerNameComponent, decoration.suffixComponent());
+    }
+
+    private NameDecoration collectNameDecoration(ServerPlayer player) {
+        PlayerListConfig config = PlayerListConfig.getInstance();
+        MutableComponent prefixComponent = Component.empty();
+        MutableComponent suffixComponent = Component.empty();
+        TextColor playerNameColor = null;
+        boolean hasPrefix = false;
+        boolean hasSuffix = false;
+        boolean combineMultiple = config.isCombineMultipleRanks();
+
+        cz.voidium.config.DiscordConfig discordConfig = cz.voidium.config.DiscordConfig.getInstance();
+        if (discordConfig != null
+                && discordConfig.isEnableDiscord()
+                && discordConfig.getRolePrefixes() != null
+                && !discordConfig.getRolePrefixes().isEmpty()) {
+            try {
+                List<String> playerRoleIds = cz.voidium.discord.DiscordManager.getInstance()
+                        .getPlayerDiscordRoles(player.getUUID());
+
+                if (!playerRoleIds.isEmpty()) {
+                    List<Map.Entry<String, cz.voidium.config.DiscordConfig.RoleStyle>> matchingRoles = new ArrayList<>();
+                    for (String roleId : playerRoleIds) {
+                        cz.voidium.config.DiscordConfig.RoleStyle roleStyle = discordConfig.getRolePrefixes().get(roleId);
+                        if (roleStyle != null) {
+                            matchingRoles.add(Map.entry(roleId, roleStyle));
+                        }
+                    }
+
+                    matchingRoles.sort(Comparator.comparingInt(
+                            (Map.Entry<String, cz.voidium.config.DiscordConfig.RoleStyle> entry) -> entry.getValue().priority)
+                            .reversed());
+
+                    int processedRoles = 0;
+                    for (Map.Entry<String, cz.voidium.config.DiscordConfig.RoleStyle> entry : matchingRoles) {
+                        cz.voidium.config.DiscordConfig.RoleStyle roleStyle = entry.getValue();
+
+                        if (roleStyle.prefix != null && !roleStyle.prefix.isBlank()) {
+                            prefixComponent.append(Component.literal(ensureTrailingSpace(translateColorCodes(roleStyle.prefix))));
+                            hasPrefix = true;
+                        }
+
+                        if (roleStyle.suffix != null && !roleStyle.suffix.isBlank()) {
+                            suffixComponent.append(Component.literal(ensureLeadingSpace(translateColorCodes(roleStyle.suffix))));
+                            hasSuffix = true;
+                        }
+
+                        if (playerNameColor == null && roleStyle.color != null && !roleStyle.color.isBlank()) {
+                            playerNameColor = parseTextColor(roleStyle.color);
+                        }
+
+                        processedRoles++;
+                        if (!combineMultiple && processedRoles >= 1) {
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.error("[PlayerList] Error fetching Discord roles for {}: {}", player.getScoreboardName(),
+                        e.getMessage());
+            }
+        }
+
+        Component rankPrefixComponent = null;
+        Component rankSuffixComponent = null;
+        cz.voidium.config.GeneralConfig generalConfig = cz.voidium.config.GeneralConfig.getInstance();
+        RanksConfig ranksConfig = RanksConfig.getInstance();
+        if (generalConfig != null
+                && generalConfig.isEnableRanks()
+                && ranksConfig != null
+                && ranksConfig.isEnableAutoRanks()
+                && ranksConfig.getRanks() != null) {
+            int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+            double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
+
+            RanksConfig.RankDefinition bestTimePrefix = null;
+            RanksConfig.RankDefinition bestTimeSuffix = null;
+
+            for (RanksConfig.RankDefinition rank : ranksConfig.getRanks()) {
+                if (hoursPlayed < rank.hours) {
+                    continue;
+                }
+
+                boolean meetsConditions = true;
+                if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
+                    String uuid = player.getUUID().toString();
+                    for (RanksConfig.CustomCondition condition : rank.customConditions) {
+                        if (!cz.voidium.ranks.ProgressTracker.getInstance()
+                                .meetsCondition(uuid, condition.type, condition.count)) {
+                            meetsConditions = false;
+                            break;
+                        }
+                    }
+                }
+                if (!meetsConditions) {
+                    continue;
+                }
+
+                if ("PREFIX".equalsIgnoreCase(rank.type)) {
+                    if (bestTimePrefix == null || rank.hours > bestTimePrefix.hours) {
+                        bestTimePrefix = rank;
+                    }
+                } else if ("SUFFIX".equalsIgnoreCase(rank.type)) {
+                    if (bestTimeSuffix == null || rank.hours > bestTimeSuffix.hours) {
+                        bestTimeSuffix = rank;
+                    }
+                }
+            }
+
+            if (bestTimePrefix != null) {
+                String prefix = ensureTrailingSpace(translateColorCodes(bestTimePrefix.value));
+                String playedText = ranksConfig.getTooltipPlayed().replace("%hours%", String.format("%.1f", hoursPlayed));
+                String requiredText = ranksConfig.getTooltipRequired().replace("%hours%", String.valueOf(bestTimePrefix.hours));
+                Component tooltip = Component.literal(playedText).append(Component.literal("\n" + requiredText));
+                rankPrefixComponent = Component.literal(prefix)
+                        .withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip)));
+            }
+
+            if (bestTimeSuffix != null) {
+                String suffix = ensureLeadingSpace(translateColorCodes(bestTimeSuffix.value));
+                String playedText = ranksConfig.getTooltipPlayed().replace("%hours%", String.format("%.1f", hoursPlayed));
+                String requiredText = ranksConfig.getTooltipRequired().replace("%hours%", String.valueOf(bestTimeSuffix.hours));
+                Component tooltip = Component.literal(playedText).append(Component.literal("\n" + requiredText));
+                rankSuffixComponent = Component.literal(suffix)
+                        .withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip)));
+            }
+        }
+
+        if (!hasPrefix && rankPrefixComponent == null && config.getDefaultPrefix() != null
+                && !config.getDefaultPrefix().isEmpty()) {
+            prefixComponent.append(Component.literal(ensureTrailingSpace(translateColorCodes(config.getDefaultPrefix()))));
+        }
+
+        if (!hasSuffix && rankSuffixComponent == null && config.getDefaultSuffix() != null
+                && !config.getDefaultSuffix().isEmpty()) {
+            suffixComponent.append(Component.literal(ensureLeadingSpace(translateColorCodes(config.getDefaultSuffix()))));
+        }
+
+        if (rankPrefixComponent != null) {
+            prefixComponent.append(rankPrefixComponent);
+        }
+
+        if (rankSuffixComponent != null) {
+            suffixComponent.append(rankSuffixComponent);
+        }
+
+        return new NameDecoration(prefixComponent, suffixComponent, playerNameColor);
+    }
+
+    private Component applyNameFormat(String rawFormat, Component prefixComponent, Component playerNameComponent,
+            Component suffixComponent) {
+        String format = rawFormat == null || rawFormat.isBlank() ? DEFAULT_PLAYER_NAME_FORMAT : rawFormat;
+        MutableComponent result = Component.empty();
+        int cursor = 0;
+        boolean insertedPlayerName = false;
+
+        while (cursor < format.length()) {
+            int nextIndex = format.length();
+            String placeholder = null;
+
+            for (String candidate : new String[] { "%rank_prefix%", "%player_name%", "%rank_suffix%" }) {
+                int candidateIndex = format.indexOf(candidate, cursor);
+                if (candidateIndex >= 0 && candidateIndex < nextIndex) {
+                    nextIndex = candidateIndex;
+                    placeholder = candidate;
+                }
+            }
+
+            if (placeholder == null) {
+                if (cursor < format.length()) {
+                    result.append(Component.literal(translateColorCodes(format.substring(cursor))));
+                }
+                break;
+            }
+
+            if (nextIndex > cursor) {
+                result.append(Component.literal(translateColorCodes(format.substring(cursor, nextIndex))));
+            }
+
+            if ("%rank_prefix%".equals(placeholder)) {
+                result.append(prefixComponent.copy());
+            } else if ("%player_name%".equals(placeholder)) {
+                result.append(playerNameComponent.copy());
+                insertedPlayerName = true;
+            } else if ("%rank_suffix%".equals(placeholder)) {
+                result.append(suffixComponent.copy());
+            }
+
+            cursor = nextIndex + placeholder.length();
+        }
+
+        if (!insertedPlayerName) {
+            result.append(playerNameComponent.copy());
+        }
+
+        return result;
+    }
+
+    private void refreshPlayerNames() {
+        if (server == null) {
+            return;
+        }
+
+        runOnServerThread(() -> {
+            List<ServerPlayer> players = List.copyOf(server.getPlayerList().getPlayers());
+            for (ServerPlayer onlinePlayer : players) {
+                onlinePlayer.refreshDisplayName();
+                onlinePlayer.refreshTabListName();
+            }
+        });
+    }
+
+    private void runOnServerThread(Runnable action) {
+        if (server == null) {
+            return;
+        }
+
+        if (server.isSameThread()) {
+            action.run();
+        } else {
+            server.execute(action);
+        }
+    }
+
     private String buildTextWithPlayer(String line1, String line2, String line3, ServerPlayer player, int ping) {
         if (server == null)
             return "";
         int online = server.getPlayerList().getPlayerCount();
         int max = server.getPlayerList().getMaxPlayers();
         double tps = getCurrentTPS();
-        StringBuilder sb = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         if (!line1.isEmpty()) {
-            sb.append(replacePlaceholdersFull(line1, online, max, tps, ping, player));
+            stringBuilder.append(replacePlaceholdersFull(line1, online, max, tps, ping, player));
         }
         if (!line2.isEmpty()) {
-            if (sb.length() > 0)
-                sb.append("\n");
-            sb.append(replacePlaceholdersFull(line2, online, max, tps, ping, player));
+            if (stringBuilder.length() > 0)
+                stringBuilder.append("\n");
+            stringBuilder.append(replacePlaceholdersFull(line2, online, max, tps, ping, player));
         }
         if (!line3.isEmpty()) {
-            if (sb.length() > 0)
-                sb.append("\n");
-            sb.append(replacePlaceholdersFull(line3, online, max, tps, ping, player));
+            if (stringBuilder.length() > 0)
+                stringBuilder.append("\n");
+            stringBuilder.append(replacePlaceholdersFull(line3, online, max, tps, ping, player));
         }
-        return sb.toString();
+        return stringBuilder.toString();
     }
 
-    // New: Replace all placeholders including %playtime% and %time%
     private String replacePlaceholdersFull(String text, int online, int max, double tps, int ping,
             ServerPlayer player) {
-        // Playtime in hours (rounded to 1 decimal)
         double playtimeHours = 0.0;
         if (player != null) {
             int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
             playtimeHours = ticksPlayed / 20.0 / 3600.0;
         }
-        // Prague time
+
         ZonedDateTime pragueTime = ZonedDateTime.now(ZoneId.of("Europe/Prague"));
         String formattedTime = pragueTime.format(DateTimeFormatter.ofPattern("HH:mm"));
-        // Memory usage (used/total MB)
         long usedMem = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
         long maxMem = Runtime.getRuntime().maxMemory() / (1024 * 1024);
         String memoryString = usedMem + " / " + maxMem + " MB";
+
         return text
                 .replace("%online%", String.valueOf(online))
                 .replace("%max%", String.valueOf(max))
@@ -146,333 +437,84 @@ public class PlayerListManager {
                 .replace("%memory%", memoryString);
     }
 
-    private void updatePlayerTeam(ServerPlayer player) {
-        try {
-            if (server == null)
-                return;
-
-            PlayerListConfig config = PlayerListConfig.getInstance();
-            RanksConfig ranksConfig = RanksConfig.getInstance();
-
-            Scoreboard scoreboard = server.getScoreboard();
-            String playerName = player.getScoreboardName();
-
-            // Collect all prefixes and suffixes from different sources
-            StringBuilder allPrefixes = new StringBuilder();
-            StringBuilder allSuffixes = new StringBuilder();
-            ChatFormatting primaryColor = ChatFormatting.WHITE;
-            boolean hasColor = false;
-            boolean combineMultiple = config.isCombineMultipleRanks();
-            MutableComponent rankPrefixComp = null;
-            MutableComponent rankSuffixComp = null;
-
-            // 0. Inherit from existing team (if not voidium team) to respect other mods
-            PlayerTeam currentTeam = player.getTeam();
-            if (currentTeam != null && !currentTeam.getName().startsWith("voidium_")) {
-                String existingPrefix = currentTeam.getPlayerPrefix().getString();
-                String existingSuffix = currentTeam.getPlayerSuffix().getString();
-
-                if (!existingPrefix.isEmpty()) {
-                    allPrefixes.append(existingPrefix);
-                    if (!existingPrefix.endsWith(" "))
-                        allPrefixes.append(" ");
-                }
-                if (!existingSuffix.isEmpty()) {
-                    if (!existingSuffix.startsWith(" "))
-                        allSuffixes.append(" ");
-                    allSuffixes.append(existingSuffix);
-                }
-
-                if (currentTeam.getColor() != ChatFormatting.RESET && currentTeam.getColor() != ChatFormatting.WHITE) {
-                    primaryColor = currentTeam.getColor();
-                    hasColor = true;
-                }
-            }
-
-            // 1. Collect Discord role-based prefixes/suffixes from
-            // DiscordConfig.rolePrefixes
-            cz.voidium.config.DiscordConfig discordConfig = cz.voidium.config.DiscordConfig.getInstance();
-            if (discordConfig != null && discordConfig.isEnableDiscord() && discordConfig.getRolePrefixes() != null) {
-                try {
-                    List<String> playerRoleIds = cz.voidium.discord.DiscordManager.getInstance()
-                            .getPlayerDiscordRoles(player.getUUID());
-
-                    if (!playerRoleIds.isEmpty()) {
-                        // Get ALL matching roles sorted by priority (highest first)
-                        List<java.util.Map.Entry<String, cz.voidium.config.DiscordConfig.RoleStyle>> matchingRoles = new java.util.ArrayList<>();
-                        for (String roleId : playerRoleIds) {
-                            if (discordConfig.getRolePrefixes().containsKey(roleId)) {
-                                cz.voidium.config.DiscordConfig.RoleStyle roleStyle = discordConfig.getRolePrefixes()
-                                        .get(roleId);
-                                matchingRoles.add(new java.util.AbstractMap.SimpleEntry<>(roleId, roleStyle));
-                            }
-                        }
-
-                        // Sort by priority (highest first)
-                        matchingRoles.sort((a, b) -> Integer.compare(b.getValue().priority, a.getValue().priority));
-
-                        // Append prefixes/suffixes
-                        int rolesProcessed = 0;
-                        for (java.util.Map.Entry<String, cz.voidium.config.DiscordConfig.RoleStyle> entry : matchingRoles) {
-                            String roleId = entry.getKey();
-                            cz.voidium.config.DiscordConfig.RoleStyle roleStyle = entry.getValue();
-
-                            // Fetch Role info from Discord if needed for defaults
-                            net.dv8tion.jda.api.entities.Role discordRole = cz.voidium.discord.DiscordManager
-                                    .getInstance().getRole(roleId);
-
-                            String prefix = roleStyle.prefix;
-                            String suffix = roleStyle.suffix;
-                            String color = roleStyle.color;
-
-                            // Auto-generate prefix if missing but role exists
-                            if ((prefix == null || prefix.isEmpty()) && discordRole != null) {
-                                String roleName = discordRole.getName();
-                                String hexColor = "";
-
-                                // Try to get color from config or role
-                                if (color != null && !color.isEmpty()) {
-                                    // Config color takes precedence
-                                } else {
-                                    java.awt.Color roleColor = discordRole.getColor();
-                                    if (roleColor != null) {
-                                        hexColor = String.format("&#%02x%02x%02x", roleColor.getRed(),
-                                                roleColor.getGreen(), roleColor.getBlue());
-                                    }
-                                }
-
-                                if (!hexColor.isEmpty()) {
-                                    prefix = hexColor + "[" + roleName + "]&r";
-                                } else {
-                                    prefix = "&7[" + roleName + "]&r";
-                                }
-                            }
-
-                            if (prefix != null && !prefix.isEmpty()) {
-                                String translatedPrefix = translateColorCodes(prefix);
-                                allPrefixes.append(translatedPrefix);
-                                if (!translatedPrefix.endsWith(" ")) {
-                                    allPrefixes.append(" ");
-                                }
-                            }
-                            if (suffix != null && !suffix.isEmpty()) {
-                                String translatedSuffix = translateColorCodes(suffix);
-                                if (!translatedSuffix.startsWith(" ")) {
-                                    allSuffixes.append(" ");
-                                }
-                                allSuffixes.append(translatedSuffix);
-                            }
-                            // Use color from highest priority role
-                            if (!hasColor && color != null && !color.isEmpty()) {
-                                primaryColor = parseColorCode(color);
-                                hasColor = true;
-                            }
-
-                            rolesProcessed++;
-                            // If not combining multiple, stop after first role
-                            if (!combineMultiple && rolesProcessed >= 1)
-                                break;
-                        }
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("[PlayerList] Error fetching Discord roles for {}: {}", playerName, e.getMessage());
-                }
-            }
-
-            // 2. Add time-based ranks from RanksConfig
-            if (ranksConfig != null && ranksConfig.getRanks() != null) {
-                int ticksPlayed = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
-                double hoursPlayed = ticksPlayed / 20.0 / 3600.0;
-
-                RanksConfig.RankDefinition bestTimePrefix = null;
-                RanksConfig.RankDefinition bestTimeSuffix = null;
-
-                for (RanksConfig.RankDefinition rank : ranksConfig.getRanks()) {
-                    if (hoursPlayed < rank.hours)
-                        continue;
-
-                    // Check custom conditions
-                    boolean meetsConditions = true;
-                    if (rank.customConditions != null && !rank.customConditions.isEmpty()) {
-                        String uuid = player.getUUID().toString();
-                        for (RanksConfig.CustomCondition cond : rank.customConditions) {
-                            if (!cz.voidium.ranks.ProgressTracker.getInstance()
-                                    .meetsCondition(uuid, cond.type, cond.count)) {
-                                meetsConditions = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (!meetsConditions)
-                        continue;
-
-                    if ("PREFIX".equalsIgnoreCase(rank.type)) {
-                        if (bestTimePrefix == null || rank.hours > bestTimePrefix.hours)
-                            bestTimePrefix = rank;
-                    } else if ("SUFFIX".equalsIgnoreCase(rank.type)) {
-                        if (bestTimeSuffix == null || rank.hours > bestTimeSuffix.hours)
-                            bestTimeSuffix = rank;
-                    }
-                }
-
-                if (bestTimePrefix != null) {
-                    String translatedPrefix = translateColorCodes(bestTimePrefix.value);
-                    if (!translatedPrefix.endsWith(" ")) translatedPrefix += " ";
-                    String pf = ranksConfig.getTooltipPlayed() != null ? ranksConfig.getTooltipPlayed() : "§7Played: §f%hours%h";
-                    String rf = ranksConfig.getTooltipRequired() != null ? ranksConfig.getTooltipRequired() : "§7Required: §f%hours%h";
-                    String pt = pf.replace("%hours%", String.format("%.1f", hoursPlayed));
-                    String rt = rf.replace("%hours%", String.valueOf(bestTimePrefix.hours));
-                    Component tooltip = Component.literal(pt).append(Component.literal("\n" + rt));
-                    rankPrefixComp = Component.literal(translatedPrefix)
-                            .withStyle(style -> style.withHoverEvent(
-                                    new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip)));
-                }
-                if (bestTimeSuffix != null) {
-                    String translatedSuffix = translateColorCodes(bestTimeSuffix.value);
-                    if (!translatedSuffix.startsWith(" ")) translatedSuffix = " " + translatedSuffix;
-                    String pf = ranksConfig.getTooltipPlayed() != null ? ranksConfig.getTooltipPlayed() : "§7Played: §f%hours%h";
-                    String rf = ranksConfig.getTooltipRequired() != null ? ranksConfig.getTooltipRequired() : "§7Required: §f%hours%h";
-                    String pt = pf.replace("%hours%", String.format("%.1f", hoursPlayed));
-                    String rt = rf.replace("%hours%", String.valueOf(bestTimeSuffix.hours));
-                    Component suffixTooltip = Component.literal(pt).append(Component.literal("\n" + rt));
-                    rankSuffixComp = Component.literal(translatedSuffix)
-                            .withStyle(style -> style.withHoverEvent(
-                                    new HoverEvent(HoverEvent.Action.SHOW_TEXT, suffixTooltip)));
-                }
-            }
-
-            // 3. Default prefix/suffix (applied if nothing else)
-            if (allPrefixes.length() == 0 && rankPrefixComp == null && config.getDefaultPrefix() != null
-                    && !config.getDefaultPrefix().isEmpty()) {
-                String defaultPrefix = translateColorCodes(config.getDefaultPrefix());
-                allPrefixes.append(defaultPrefix);
-                if (!defaultPrefix.endsWith(" ")) {
-                    allPrefixes.append(" ");
-                }
-            }
-            if (allSuffixes.length() == 0 && rankSuffixComp == null && config.getDefaultSuffix() != null
-                    && !config.getDefaultSuffix().isEmpty()) {
-                String defaultSuffix = translateColorCodes(config.getDefaultSuffix());
-                if (!defaultSuffix.startsWith(" ")) {
-                    allSuffixes.append(" ");
-                }
-                allSuffixes.append(defaultSuffix);
-            }
-
-            // Create or get team
-            String teamName = "voidium_" + playerName;
-            PlayerTeam team = scoreboard.getPlayerTeam(teamName);
-
-            if (team == null) {
-                team = scoreboard.addPlayerTeam(teamName);
-            }
-
-            // Set team properties with combined prefixes/suffixes (rank parts have HoverEvent)
-            MutableComponent finalPrefix = Component.empty();
-            if (allPrefixes.length() > 0) finalPrefix.append(Component.literal(allPrefixes.toString()));
-            if (rankPrefixComp != null) finalPrefix.append(rankPrefixComp);
-
-            MutableComponent finalSuffix = Component.empty();
-            if (rankSuffixComp != null) finalSuffix.append(rankSuffixComp);
-            if (allSuffixes.length() > 0) finalSuffix.append(Component.literal(allSuffixes.toString()));
-
-            team.setPlayerPrefix(finalPrefix);
-            team.setPlayerSuffix(finalSuffix);
-            team.setColor(primaryColor);
-
-            // Add player to team
-            scoreboard.addPlayerToTeam(playerName, team);
-
-        } catch (Exception e) {
-            LOGGER.error("Error updating player team for " + player.getName().getString(), e);
-        }
-    }
-
     private String translateColorCodes(String text) {
-        if (text == null)
+        if (text == null) {
             return "";
+        }
 
-        // Handle Hex colors: &#RRGGBB -> §x§R§R§G§G§B§B
         java.util.regex.Pattern hexPattern = java.util.regex.Pattern.compile("&#([A-Fa-f0-9]{6})");
         java.util.regex.Matcher matcher = hexPattern.matcher(text);
-        StringBuffer sb = new StringBuffer();
+        StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
             String hex = matcher.group(1);
             StringBuilder replacement = new StringBuilder("§x");
-            for (char c : hex.toCharArray()) {
-                replacement.append("§").append(c);
+            for (char character : hex.toCharArray()) {
+                replacement.append("§").append(character);
             }
-            matcher.appendReplacement(sb, replacement.toString());
+            matcher.appendReplacement(buffer, replacement.toString());
         }
-        matcher.appendTail(sb);
-        text = sb.toString();
+        matcher.appendTail(buffer);
 
-        // Convert & color codes to § for Minecraft
-        return text.replace("&", "§");
+        return buffer.toString().replace("&", "§");
     }
 
-    private ChatFormatting parseColorCode(String colorCode) {
-        if (colorCode == null || colorCode.isEmpty())
-            return ChatFormatting.WHITE;
+    private TextColor parseTextColor(String colorCode) {
+        if (colorCode == null || colorCode.isBlank()) {
+            return null;
+        }
 
-        // Remove & or § prefix
-        String code = colorCode.replace("&", "").replace("§", "").toLowerCase();
+        String normalized = colorCode.trim();
+        if (normalized.startsWith("<#") && normalized.endsWith(">")) {
+            normalized = normalized.substring(2, normalized.length() - 1);
+        }
+        if (normalized.startsWith("&#")) {
+            normalized = normalized.substring(2);
+        }
+        if (normalized.startsWith("#")) {
+            normalized = normalized.substring(1);
+        }
+        if (normalized.matches("(?i)[0-9a-f]{6}")) {
+            return TextColor.fromRgb(Integer.parseInt(normalized, 16));
+        }
 
-        // Map color codes to ChatFormatting
-        return switch (code.substring(0, 1)) {
-            case "0" -> ChatFormatting.BLACK;
-            case "1" -> ChatFormatting.DARK_BLUE;
-            case "2" -> ChatFormatting.DARK_GREEN;
-            case "3" -> ChatFormatting.DARK_AQUA;
-            case "4" -> ChatFormatting.DARK_RED;
-            case "5" -> ChatFormatting.DARK_PURPLE;
-            case "6" -> ChatFormatting.GOLD;
-            case "7" -> ChatFormatting.GRAY;
-            case "8" -> ChatFormatting.DARK_GRAY;
-            case "9" -> ChatFormatting.BLUE;
-            case "a" -> ChatFormatting.GREEN;
-            case "b" -> ChatFormatting.AQUA;
-            case "c" -> ChatFormatting.RED;
-            case "d" -> ChatFormatting.LIGHT_PURPLE;
-            case "e" -> ChatFormatting.YELLOW;
-            case "f" -> ChatFormatting.WHITE;
-            default -> ChatFormatting.WHITE;
+        normalized = normalized.replace("&", "").replace("§", "").toLowerCase();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+
+        return switch (normalized.substring(0, 1)) {
+            case "0" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.BLACK);
+            case "1" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.DARK_BLUE);
+            case "2" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.DARK_GREEN);
+            case "3" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.DARK_AQUA);
+            case "4" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.DARK_RED);
+            case "5" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.DARK_PURPLE);
+            case "6" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.GOLD);
+            case "7" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.GRAY);
+            case "8" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.DARK_GRAY);
+            case "9" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.BLUE);
+            case "a" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.GREEN);
+            case "b" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.AQUA);
+            case "c" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.RED);
+            case "d" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.LIGHT_PURPLE);
+            case "e" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.YELLOW);
+            case "f" -> TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.WHITE);
+            default -> null;
         };
     }
 
-    private String buildText(String line1, String line2, String line3) {
-        if (server == null)
-            return "";
-
-        int online = server.getPlayerList().getPlayerCount();
-        int max = server.getPlayerList().getMaxPlayers();
-        double tps = getCurrentTPS();
-
-        StringBuilder sb = new StringBuilder();
-
-        if (!line1.isEmpty()) {
-            sb.append(replacePlaceholders(line1, online, max, tps, 0));
+    private String ensureTrailingSpace(String value) {
+        if (value == null || value.isEmpty() || value.endsWith(" ")) {
+            return value;
         }
-        if (!line2.isEmpty()) {
-            if (sb.length() > 0)
-                sb.append("\n");
-            sb.append(replacePlaceholders(line2, online, max, tps, 0));
-        }
-        if (!line3.isEmpty()) {
-            if (sb.length() > 0)
-                sb.append("\n");
-            sb.append(replacePlaceholders(line3, online, max, tps, 0));
-        }
-
-        return sb.toString();
+        return value + " ";
     }
 
-    private String replacePlaceholders(String text, int online, int max, double tps, int ping) {
-        return text
-                .replace("%online%", String.valueOf(online))
-                .replace("%max%", String.valueOf(max))
-                .replace("%tps%", String.format("%.1f", tps))
-                .replace("%ping%", String.valueOf(ping));
+    private String ensureLeadingSpace(String value) {
+        if (value == null || value.isEmpty() || value.startsWith(" ")) {
+            return value;
+        }
+        return " " + value;
     }
 
     private double getCurrentTPS() {
@@ -480,28 +522,14 @@ public class PlayerListManager {
     }
 
     public void onPlayerJoin(ServerPlayer player) {
-        // Setup player team when they join
-        PlayerListConfig config = PlayerListConfig.getInstance();
-        if (config.isEnableCustomNames()) {
-            updatePlayerTeam(player);
-        }
-        // Trigger immediate update for new player
+        refreshPlayerNames();
         updatePlayerList();
     }
 
     public void onPlayerLeave(ServerPlayer player) {
-        // Clean up player's team when they leave
-        try {
-            if (server != null) {
-                Scoreboard scoreboard = server.getScoreboard();
-                String teamName = "voidium_" + player.getScoreboardName();
-                PlayerTeam team = scoreboard.getPlayerTeam(teamName);
-                if (team != null) {
-                    scoreboard.removePlayerTeam(team);
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error cleaning up player team", e);
-        }
+        updatePlayerList();
+    }
+
+    private record NameDecoration(Component prefixComponent, Component suffixComponent, TextColor playerNameColor) {
     }
 }

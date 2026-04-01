@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import cz.voidium.Voidium;
 import cz.voidium.config.VoidiumConfig;
 import cz.voidium.config.RestartConfig;
 import cz.voidium.config.AnnouncementConfig;
@@ -42,6 +43,19 @@ public class VoidiumCommand {
 
     public static void setEntityCleaner(EntityCleaner cleaner) {
         entityCleaner = cleaner;
+    }
+
+    private static AnnouncementManager resolveAnnouncementManager(CommandSourceStack source, boolean ensureAvailable) {
+        Voidium voidium = Voidium.getInstance();
+        if (voidium == null) {
+            return announcementManager;
+        }
+
+        AnnouncementManager resolvedManager = ensureAvailable
+                ? voidium.ensureAnnouncementManager(source.getServer())
+                : voidium.getAnnouncementManager();
+        announcementManager = resolvedManager;
+        return resolvedManager;
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -186,7 +200,11 @@ public class VoidiumCommand {
                 restartManager.reload();
             }
 
-            if (announcementManager != null) {
+            Voidium voidium = Voidium.getInstance();
+            if (voidium != null) {
+                voidium.reloadAnnouncementManager(context.getSource().getServer());
+                announcementManager = voidium.getAnnouncementManager();
+            } else if (announcementManager != null) {
                 announcementManager.reload();
             }
 
@@ -231,8 +249,9 @@ public class VoidiumCommand {
 
     private static int announce(CommandContext<CommandSourceStack> context) {
         String message = StringArgumentType.getString(context, "message");
-        if (announcementManager != null) {
-            announcementManager.broadcastMessage(message);
+        AnnouncementManager manager = resolveAnnouncementManager(context.getSource(), true);
+        if (manager != null) {
+            manager.broadcastMessage(message);
             context.getSource().sendSuccess(() -> Component.literal("§8[§bVoidium§8] §aAnnouncement sent!"), false);
         } else {
             context.getSource()

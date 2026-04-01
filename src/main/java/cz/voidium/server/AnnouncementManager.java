@@ -4,6 +4,8 @@ import cz.voidium.config.VoidiumConfig;
 import cz.voidium.config.AnnouncementConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -11,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AnnouncementManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger("Voidium-Announcements");
     private final MinecraftServer server;
     private ScheduledExecutorService scheduler;
     private final AtomicInteger currentAnnouncementIndex;
@@ -25,6 +28,11 @@ public class AnnouncementManager {
     private void scheduleAnnouncements() {
         AnnouncementConfig config = AnnouncementConfig.getInstance();
         int intervalMinutes = config.getAnnouncementIntervalMinutes();
+
+        if (intervalMinutes <= 0) {
+            LOGGER.info("Automatic announcements are disabled (interval={} minutes).", intervalMinutes);
+            return;
+        }
 
         scheduler.scheduleAtFixedRate(
             this::broadcastNextAnnouncement,

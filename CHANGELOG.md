@@ -1,5 +1,14 @@
 # Voidium Changelog
 
+## [2.5.2] - 2026-04-01
+
+### Fixes
+- **Manual Announce Recovery**: `/voidium announce` and the web announce action now work again after reloads and in setups where automatic announcements are disabled with interval `0`.
+- **Prefixes Only For Real Players**: Custom prefixes and suffixes in the player list are now applied through player-only name events instead of scoreboard team prefixes, so they no longer leak onto pets or other named entities.
+- **Clearing Discord Role Prefixes**: Empty Discord role prefix and suffix fields are now respected as truly empty values instead of being auto-regenerated from the Discord role name.
+- **Global Rank Toggle Respected**: When ranks are disabled in `general.json`, player list custom names no longer keep showing time-based rank decorations.
+- **Version Metadata Sync**: Updated project version metadata to `2.5.2` for this release.
+
 ## [2.5.1] - 2026-03-15
 
 ### Fixes

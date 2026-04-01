@@ -14,6 +14,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
+import net.minecraft.server.MinecraftServer;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -124,6 +125,36 @@ public class Voidium {
         return announcementManager;
     }
 
+    public synchronized AnnouncementManager ensureAnnouncementManager(MinecraftServer server) {
+        cz.voidium.config.GeneralConfig generalConfig = cz.voidium.config.GeneralConfig.getInstance();
+        if (generalConfig == null || !generalConfig.isEnableAnnouncements()) {
+            return null;
+        }
+
+        if (announcementManager == null) {
+            announcementManager = new AnnouncementManager(server);
+            VoidiumCommand.setManagers(restartManager, announcementManager);
+        }
+
+        return announcementManager;
+    }
+
+    public synchronized void reloadAnnouncementManager(MinecraftServer server) {
+        cz.voidium.config.GeneralConfig generalConfig = cz.voidium.config.GeneralConfig.getInstance();
+        if (generalConfig != null && generalConfig.isEnableAnnouncements()) {
+            if (announcementManager == null) {
+                announcementManager = new AnnouncementManager(server);
+            } else {
+                announcementManager.reload();
+            }
+        } else if (announcementManager != null) {
+            announcementManager.shutdown();
+            announcementManager = null;
+        }
+
+        VoidiumCommand.setManagers(restartManager, announcementManager);
+    }
+
     private void onServerStarting(ServerStartingEvent event) {
         cz.voidium.config.GeneralConfig gc = cz.voidium.config.GeneralConfig.getInstance();
         // Start Discord Manager early to send "Starting" message
@@ -144,9 +175,8 @@ public class Voidium {
                 restartManager = new RestartManager(event.getServer());
             }
 
-            if (gc.isEnableAnnouncements()) {
-                announcementManager = new AnnouncementManager(event.getServer());
-            }
+            reloadAnnouncementManager(event.getServer());
+            VoidiumCommand.setManagers(restartManager, announcementManager);
 
             if (gc.isEnableVote()) {
                 voteManager = new VoteManager(event.getServer());
@@ -231,8 +261,11 @@ public class Voidium {
 
             // Oznámení pro OPs
             if (announcementManager != null) {
+                String version = net.neoforged.fml.ModList.get().getModContainerById(MOD_ID)
+                        .map(container -> container.getModInfo().getVersion().toString())
+                        .orElse("unknown");
                 announcementManager.broadcastToOps("&aVOIDIUM - INTELLIGENT SERVER CONTROL loaded and running!");
-                announcementManager.broadcastToOps("&eVersion: 2.4");
+                announcementManager.broadcastToOps("&eVersion: " + version);
                 announcementManager.broadcastToOps("&bConfiguration loaded successfully!");
             }
         } catch (Exception e) {
