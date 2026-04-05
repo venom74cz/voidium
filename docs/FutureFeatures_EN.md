@@ -16,11 +16,9 @@ title: Plans & Roadmap (EN)
             <p>The following features are planned for future versions.</p>
             
             <div class="feature-list">
-                <h3>1) Web Control Interface v2</h3>
+                <h3>1) Open Web Panel follow-ups</h3>
                 <ul>
                     <li><strong>Discord OAuth</strong> – Login to panel using Discord account acces with specific role (no console token required).</li>
-                    <li><strong>Live Console</strong> – Real-time server console monitoring directly in browser (WebSocket).</li>
-                    <li><strong>Graphs & Visuals</strong> – History graphs for TPS, RAM, and Player Count in the dashboard.</li>
                     <li><strong>🔧 Persistent AI History (WIP)</strong> – Save admin AI conversation history across sessions for continuity.</li>
                     <li><strong>🔧 Ticket Dashboard Stats (WIP)</strong> – Analytics and statistics for the ticket system (response times, resolution rates, volume).</li>
                     <li><strong>🔧 Playtime Rank Role Picker (WIP)</strong> – When AI player access mode is set to PLAYTIME, show a dropdown of configured rank tiers so admins can pick from existing rank definitions instead of entering hours manually.</li>
@@ -39,7 +37,6 @@ title: Plans & Roadmap (EN)
                 <h3>4) System Tools</h3>
                 <ul>
                     <li><strong>Backup Manager</strong> – Manage, create and restore world backups via web interface.</li>
-                    <li><strong>Maintenance Mode</strong> – Special maintenance mode with custom MoTD and user acces with specific discord role logic.</li>
                     <li><strong>Granular Event Logger</strong> – option to have Separate channels for different event types (deaths, commands (all), suspicious activity).</li>
                 </ul>
 
@@ -68,6 +65,14 @@ title: Plans & Roadmap (EN)
             <p>Features that are already successfully implemented and available in game.</p>
 
             <div class="feature-list">
+                <h3>Web Control Panel v2</h3>
+                <ul class="checked-list">
+                    <li><strong>React + Vite Web Panel</strong> – Full SPA dashboard bundled into the JAR instead of the legacy basic editor.</li>
+                    <li><strong>Config Studio</strong> – Visual config editing with preview, diff, apply flow, and audit logging.</li>
+                    <li><strong>Live Console & Graphs</strong> – Real-time console, feeds, and performance history available directly in the panel.</li>
+                    <li><strong>Maintenance Mode</strong> – Dashboard banner, web toggle, and login block for non-OP players.</li>
+                </ul>
+
                 <h3>Discord Integration</h3>
                 <ul class="checked-list">
                     <li><strong>Whitelist System</strong> – Discord & MC account linking, verification codes.</li>
@@ -100,7 +105,6 @@ title: Plans & Roadmap (EN)
 
                 <h3>Core & Utilities</h3>
                 <ul class="checked-list">
-                    <li><strong>Web Config Editor</strong> – Basic HTTP server for editing configs (JSON).</li>
                     <li><strong>Auto-Rank</strong> – Promoting players based on playtime.</li>
                     <li><strong>Plugin Manager / Hot-Swap</strong> – Ability to enable/disable specific Voidium modules at runtime.</li>
                     <li><strong>Entity Cleaner</strong> – Automatic cleaning of ground items and entities.</li>

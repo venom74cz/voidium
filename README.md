@@ -1,6 +1,11 @@
 # VOIDIUM – INTELLIGENT SERVER CONTROL
 ## [DISCORD](https://discord.com/invite/3JYz3KWutJ)
 
+> [!IMPORTANT]
+> Pro aktualni stav projektu a orientaci v dokumentaci pouzij nejdriv `CURRENT-STATE.md`.
+>
+> Publikovana wiki zije ve slozce `docs/`. Slozka `docs_2/` je dnes archivni a pracovni vrstva, ne hlavni zdroj pravdy.
+
 **🚀 The Ultimate All-in-One Server Control System: Automate Everything, Monitor Everything, Control Everything – From Restarts to Ranks, Discord to Data, All Through One Powerful Web Panel.**
 
 _Next-generation server management made with AI_
@@ -208,6 +213,16 @@ All configuration files are stored in `config/voidium/`:
 | `player_progress.json` | Achievement progress |
 | `skin-cache.json` | Cached player skins |
 | `last_restart.txt` | Last restart timestamp |
+
+---
+
+## 📚 Documentation
+
+- `CURRENT-STATE.md` - current project reality and doc map
+- `CHANGELOG.md` - released changes
+- `docs/INDEX_CZ.md` / `docs/INDEX_EN.md` - published wiki entry points
+- `docs/FutureFeatures_CZ.md` / `docs/FutureFeatures_EN.md` - live roadmap
+- `docs_2/` - archival notes and older planning material
 
 ---
 

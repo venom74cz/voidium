@@ -8,7 +8,11 @@
     "StoredUserEntryAccessor",
     "UserBanListMixin"
   ],
-  "client": [],
+  "client": [
+    "ChatComponentMixin",
+    "ChatScreenMixin",
+    "EmojiRenderMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

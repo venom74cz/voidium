@@ -16,11 +16,9 @@ title: Plány a Roadmap (CZ)
             <p>Následující funkce jsou v plánu pro budoucí verze.</p>
             
             <div class="feature-list">
-                <h3>1) Web Control Interface v2</h3>
+                <h3>1) Otevřené follow-upy web panelu</h3>
                 <ul>
                     <li><strong>Discord OAuth</strong> – Přihlášení do panelu pomocí Discord účtu s určitou rolí (bez nutnosti tokenu z konzole).</li>
-                    <li><strong>Live Console</strong> – Sledování výstupu konzole v reálném čase přímo v prohlížeči (WebSocket).</li>
-                    <li><strong>Grafy a Vizualizace</strong> – Grafy historie TPS, RAM a počtu hráčů v administračním panelu.</li>
                     <li><strong>🔧 Persistentní AI historie (WIP)</strong> – Ukládání historie konverzací admin AI napříč sezeními pro kontinuitu.</li>
                     <li><strong>🔧 Statistiky ticketů v dashboardu (WIP)</strong> – Analytika a statistiky pro ticketový systém (doba odezvy, míra vyřešení, objem).</li>
                     <li><strong>🔧 Výběr ranku pro PLAYTIME režim (WIP)</strong> – Když je režim přístupu hráčů k AI nastaven na PLAYTIME, zobrazit dropdown s nakonfigurovanými ranky, aby admin mohl vybrat z existujících definic místo ručního zadávání hodin.</li>
@@ -39,7 +37,6 @@ title: Plány a Roadmap (CZ)
                 <h3>4) Systémové nástroje</h3>
                 <ul>
                     <li><strong>Backup Manager</strong> – Správa, vytváření a obnova záloh světa přes webové rozhraní.</li>
-                    <li><strong>Maintenance Mode</strong> – Speciální režim údržby s vlastním MoTD a přístupem pro uživatele s určitou Discord rolí.</li>
                     <li><strong>Granulární Event Logger</strong> – Možnost mít oddělené kanály pro různé typy událostí (smrti, příkazy (všechny), podezřelá aktivita).</li>
                 </ul>
 
@@ -68,6 +65,14 @@ title: Plány a Roadmap (CZ)
             <p>Funkce, které jsou již úspěšně implementovány a dostupné ve hře.</p>
 
             <div class="feature-list">
+                <h3>Web Control Panel v2</h3>
+                <ul class="checked-list">
+                    <li><strong>React + Vite Web Panel</strong> – Kompletní SPA dashboard zabudovaný do JAR místo starého basic editoru.</li>
+                    <li><strong>Config Studio</strong> – Vizualní editace konfigurace s preview, diffem, apply flow a audit logem.</li>
+                    <li><strong>Live Console & Grafy</strong> – Živý výstup konzole, feedy a historie výkonu přímo v panelu.</li>
+                    <li><strong>Maintenance Mode</strong> – Web toggle, banner v dashboardu a blokace připojení pro ne-OP hráče.</li>
+                </ul>
+
                 <h3>Discord Integrace</h3>
                 <ul class="checked-list">
                     <li><strong>Whitelist System</strong> – Propojení Discord a MC účtů, ověřovací kód.</li>
@@ -100,7 +105,6 @@ title: Plány a Roadmap (CZ)
 
                 <h3>Jádro a Utility</h3>
                 <ul class="checked-list">
-                    <li><strong>Web Config Editor</strong> – Základní HTTP server pro editaci configů (JSON).</li>
                     <li><strong>Auto-Rank</strong> – Povyšování hráčů na základě odehraného času.</li>
                     <li><strong>Plugin Manager / Hot-Swap</strong> – Možnost vypínat a zapínat jednotlivé moduly Voidium za běhu.</li>
                     <li><strong>Entity Cleaner</strong> – Automatické čištění itemů a entit na zemi.</li>
