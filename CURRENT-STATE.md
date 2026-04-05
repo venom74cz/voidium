@@ -1,8 +1,8 @@
 # VOIDIUM - Aktuální Stav
 
-Snapshot: 2026-04-03
+Snapshot: 2026-04-05
 
-Aktuální verze: 2.5.2
+Aktuální verze: 2.5.3
 
 ## Co je dnes reálně hotové
 

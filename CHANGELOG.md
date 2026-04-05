@@ -1,5 +1,11 @@
 # Voidium Changelog
 
+## [2.5.3] - 2026-04-05
+
+### Fixes
+- **Player List Name Refresh Idempotence**: Custom player names are now always rebuilt from the raw player name during `NameFormat` and `TabListNameFormat` refreshes, which prevents duplicated prefixes after update/reload cycles and keeps suffix placement stable.
+- **Version Metadata Sync**: Updated project version metadata to `2.5.3` for this release.
+
 ## [2.5.2] - 2026-04-01
 
 ### Fixes

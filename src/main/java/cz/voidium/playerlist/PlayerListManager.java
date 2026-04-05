@@ -129,7 +129,7 @@ public class PlayerListManager {
             return;
         }
 
-        event.setDisplayname(buildFormattedPlayerName(player, event.getDisplayname()));
+        event.setDisplayname(buildFormattedPlayerName(player, basePlayerName(player)));
     }
 
     @SubscribeEvent
@@ -138,8 +138,7 @@ public class PlayerListManager {
             return;
         }
 
-        Component baseName = event.getDisplayName() != null ? event.getDisplayName() : player.getName().copy();
-        event.setDisplayName(buildFormattedPlayerName(player, baseName));
+        event.setDisplayName(buildFormattedPlayerName(player, basePlayerName(player)));
     }
 
     private boolean isCustomNameFormattingEnabled() {
@@ -153,6 +152,10 @@ public class PlayerListManager {
                 && generalConfig.isEnablePlayerList()
                 && config.isEnableCustomPlayerList()
                 && config.isEnableCustomNames();
+    }
+
+    private Component basePlayerName(ServerPlayer player) {
+        return player.getName().copy();
     }
 
     private Component buildFormattedPlayerName(ServerPlayer player, Component baseName) {
