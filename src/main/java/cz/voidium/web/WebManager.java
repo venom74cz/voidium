@@ -11,8 +11,10 @@ import cz.voidium.ai.AIService;
 import cz.voidium.config.EntityCleanerConfig;
 import cz.voidium.config.GeneralConfig;
 import cz.voidium.config.StatsConfig;
+import cz.voidium.config.TicketConfig;
 import cz.voidium.config.WebConfig;
 import cz.voidium.discord.DiscordManager;
+import cz.voidium.discord.LinkManager;
 import cz.voidium.discord.TicketManager;
 import cz.voidium.server.AnnouncementManager;
 import cz.voidium.server.RestartManager;
@@ -27,6 +29,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +51,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.fml.ModList;
@@ -65,6 +72,11 @@ public class WebManager {
     private static final String ADMIN_AI_CONVERSATION_ID = "admin:web";
     private static final WebManager INSTANCE = new WebManager();
     private static final DateTimeFormatter VOTE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final URI GITHUB_LATEST_RELEASE_URI = URI.create("https://api.github.com/repos/venom74cz/voidium/releases/latest");
+    private static final Duration RELEASE_CHECK_CACHE_TTL = Duration.ofMinutes(30);
+    private static final Duration RELEASE_CHECK_FAILURE_TTL = Duration.ofMinutes(5);
+    private static final Duration RELEASE_CHECK_TIMEOUT = Duration.ofSeconds(2);
+    private static final Pattern VERSION_NUMBER_PATTERN = Pattern.compile("\\d+");
 
     private static final int RATE_LIMIT_MAX_REQUESTS = 120;
     private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
@@ -72,11 +84,17 @@ public class WebManager {
     private final Map<String, Instant> bootstrapTokens = new ConcurrentHashMap<>();
     private final Map<String, Instant> sessions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, long[]> rateLimits = new ConcurrentHashMap<>();
+        private final HttpClient releaseHttpClient = HttpClient.newBuilder()
+            .connectTimeout(RELEASE_CHECK_TIMEOUT)
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
     private volatile HttpServer httpServer;
     private volatile MinecraftServer server;
     private volatile Instant startedAt;
     private volatile java.util.concurrent.ScheduledExecutorService sessionCleaner;
     private volatile WebConsoleAppender consoleAppender;
+        private volatile ReleaseInfo cachedReleaseInfo = ReleaseInfo.empty();
+        private volatile Instant releaseInfoFetchedAt = Instant.EPOCH;
 
     private WebManager() {
     }
@@ -340,6 +358,12 @@ public class WebManager {
         }
     }
 
+    private record ReleaseInfo(String latestVersion, boolean updateAvailable, String updateUrl) {
+        private static ReleaseInfo empty() {
+            return new ReleaseInfo(null, false, null);
+        }
+    }
+
     private Map<String, Object> buildDashboardPayload() {
         MinecraftServer currentServer = server;
         Runtime runtime = Runtime.getRuntime();
@@ -347,12 +371,18 @@ public class WebManager {
         long totalMemory = runtime.totalMemory() / 1024 / 1024;
         long freeMemory = runtime.freeMemory() / 1024 / 1024;
         long usedMemory = totalMemory - freeMemory;
+        String installedVersion = resolveInstalledVersion();
+        ReleaseInfo releaseInfo = resolveReleaseInfo(installedVersion);
 
         return mapOf(
                 entry("serverName", currentServer != null ? currentServer.getMotd() : "Voidium Server"),
                 entry("baseUrl", getBaseUrl()),
                 entry("publicAccessUrl", getPersistentAccessUrl()),
-                entry("version", ModList.get().getModContainerById(Voidium.MOD_ID).map(container -> container.getModInfo().getVersion().toString()).orElse("unknown")),
+            entry("version", installedVersion),
+            entry("latestVersion", releaseInfo.latestVersion()),
+            entry("updateAvailable", releaseInfo.updateAvailable()),
+            entry("updateUrl", releaseInfo.updateUrl()),
+            entry("serverIconUrl", resolveServerIconUrl()),
                 entry("onlinePlayers", currentServer != null ? currentServer.getPlayerCount() : 0),
                 entry("maxPlayers", currentServer != null ? currentServer.getPlayerList().getMaxPlayers() : 0),
                 entry("tps", round(currentTps())),
@@ -375,6 +405,114 @@ public class WebManager {
                 entry("consoleFeed", WebConsoleFeed.getInstance().snapshot()),
                 entry("auditFeed", WebAuditLog.getInstance().snapshot()),
                 entry("systemInfo", buildSystemInfo()));
+    }
+
+    private String resolveInstalledVersion() {
+        return ModList.get().getModContainerById(Voidium.MOD_ID)
+                .map(container -> container.getModInfo().getVersion().toString())
+                .orElse("unknown");
+    }
+
+    private String resolveServerIconUrl() {
+        return Files.exists(Path.of("server-icon.png")) ? "/api/server-icon" : null;
+    }
+
+    private ReleaseInfo resolveReleaseInfo(String installedVersion) {
+        Instant now = Instant.now();
+        ReleaseInfo cached = cachedReleaseInfo;
+        Duration ttl = cached.latestVersion() == null ? RELEASE_CHECK_FAILURE_TTL : RELEASE_CHECK_CACHE_TTL;
+        if (!releaseInfoFetchedAt.equals(Instant.EPOCH) && Duration.between(releaseInfoFetchedAt, now).compareTo(ttl) < 0) {
+            return cached;
+        }
+
+        synchronized (this) {
+            cached = cachedReleaseInfo;
+            ttl = cached.latestVersion() == null ? RELEASE_CHECK_FAILURE_TTL : RELEASE_CHECK_CACHE_TTL;
+            if (!releaseInfoFetchedAt.equals(Instant.EPOCH) && Duration.between(releaseInfoFetchedAt, now).compareTo(ttl) < 0) {
+                return cached;
+            }
+
+            try {
+                cachedReleaseInfo = fetchLatestRelease(installedVersion);
+            } catch (Exception e) {
+                LOGGER.debug("Failed to resolve latest VOIDIUM release info: {}", e.getMessage());
+                if (cached.latestVersion() == null) {
+                    cachedReleaseInfo = ReleaseInfo.empty();
+                }
+            }
+            releaseInfoFetchedAt = now;
+            return cachedReleaseInfo;
+        }
+    }
+
+    private ReleaseInfo fetchLatestRelease(String installedVersion) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(GITHUB_LATEST_RELEASE_URI)
+                .timeout(RELEASE_CHECK_TIMEOUT)
+                .header("Accept", "application/vnd.github+json")
+                .header("User-Agent", "Voidium-WebPanel")
+                .GET()
+                .build();
+
+        HttpResponse<String> response = releaseHttpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if (response.statusCode() >= 400) {
+            return ReleaseInfo.empty();
+        }
+
+        JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
+        if (json == null) {
+            return ReleaseInfo.empty();
+        }
+
+        String latestVersion = sanitizeVersion(json.has("tag_name") ? json.get("tag_name").getAsString() : null);
+        String releaseUrl = json.has("html_url") ? json.get("html_url").getAsString() : "https://github.com/venom74cz/voidium/releases/latest";
+        if (latestVersion == null || latestVersion.isBlank()) {
+            return ReleaseInfo.empty();
+        }
+
+        return new ReleaseInfo(latestVersion, isNewerVersion(installedVersion, latestVersion), releaseUrl);
+    }
+
+    private String sanitizeVersion(String rawVersion) {
+        if (rawVersion == null) {
+            return null;
+        }
+        String normalized = rawVersion.trim();
+        while (normalized.startsWith("v") || normalized.startsWith("V")) {
+            normalized = normalized.substring(1);
+        }
+        return normalized;
+    }
+
+    private boolean isNewerVersion(String currentVersion, String latestVersion) {
+        List<Integer> currentParts = extractVersionParts(sanitizeVersion(currentVersion));
+        List<Integer> latestParts = extractVersionParts(sanitizeVersion(latestVersion));
+        if (currentParts.isEmpty() || latestParts.isEmpty()) {
+            return false;
+        }
+        int maxParts = Math.max(currentParts.size(), latestParts.size());
+        for (int index = 0; index < maxParts; index++) {
+            int current = index < currentParts.size() ? currentParts.get(index) : 0;
+            int latest = index < latestParts.size() ? latestParts.get(index) : 0;
+            if (latest > current) {
+                return true;
+            }
+            if (latest < current) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private List<Integer> extractVersionParts(String version) {
+        if (version == null || version.isBlank()) {
+            return List.of();
+        }
+        List<Integer> parts = new ArrayList<>();
+        Matcher matcher = VERSION_NUMBER_PATTERN.matcher(version);
+        while (matcher.find()) {
+            parts.add(Integer.parseInt(matcher.group()));
+        }
+        return parts;
     }
 
     private Map<String, Object> buildSystemInfo() {
@@ -409,8 +547,15 @@ public class WebManager {
 
     private List<Map<String, Object>> buildPlayerPayload(MinecraftServer currentServer) {
         List<Map<String, Object>> players = new ArrayList<>();
+        LinkManager linkManager = LinkManager.getInstance();
         for (ServerPlayer player : currentServer.getPlayerList().getPlayers()) {
-            players.add(mapOf(entry("name", player.getName().getString()), entry("uuid", player.getUUID().toString()), entry("ping", player.connection.latency())));
+            Long discordId = linkManager.getDiscordId(player.getUUID());
+            players.add(mapOf(
+                    entry("name", player.getName().getString()),
+                    entry("uuid", player.getUUID().toString()),
+                    entry("ping", player.connection.latency()),
+                    entry("linked", discordId != null),
+                    entry("discordId", discordId != null ? String.valueOf(discordId) : null)));
         }
         return players;
     }
@@ -418,6 +563,8 @@ public class WebManager {
     private List<Map<String, Object>> buildModulePayload() {
         GeneralConfig general = GeneralConfig.getInstance();
         VoteManager voteManager = Voidium.getInstance().getVoteManager();
+        TicketConfig ticketConfig = TicketConfig.getInstance();
+        EntityCleanerConfig cleanerConfig = EntityCleanerConfig.getInstance();
         List<Map<String, Object>> modules = new ArrayList<>();
         modules.add(module(tr("Web", "Web"), general.isEnableWeb(), isRunning() ? tr("live", "ĹľivÄ›") : tr("stopped", "zastaveno")));
         modules.add(module(tr("Discord", "Discord"), general.isEnableDiscord(), DiscordManager.getInstance().getJda() != null ? tr("connected", "pĹ™ipojeno") : tr("offline", "offline")));
@@ -425,8 +572,10 @@ public class WebManager {
         modules.add(module(tr("Ranks", "Ranky"), general.isEnableRanks(), general.isEnableRanks() ? tr("active", "aktivnĂ­") : tr("disabled", "vypnuto")));
         modules.add(module(tr("Vote", "Vote"), general.isEnableVote(), voteManager != null && voteManager.getPendingQueue() != null ? voteManager.getPendingQueue().getTotalPending() + tr(" pending", " ÄŤekĂˇ") : tr("idle", "neÄŤinnĂ©")));
         modules.add(module(tr("PlayerList", "PlayerList"), general.isEnablePlayerList(), general.isEnablePlayerList() ? tr("enabled", "zapnuto") : tr("disabled", "vypnuto")));
+        modules.add(module(tr("Tickets", "Tikety"), ticketConfig != null && ticketConfig.isEnableTickets(), TicketManager.getInstance().snapshotOpenTickets().size() + tr(" open", " otevreno")));
         modules.add(module(tr("Announcements", "OznĂˇmenĂ­"), general.isEnableAnnouncements(), general.isEnableAnnouncements() ? tr("scheduled", "naplĂˇnovĂˇno") : tr("disabled", "vypnuto")));
         modules.add(module(tr("Restarts", "Restarty"), general.isEnableRestarts(), general.isEnableRestarts() ? resolveNextRestart() : tr("disabled", "vypnuto")));
+        modules.add(module(tr("EntityCleaner", "EntityCleaner"), cleanerConfig != null && cleanerConfig.isEnabled(), cleanerConfig != null && cleanerConfig.isEnabled() ? tr("Every ", "Kazdych ") + cleanerConfig.getCleanupIntervalSeconds() + "s" : tr("disabled", "vypnuto")));
         modules.add(module(tr("AI", "AI"), true, tr("player + admin assistants", "hrĂˇÄŤskĂ˝ + admin asistent")));
         return modules;
     }
@@ -870,7 +1019,7 @@ public class WebManager {
                             return;
                         }
                         server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "voidium reload"));
-                        sendJson(exchange, 200, Map.of("message", "Reload command dispatched."));
+                        sendJson(exchange, 200, Map.of("message", "Reload requested."));
                     }
                     case "entitycleaner_preview" -> {
                         var cleaner = Voidium.getInstance().getEntityCleaner();
@@ -939,6 +1088,48 @@ public class WebManager {
                                 ? tr("No pending votes removed.", "Nebyly odebrĂˇny ĹľĂˇdnĂ© ÄŤekajĂ­cĂ­ hlasy.")
                                 : tr("Removed ", "OdebrĂˇno ") + removed + tr(" pending vote(s) for ", " ÄŤekajĂ­cĂ­ch hlasĹŻ pro ") + player + "."));
                     }
+                    case "player_kick" -> {
+                        if (server == null) {
+                            sendJson(exchange, 500, Map.of("message", tr("Server is not attached.", "Server není připojen.")));
+                            return;
+                        }
+                        String playerName = params.getOrDefault("player", "").trim();
+                        String reason = params.getOrDefault("reason", tr("Removed by web panel", "Odebrán přes web panel")).trim();
+                        if (playerName.isEmpty()) {
+                            sendJson(exchange, 400, Map.of("message", tr("Player is required.", "Hráč je povinný.")));
+                            return;
+                        }
+                        if (server.getPlayerList().getPlayerByName(playerName) == null) {
+                            sendJson(exchange, 400, Map.of("message", tr("Player must be online for kick.", "Hráč musí být online pro kick.")));
+                            return;
+                        }
+                        server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "kick " + playerName + " " + reason));
+                        sendJson(exchange, 200, Map.of("message", tr("Kick requested for ", "Kick byl vyzadan pro ") + playerName + "."));
+                    }
+                    case "player_ban" -> {
+                        if (server == null) {
+                            sendJson(exchange, 500, Map.of("message", tr("Server is not attached.", "Server není připojen.")));
+                            return;
+                        }
+                        String playerName = params.getOrDefault("player", "").trim();
+                        String reason = params.getOrDefault("reason", tr("Banned by web panel", "Zabanován přes web panel")).trim();
+                        if (playerName.isEmpty()) {
+                            sendJson(exchange, 400, Map.of("message", tr("Player is required.", "Hráč je povinný.")));
+                            return;
+                        }
+                        server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "ban " + playerName + " " + reason));
+                        sendJson(exchange, 200, Map.of("message", tr("Ban requested for ", "Ban byl vyzadan pro ") + playerName + "."));
+                    }
+                    case "player_unlink" -> {
+                        String uuid = params.getOrDefault("uuid", "").trim();
+                        String playerName = params.getOrDefault("player", "").trim();
+                        if (uuid.isEmpty()) {
+                            sendJson(exchange, 400, Map.of("message", tr("Player UUID is required.", "UUID hráče je povinné.")));
+                            return;
+                        }
+                        LinkManager.getInstance().unlink(UUID.fromString(uuid));
+                        sendJson(exchange, 200, Map.of("message", tr("Discord link removed for ", "Discord propojení odstraněno pro ") + (playerName.isBlank() ? uuid : playerName) + "."));
+                    }
                     case "ticket_note" -> {
                         String channelId = params.getOrDefault("channelId", "").trim();
                         String message = params.getOrDefault("message", "").trim();
@@ -956,7 +1147,7 @@ public class WebManager {
                             return;
                         }
                         TicketManager.getInstance().closeTicketFromWeb(channelId);
-                        sendJson(exchange, 200, Map.of("message", tr("Ticket close dispatched.", "UzavĹ™enĂ­ ticketu bylo odeslĂˇno.")));
+                        sendJson(exchange, 200, Map.of("message", tr("Ticket close requested.", "Uzavreni ticketu bylo vyzadano.")));
                     }
                     case "maintenance_on" -> {
                         GeneralConfig.getInstance().setMaintenanceMode(true);
@@ -1268,7 +1459,7 @@ public class WebManager {
             }
             server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "voidium reload"));
             WebAuditLog.getInstance().record("config.reload", "voidium reload", String.valueOf(exchange.getRemoteAddress()), true);
-            sendJson(exchange, 200, Map.of("message", "Reload command dispatched."));
+            sendJson(exchange, 200, Map.of("message", "Reload requested."));
         }
     }
 
@@ -1299,7 +1490,7 @@ public class WebManager {
 
             server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command));
             WebAuditLog.getInstance().record("console.execute", family + ": " + command, String.valueOf(exchange.getRemoteAddress()), true);
-            sendJson(exchange, 200, Map.of("message", "Command dispatched [" + family + "]: " + command));
+            sendJson(exchange, 200, Map.of("message", "Command queued [" + family + "]: " + command));
         }
     }
 

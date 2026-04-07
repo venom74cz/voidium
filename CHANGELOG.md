@@ -1,5 +1,33 @@
 # Voidium Changelog
 
+## [2.6.0] - 2026-04-07
+
+### Web Panel Information Architecture Cleanup
+- Moved feature controls out of `Modules` into dedicated pages for Announcements, Restarts, Entity Cleaner, and Statistics.
+- Reduced `Modules` to a runtime health overview instead of mixing live status with feature configuration editors.
+- Added a dedicated `Server` page so `server.properties` editing is reachable again from the main navigation.
+- Removed the redundant `Activity` page and folded its purpose into `Statistics` and `Players`.
+- Moved live performance cards and history charts onto `Dashboard`, then narrowed `Statistics` down to daily report settings and config editing.
+- Moved `Statistics` into the feature navigation so it sits with the rest of the configurable modules.
+- Exposed the `ranks.countAfkTime` setting in both Config Studio and demo data so the web editor now matches the config surface.
+- Updated dashboard quick actions to act as clean entry points into feature pages instead of duplicating the same controls across views.
+- Completed runtime module coverage in both demo data and backend payloads so Tickets and Entity Cleaner now appear in module health consistently.
+
+### Documentation
+- Rewrote `README.md` to match the current product shape, current web panel page map, and the real config file list.
+- Added the missing `ai.json` entry to the documented config surface.
+
+### Validation
+- Re-ran the web panel production build after the final dashboard/statistics IA cleanup.
+- Re-ran `compileJava` after the config surface and WebManager response polish to confirm backend compatibility.
+
+### Premium Web Panel Redesign (VOIDIUM Identity)
+- **Kompletní UI Redesign**: Web panel kompletně přepsán ze schématu "mint/cyan" do nové fialové thematické "VOIDIUM" identity (`#a855f7`). Původní `index.html` inline úpravy odstraněny, vše přeneseno do custom CSS s React HashRouterem.
+- **Nová navigace (Multi-page Layout)**: Původní vertikální single-page view nahrazen profesionálním postranním sidebar panelem (celkem 14 logických stránek pro tickety, moduly, hrace, ranked list atd).
+- **Využití celé obrazovky**: Optimalizace viewportu. Dashboard nyní responzivně využívá maximum prostoru a netvoří odříznuté sloupce.
+- **Offline Demo Režim (Pre-filled)**: UI reaguje na chybějící mod-server (backend) mock obsahem (42 hráčů, grafy, status panel).
+- **RGB a Minecraft Text** v sekcích `ConfigStudio` byly updatovány na nové base-color (hexa na fialovou, fix label/value zanoření textů). UI i preview je validní a správně napojené.
+
 ## [2.5.3] - 2026-04-05
 
 ### Fixes

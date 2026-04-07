@@ -3,6 +3,10 @@ export interface DashboardData {
   baseUrl: string
   publicAccessUrl: string
   version: string
+  latestVersion?: string | null
+  updateAvailable?: boolean
+  updateUrl?: string | null
+  serverIconUrl?: string | null
   onlinePlayers: number
   maxPlayers: number
   tps: number
@@ -54,6 +58,8 @@ export interface Player {
   name: string
   uuid: string
   ping: number
+  linked: boolean
+  discordId?: string | null
 }
 
 export interface Module {
@@ -184,6 +190,8 @@ export interface AiSuggestResult {
 export interface DiscordRole {
   id: string
   name: string
+  color?: string
+  position?: number
 }
 
 export interface DimensionHeatmap {

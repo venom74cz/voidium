@@ -15,7 +15,19 @@ interface Segment {
   obfuscated: boolean
 }
 
+function normalizeMcInput(raw: string): string {
+  let normalized = String(raw || '')
+
+  normalized = normalized.replace(/§x(§[0-9a-fA-F]){6}/g, match => {
+    const hex = match.replaceAll('§x', '').replaceAll('§', '')
+    return `&#${hex}`
+  })
+
+  return normalized.replaceAll('§', '&')
+}
+
 function parseMcText(raw: string): Segment[] {
+  const source = normalizeMcInput(raw)
   const segments: Segment[] = []
   let color = '#AAAAAA'
   let bold = false
@@ -33,12 +45,12 @@ function parseMcText(raw: string): Segment[] {
     }
   }
 
-  while (i < raw.length) {
-    if (raw[i] === '&' && i + 1 < raw.length) {
-      const next = raw[i + 1]
-      if (next === '#' && i + 7 < raw.length) {
+  while (i < source.length) {
+    if (source[i] === '&' && i + 1 < source.length) {
+      const next = source[i + 1]
+      if (next === '#' && i + 7 < source.length) {
         // &#RRGGBB hex
-        const hex = raw.substring(i + 2, i + 8)
+        const hex = source.substring(i + 2, i + 8)
         if (/^[0-9a-fA-F]{6}$/.test(hex)) {
           flush()
           color = '#' + hex
@@ -67,15 +79,11 @@ function parseMcText(raw: string): Segment[] {
         continue
       }
     }
-    buffer += raw[i]
+    buffer += source[i]
     i++
   }
   flush()
   return segments
-}
-
-function hasFormatCodes(text: string): boolean {
-  return /&[0-9a-fA-FklmnorKLMNOR#]/.test(text)
 }
 
 interface Props {
@@ -83,7 +91,7 @@ interface Props {
 }
 
 export function McTextPreview({ text }: Props) {
-  if (!text || !hasFormatCodes(text)) return null
+  if (!text?.trim()) return null
   const segments = parseMcText(text)
   return (
     <div className="mc-preview">

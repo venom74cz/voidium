@@ -48,6 +48,10 @@ public class PlayerListConfig {
         return instance;
     }
 
+    public static PlayerListConfig defaults(Path configPath) {
+        return new PlayerListConfig(configPath);
+    }
+
     public static void init(Path configDir) {
         Path configPath = configDir.resolve("playerlist.json");
         if (Files.exists(configPath)) {

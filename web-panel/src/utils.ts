@@ -45,14 +45,36 @@ export function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
 }
 
+const LEGACY_MC_COLORS: Record<string, string> = {
+  '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+  '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+  '8': '#555555', '9': '#5555FF', a: '#55FF55', b: '#55FFFF',
+  c: '#FF5555', d: '#FF55FF', e: '#FFFF55', f: '#FFFFFF',
+}
+
 export function extractLastHexColor(value: string): string | null {
-  const matches = String(value || '').match(/&#([0-9a-fA-F]{6})/g)
-  if (!matches || !matches.length) return null
-  return '#' + matches[matches.length - 1].slice(2)
+  const source = String(value || '')
+  const prefixedHexMatches = [...source.matchAll(/&#([0-9a-fA-F]{6})/g)]
+  if (prefixedHexMatches.length) {
+    return '#' + prefixedHexMatches[prefixedHexMatches.length - 1][1]
+  }
+
+  const plainHexMatches = [...source.matchAll(/(^|[^&])#([0-9a-fA-F]{6})/g)]
+  if (plainHexMatches.length) {
+    return '#' + plainHexMatches[plainHexMatches.length - 1][2]
+  }
+
+  const legacyMatches = [...source.matchAll(/[&§]([0-9a-fA-F])/g)]
+  if (legacyMatches.length) {
+    const code = legacyMatches[legacyMatches.length - 1][1].toLowerCase()
+    return LEGACY_MC_COLORS[code] || null
+  }
+
+  return null
 }
 
 export function toVoidiumHex(value: string): string {
-  return `&#${String(value || '#6fe8ff').replace('#', '').toUpperCase()}`
+  return `&#${String(value || '#a855f7').replace('#', '').toUpperCase()}`
 }
 
 export function formatValue(value: unknown): string {

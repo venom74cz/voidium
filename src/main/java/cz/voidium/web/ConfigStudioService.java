@@ -91,6 +91,7 @@ public class ConfigStudioService {
         schema.put("ranks", section("Ranks", false, List.of(
                 field("enableAutoRanks", "boolean", "Enable auto ranks", "Turns on automatic rank checks."),
                 field("checkIntervalMinutes", "number", "Check interval", "How often rank promotion checks run."),
+                field("countAfkTime", "boolean", "Count AFK time", "Include AFK time in playtime-based rank progress."),
                 field("promotionMessage", "text", "Promotion message", "Supports %rank% placeholder."),
                 field("tooltipPlayed", "text", "Tooltip played", "Hover text for current playtime."),
                 field("tooltipRequired", "text", "Tooltip required", "Hover text for required playtime."),
@@ -113,6 +114,8 @@ public class ConfigStudioService {
                 field("enableTickets", "boolean", "Enable tickets", "Turns the Discord ticket workflow on or off."),
                 field("ticketCategoryId", "text", "Ticket category ID", "Discord category where ticket channels are created."),
                 field("supportRoleId", "text", "Support role ID", "Discord role granted visibility to ticket channels."),
+                field("enableAutoAssign", "boolean", "Enable auto-assign", "Assign new tickets to the support member with the fewest active tickets."),
+                field("assignedMessage", "text", "Assigned message", "Shown when a support member is auto-assigned. Supports %assignee% placeholder."),
                 field("ticketChannelTopic", "text", "Ticket channel topic", "Supports %user% and %reason% placeholders."),
                 field("maxTicketsPerUser", "number", "Max tickets per user", "Maximum number of open tickets allowed per user."),
                 field("ticketCreatedMessage", "text", "Ticket created message", "Discord message shown after a ticket is created."),
@@ -231,6 +234,8 @@ public class ConfigStudioService {
                 field("adminContextMaxChars", "number", "Admin context max", "Maximum size of context passed to admin AI."),
                 field("playerApi.endpointUrl", "text", "Player endpoint URL", "OpenAI-compatible endpoint for player chat."),
                 secretField("playerApi.apiKey", "Player API key", "Stored server-side for player AI."),
+                field("playerApi.authHeaderName", "text", "Player auth header", "Authorization header name used for player AI requests."),
+                field("playerApi.authHeaderPrefix", "text", "Player auth prefix", "Prefix prepended before the player API key, for example Bearer."),
                 field("playerApi.model", "text", "Player model", "Model name used for player chat."),
                 field("playerApi.systemPrompt", "text", "Player system prompt", "Instructions for player AI replies."),
                 field("playerApi.temperature", "number", "Player temperature", "Sampling temperature for player chat."),
@@ -238,6 +243,8 @@ public class ConfigStudioService {
                 field("playerApi.timeoutSeconds", "number", "Player timeout", "Request timeout in seconds for player AI."),
                 field("adminApi.endpointUrl", "text", "Admin endpoint URL", "OpenAI-compatible endpoint for admin AI."),
                 secretField("adminApi.apiKey", "Admin API key", "Stored server-side for admin AI."),
+                field("adminApi.authHeaderName", "text", "Admin auth header", "Authorization header name used for admin AI requests."),
+                field("adminApi.authHeaderPrefix", "text", "Admin auth prefix", "Prefix prepended before the admin API key, for example Bearer."),
                 field("adminApi.model", "text", "Admin model", "Model name used for admin AI."),
                 field("adminApi.systemPrompt", "text", "Admin system prompt", "Instructions for admin AI replies."),
                 field("adminApi.temperature", "number", "Admin temperature", "Sampling temperature for admin AI."),
@@ -352,6 +359,7 @@ public class ConfigStudioService {
         values.put("ranks", mapOf(
                 entry("enableAutoRanks", ranks.isEnableAutoRanks()),
                 entry("checkIntervalMinutes", ranks.getCheckIntervalMinutes()),
+                entry("countAfkTime", ranks.isCountAfkTime()),
                 entry("promotionMessage", ranks.getPromotionMessage()),
                 entry("tooltipPlayed", ranks.getTooltipPlayed()),
                 entry("tooltipRequired", ranks.getTooltipRequired()),
@@ -376,6 +384,8 @@ public class ConfigStudioService {
                 entry("enableTickets", tickets.isEnableTickets()),
                 entry("ticketCategoryId", tickets.getTicketCategoryId()),
                 entry("supportRoleId", tickets.getSupportRoleId()),
+                entry("enableAutoAssign", tickets.isEnableAutoAssign()),
+                entry("assignedMessage", tickets.getAssignedMessage()),
                 entry("ticketChannelTopic", tickets.getTicketChannelTopic()),
                 entry("maxTicketsPerUser", tickets.getMaxTicketsPerUser()),
                 entry("ticketCreatedMessage", tickets.getTicketCreatedMessage()),
@@ -499,6 +509,8 @@ public class ConfigStudioService {
                 entry("adminContextMaxChars", ai.getAdminContextMaxChars()),
                 entry("playerApi.endpointUrl", ai.getPlayerApi().getEndpointUrl()),
                 entry("playerApi.apiKey", maskSecret(ai.getPlayerApi().getApiKey())),
+                entry("playerApi.authHeaderName", ai.getPlayerApi().getAuthHeaderName()),
+                entry("playerApi.authHeaderPrefix", ai.getPlayerApi().getAuthHeaderPrefix()),
                 entry("playerApi.model", ai.getPlayerApi().getModel()),
                 entry("playerApi.systemPrompt", ai.getPlayerApi().getSystemPrompt()),
                 entry("playerApi.temperature", ai.getPlayerApi().getTemperature()),
@@ -506,6 +518,8 @@ public class ConfigStudioService {
                 entry("playerApi.timeoutSeconds", ai.getPlayerApi().getTimeoutSeconds()),
                 entry("adminApi.endpointUrl", ai.getAdminApi().getEndpointUrl()),
                 entry("adminApi.apiKey", maskSecret(ai.getAdminApi().getApiKey())),
+                entry("adminApi.authHeaderName", ai.getAdminApi().getAuthHeaderName()),
+                entry("adminApi.authHeaderPrefix", ai.getAdminApi().getAuthHeaderPrefix()),
                 entry("adminApi.model", ai.getAdminApi().getModel()),
                 entry("adminApi.systemPrompt", ai.getAdminApi().getSystemPrompt()),
                 entry("adminApi.temperature", ai.getAdminApi().getTemperature()),
@@ -1160,6 +1174,7 @@ public class ConfigStudioService {
         RanksConfig config = RanksConfig.getInstance();
         config.setEnableAutoRanks(boolValue(values.get("enableAutoRanks")));
         config.setCheckIntervalMinutes(intValue(values.get("checkIntervalMinutes")));
+        config.setCountAfkTime(boolValue(values.get("countAfkTime")));
         config.setPromotionMessage(stringValue(values.get("promotionMessage")));
         config.setTooltipPlayed(stringValue(values.get("tooltipPlayed")));
         config.setTooltipRequired(stringValue(values.get("tooltipRequired")));
@@ -1191,6 +1206,8 @@ public class ConfigStudioService {
         config.setEnableTickets(boolValue(values.get("enableTickets")));
         config.setTicketCategoryId(stringValue(values.get("ticketCategoryId")));
         config.setSupportRoleId(stringValue(values.get("supportRoleId")));
+        config.setEnableAutoAssign(boolValue(values.get("enableAutoAssign")));
+        config.setAssignedMessage(stringValue(values.get("assignedMessage")));
         config.setTicketChannelTopic(stringValue(values.get("ticketChannelTopic")));
         config.setMaxTicketsPerUser(intValue(values.get("maxTicketsPerUser")));
         config.setTicketCreatedMessage(stringValue(values.get("ticketCreatedMessage")));
@@ -1280,6 +1297,8 @@ public class ConfigStudioService {
         if (!isMasked(values.get("playerApi.apiKey"))) {
             config.getPlayerApi().setApiKey(stringValue(values.get("playerApi.apiKey")));
         }
+        config.getPlayerApi().setAuthHeaderName(stringValue(values.get("playerApi.authHeaderName")));
+        config.getPlayerApi().setAuthHeaderPrefix(stringValue(values.get("playerApi.authHeaderPrefix")));
         config.getPlayerApi().setModel(stringValue(values.get("playerApi.model")));
         config.getPlayerApi().setSystemPrompt(stringValue(values.get("playerApi.systemPrompt")));
         config.getPlayerApi().setTemperature(doubleValue(values.get("playerApi.temperature")));
@@ -1289,6 +1308,8 @@ public class ConfigStudioService {
         if (!isMasked(values.get("adminApi.apiKey"))) {
             config.getAdminApi().setApiKey(stringValue(values.get("adminApi.apiKey")));
         }
+        config.getAdminApi().setAuthHeaderName(stringValue(values.get("adminApi.authHeaderName")));
+        config.getAdminApi().setAuthHeaderPrefix(stringValue(values.get("adminApi.authHeaderPrefix")));
         config.getAdminApi().setModel(stringValue(values.get("adminApi.model")));
         config.getAdminApi().setSystemPrompt(stringValue(values.get("adminApi.systemPrompt")));
         config.getAdminApi().setTemperature(doubleValue(values.get("adminApi.temperature")));
@@ -1361,6 +1382,7 @@ public class ConfigStudioService {
         AnnouncementConfig announcements = new AnnouncementConfig(getConfigDir().resolve("announcements.json"));
         RestartConfig restart = new RestartConfig(getConfigDir().resolve("restart.json"));
         RanksConfig ranks = new RanksConfig(getConfigDir().resolve("ranks.json"));
+        PlayerListConfig playerList = PlayerListConfig.defaults(getConfigDir().resolve("playerlist.json"));
         TicketConfig tickets = new TicketConfig(getConfigDir().resolve("tickets.json"));
         DiscordConfig discord = new DiscordConfig(getConfigDir().resolve("discord.json"));
         StatsConfig stats = new StatsConfig(getConfigDir().resolve("stats.json"));
@@ -1403,28 +1425,31 @@ public class ConfigStudioService {
         defaults.put("ranks", mapOf(
                 entry("enableAutoRanks", ranks.isEnableAutoRanks()),
                 entry("checkIntervalMinutes", ranks.getCheckIntervalMinutes()),
+                entry("countAfkTime", ranks.isCountAfkTime()),
                 entry("promotionMessage", ranks.getPromotionMessage()),
                 entry("tooltipPlayed", ranks.getTooltipPlayed()),
                 entry("tooltipRequired", ranks.getTooltipRequired()),
                 entry("ranks", GSON.toJson(ranks.getRanks()))));
         defaults.put("playerlist", mapOf(
-                entry("enableCustomPlayerList", true),
-                entry("headerLine1", "§b§l✦ VOIDIUM SERVER ✦"),
-                entry("headerLine2", "§7Online: §a%online%§7/§a%max%"),
-                entry("headerLine3", ""),
-                entry("footerLine1", "§7TPS: §a%tps%"),
-                entry("footerLine2", "§7Ping: §e%ping%ms"),
-                entry("footerLine3", ""),
-                entry("enableCustomNames", true),
-                entry("playerNameFormat", "%rank_prefix%%player_name%%rank_suffix%"),
-                entry("defaultPrefix", "§7"),
-                entry("defaultSuffix", ""),
-                entry("combineMultipleRanks", true),
-                entry("updateIntervalSeconds", 5)));
+                entry("enableCustomPlayerList", playerList.isEnableCustomPlayerList()),
+                entry("headerLine1", playerList.getHeaderLine1()),
+                entry("headerLine2", playerList.getHeaderLine2()),
+                entry("headerLine3", playerList.getHeaderLine3()),
+                entry("footerLine1", playerList.getFooterLine1()),
+                entry("footerLine2", playerList.getFooterLine2()),
+                entry("footerLine3", playerList.getFooterLine3()),
+                entry("enableCustomNames", playerList.isEnableCustomNames()),
+                entry("playerNameFormat", playerList.getPlayerNameFormat()),
+                entry("defaultPrefix", playerList.getDefaultPrefix()),
+                entry("defaultSuffix", playerList.getDefaultSuffix()),
+                entry("combineMultipleRanks", playerList.isCombineMultipleRanks()),
+                entry("updateIntervalSeconds", playerList.getUpdateIntervalSeconds())));
             defaults.put("tickets", mapOf(
                 entry("enableTickets", tickets.isEnableTickets()),
                 entry("ticketCategoryId", tickets.getTicketCategoryId()),
                 entry("supportRoleId", tickets.getSupportRoleId()),
+                entry("enableAutoAssign", tickets.isEnableAutoAssign()),
+                entry("assignedMessage", tickets.getAssignedMessage()),
                 entry("ticketChannelTopic", tickets.getTicketChannelTopic()),
                 entry("maxTicketsPerUser", tickets.getMaxTicketsPerUser()),
                 entry("ticketCreatedMessage", tickets.getTicketCreatedMessage()),
@@ -1456,7 +1481,7 @@ public class ConfigStudioService {
                 entry("chatChannelId", discord.getChatChannelId()),
                 entry("consoleChannelId", discord.getConsoleChannelId()),
                 entry("linkChannelId", discord.getLinkChannelId()),
-                entry("statusChannelId", ""),
+                entry("statusChannelId", discord.getStatusChannelId()),
                 entry("enableStatusMessages", discord.isEnableStatusMessages()),
                 entry("statusMessageStarting", discord.getStatusMessageStarting()),
                 entry("statusMessageStarted", discord.getStatusMessageStarted()),
@@ -1543,6 +1568,8 @@ public class ConfigStudioService {
                 entry("adminContextMaxChars", ai.getAdminContextMaxChars()),
                 entry("playerApi.endpointUrl", ai.getPlayerApi().getEndpointUrl()),
                 entry("playerApi.apiKey", maskSecret(ai.getPlayerApi().getApiKey())),
+                entry("playerApi.authHeaderName", ai.getPlayerApi().getAuthHeaderName()),
+                entry("playerApi.authHeaderPrefix", ai.getPlayerApi().getAuthHeaderPrefix()),
                 entry("playerApi.model", ai.getPlayerApi().getModel()),
                 entry("playerApi.systemPrompt", ai.getPlayerApi().getSystemPrompt()),
                 entry("playerApi.temperature", ai.getPlayerApi().getTemperature()),
@@ -1550,6 +1577,8 @@ public class ConfigStudioService {
                 entry("playerApi.timeoutSeconds", ai.getPlayerApi().getTimeoutSeconds()),
                 entry("adminApi.endpointUrl", ai.getAdminApi().getEndpointUrl()),
                 entry("adminApi.apiKey", maskSecret(ai.getAdminApi().getApiKey())),
+                entry("adminApi.authHeaderName", ai.getAdminApi().getAuthHeaderName()),
+                entry("adminApi.authHeaderPrefix", ai.getAdminApi().getAuthHeaderPrefix()),
                 entry("adminApi.model", ai.getAdminApi().getModel()),
                 entry("adminApi.systemPrompt", ai.getAdminApi().getSystemPrompt()),
                 entry("adminApi.temperature", ai.getAdminApi().getTemperature()),
@@ -1880,6 +1909,7 @@ public class ConfigStudioService {
             case "Kick message" -> "Kick zpráva";
             case "Enable auto ranks" -> "Povolit auto ranky";
             case "Check interval" -> "Interval kontroly";
+            case "Count AFK time" -> "Pocitat AFK cas";
             case "Promotion message" -> "Zpráva o povýšení";
             case "Tooltip played" -> "Tooltip odehráno";
             case "Tooltip required" -> "Tooltip požadováno";
@@ -1994,6 +2024,7 @@ public class ConfigStudioService {
             case "Shown when players are disconnected." -> "Zobrazí se při odpojení hráčů.";
             case "Turns on automatic rank checks." -> "Zapne automatické kontroly ranků.";
             case "How often rank promotion checks run." -> "Jak často běží kontroly povýšení ranku.";
+            case "Include AFK time in playtime-based rank progress." -> "Zahrne AFK cas do postupu ranku podle playtime.";
             case "Supports %rank% placeholder." -> "Podporuje placeholder %rank%.";
             case "Hover text for current playtime." -> "Hover text pro aktuální playtime.";
             case "Hover text for required playtime." -> "Hover text pro požadovanou playtime.";

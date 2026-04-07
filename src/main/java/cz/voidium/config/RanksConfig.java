@@ -13,8 +13,7 @@ public class RanksConfig {
 
     private boolean enableAutoRanks = true;
     private int checkIntervalMinutes = 5;
-    @SuppressWarnings("unused")
-    private boolean countAfkTime = false; // Reserved for future AFK time tracking feature
+    private boolean countAfkTime = false;
 
     public static class CustomCondition {
         public String type; // "KILL", "VISIT", "BREAK", "PLACE"
@@ -151,6 +150,10 @@ public class RanksConfig {
         return checkIntervalMinutes;
     }
 
+    public boolean isCountAfkTime() {
+        return countAfkTime;
+    }
+
     public List<RankDefinition> getRanks() {
         return ranks;
     }
@@ -173,6 +176,10 @@ public class RanksConfig {
 
     public void setCheckIntervalMinutes(int checkIntervalMinutes) {
         this.checkIntervalMinutes = Math.max(1, checkIntervalMinutes);
+    }
+
+    public void setCountAfkTime(boolean countAfkTime) {
+        this.countAfkTime = countAfkTime;
     }
 
     public void setRanks(List<RankDefinition> ranks) {
