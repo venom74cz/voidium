@@ -1,5 +1,11 @@
 # Voidium Changelog
 
+## [2.6.1] - 2026-04-08
+
+### Fixes
+- **Startup Crash After 2.6.0**: Fixed a `WebManager` initialization regression where the new release-check `HttpClient` could be constructed before its timeout constant was initialized, causing a server crash during `ServerStartedEvent`.
+- **Version Metadata Sync**: Updated project version metadata to `2.6.1` for this hotfix release.
+
 ## [2.6.0] - 2026-04-07
 
 ### Web Panel Information Architecture Cleanup

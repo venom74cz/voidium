@@ -70,21 +70,21 @@ public class WebManager {
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private static final String SESSION_COOKIE = "voidium_session"; 
     private static final String ADMIN_AI_CONVERSATION_ID = "admin:web";
-    private static final WebManager INSTANCE = new WebManager();
     private static final DateTimeFormatter VOTE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final URI GITHUB_LATEST_RELEASE_URI = URI.create("https://api.github.com/repos/venom74cz/voidium/releases/latest");
     private static final Duration RELEASE_CHECK_CACHE_TTL = Duration.ofMinutes(30);
     private static final Duration RELEASE_CHECK_FAILURE_TTL = Duration.ofMinutes(5);
     private static final Duration RELEASE_CHECK_TIMEOUT = Duration.ofSeconds(2);
     private static final Pattern VERSION_NUMBER_PATTERN = Pattern.compile("\\d+");
-
     private static final int RATE_LIMIT_MAX_REQUESTS = 120;
     private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
+    // Keep the singleton below timeout constants because instance field initialization uses them.
+    private static final WebManager INSTANCE = new WebManager();
 
     private final Map<String, Instant> bootstrapTokens = new ConcurrentHashMap<>();
     private final Map<String, Instant> sessions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, long[]> rateLimits = new ConcurrentHashMap<>();
-        private final HttpClient releaseHttpClient = HttpClient.newBuilder()
+    private final HttpClient releaseHttpClient = HttpClient.newBuilder()
             .connectTimeout(RELEASE_CHECK_TIMEOUT)
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
@@ -93,8 +93,8 @@ public class WebManager {
     private volatile Instant startedAt;
     private volatile java.util.concurrent.ScheduledExecutorService sessionCleaner;
     private volatile WebConsoleAppender consoleAppender;
-        private volatile ReleaseInfo cachedReleaseInfo = ReleaseInfo.empty();
-        private volatile Instant releaseInfoFetchedAt = Instant.EPOCH;
+    private volatile ReleaseInfo cachedReleaseInfo = ReleaseInfo.empty();
+    private volatile Instant releaseInfoFetchedAt = Instant.EPOCH;
 
     private WebManager() {
     }
